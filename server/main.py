@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from server.response import ApiResponse
 from server.routers.authRouter import authRouter
+from server.routers.materialRouter import materialRouter
 
 app = FastAPI(
     title="Filament Accounting API"
@@ -22,7 +23,7 @@ app.add_middleware(
 # -------------------------
 
 app.include_router(authRouter)
-
+app.include_router(materialRouter)
 
 # -------------------------
 # ROOT TEST
