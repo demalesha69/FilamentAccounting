@@ -44,7 +44,7 @@ class MaterialService:
             "type": created_material.type,
             "color": created_material.color,
             "initial_mass": created_material.initial_mass,
-            "current_mass": created_material.remaining_mass
+            "current_mass": created_material.initial_mass
         }
 
     # -------------------------
