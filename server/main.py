@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from server.response import ApiResponse
-
+from server.routers.authRouter import authRouter
 
 app = FastAPI()
 
@@ -13,12 +13,25 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+app = FastAPI(
+    title="Filament Accounting API"
+)
+
+
+# -------------------------
+# ROUTES
+# -------------------------
+
+app.include_router(authRouter)
+
+
+# -------------------------
+# ROOT TEST
+# -------------------------
+
 @app.get("/")
 def root():
-
-    return ApiResponse.success(
-        message="Server is running",
-        data={
-            "status": "ok"
-        }
-    )
+    return {
+        "status": "ok",
+        "message": "Server is running"
+    }
