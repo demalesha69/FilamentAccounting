@@ -78,11 +78,12 @@ def login(
 
 @authRouter.get("/verify")
 def verify(
+    db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     user_repo = UserRepository()
 
-    user = user_repo.get_by_id(current_user["user_id"])
+    user = user_repo.get_by_id(db, current_user["user_id"])
 
     return ApiResponse.success(
         "Токен найден",
