@@ -1,6 +1,6 @@
 from database.models.user import User
 from server.repositories.userRepo import UserRepository
-from services.hashService import HashService
+from server.services.hashService import HashService
 
 
 class AuthService:
