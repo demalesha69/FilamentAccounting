@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from database.db.db import get_db
-from server.schemas.user import UserLogin, UserRegister
+from server.schemas.user import UserLogin
 from server.services.authService import AuthService
 from server.response import ApiResponse
 
@@ -17,7 +17,7 @@ auth_service = AuthService()
 
 @authRouter.post("/register")
 def register(
-    data: UserRegister,
+    data: UserLogin,
     db: Session = Depends(get_db)
 ):
 
