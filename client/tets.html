@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проверка сервера</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f1117;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: #1a1d26;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+        
+        .status {
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-size: 18px;
+            background: #232734;
+        }
+        
+        .status.loading {
+            color: #f5c542;
+        }
+        
+        .status.success {
+            color: #56d364;
+            border: 1px solid #56d364;
+        }
+        
+        .status.error {
+            color: #ff5f5f;
+            border: 1px solid #ff5f5f;
+        }
+        
+        button {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        .details {
+            margin-top: 16px;
+            font-size: 14px;
+            color: #9ca3af;
+            text-align: left;
+            background: #0f1117;
+            padding: 12px;
+            border-radius: 8px;
+            word-break: break-all;
+            display: none;
+        }
+        
+        .details.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 Проверка сервера</h1>
+        
+        <div class="status loading" id="status">
+            ⏳ Нажмите кнопку для проверки
+        </div>
+        
+        <button onclick="checkServer()">
+            🚀 Проверить сервер
+        </button>
+        
+        <div class="details" id="details"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://186.246.28.163:8000/';
+        
+        async function checkServer() {
+            const status = document.getElementById('status');
+            const details = document.getElementById('details');
+            
+            status.className = 'status loading';
+            status.textContent = '⏳ Проверка...';
+            details.className = 'details';
+            details.textContent = '';
+            
+            try {
+                const startTime = Date.now();
+                
+                // Проверка корневого пути
+                const response = await fetch(API_URL, {
+                    method: 'GET'
+                });
+                
+                const endTime = Date.now();
+                const time = endTime - startTime;
+                
+                // Получаем текст ответа
+                let data = '';
+                try {
+                    data = await response.text();
+                } catch (e) {
+                    data = 'Не удалось прочитать ответ';
+                }
+                
+                // Обрезаем длинный ответ
+                if (data.length > 500) {
+                    data = data.substring(0, 500) + '\n... (обрезано)';
+                }
+                
+                if (response.ok) {
+                    status.className = 'status success';
+                    status.textContent = `✅ Сервер работает! (${time}мс)`;
+                } else {
+                    status.className = 'status error';
+                    status.textContent = `❌ Ошибка ${response.status} (${time}мс)`;
+                }
+                
+                // Показываем детали
+                details.className = 'details show';
+                details.textContent = `
+📡 URL: ${API_URL}
+📊 Статус: ${response.status} ${response.statusText}
+⏱️ Время: ${time}мс
+📦 Ответ сервера:
+${data}
+                `.trim();
+                
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = '❌ Сервер не доступен';
+                
+                details.className = 'details show';
+                details.textContent = `
+❌ Ошибка подключения к серверу
+
+🔍 Проверьте:
+• Запущен ли сервер на порту 8000
+• Правильный ли IP адрес (186.246.28.163)
+• Нет ли блокировки (фаервол/VPN)
+
+📝 Текст ошибки:
+${error.message}
+                `.trim();
+            }
+        }
+    </script>
+</body>
+</html>

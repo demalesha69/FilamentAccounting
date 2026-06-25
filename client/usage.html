@@ -1,0 +1,273 @@
+<!DOCTYPE html> 
+<html lang="ru"> 
+<head>
+	<title>FilamentAccounting</title>
+	<link rel="stylesheet" href="style.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+</head>
+<body>
+<script>
+// ============================
+// ПРОВЕРКА АВТОРИЗАЦИИ
+// ============================
+
+const API_URL = 'http://186.246.28.163:8000';
+
+async function checkAuth() {
+    const token = localStorage.getItem('token');
+    
+    // Если токена нет - показываем кнопку "Войти"
+    if (!token) {
+        updateAuthUI(false);
+        return false;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/verify`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Неверный токен');
+        }
+        
+        const data = await response.json();
+        updateAuthUI(true);
+        showUsername();
+        return data.valid;
+        
+    } catch (error) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        updateAuthUI(false);
+        return false;
+    }
+}
+
+// Обновление UI в зависимости от авторизации
+function updateAuthUI(isLoggedIn) {
+    const authContainer = document.getElementById('authContainer');
+    if (!authContainer) return;
+    
+    if (isLoggedIn) {
+        // Показываем имя + кнопку выхода
+        authContainer.innerHTML = `
+            <span style="color:#9ca3af; font-size:14px;" id="usernameDisplay"></span>
+            <button class="icon-button" onclick="logout()" title="Выйти">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        `;
+    } else {
+        // Показываем кнопку "Войти"
+        authContainer.innerHTML = `
+            <a href="login.html" class="icon-button" title="Войти">
+                <i class="fa-solid fa-right-to-bracket"></i>
+            </a>
+        `;
+    }
+}
+
+// Выход
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+}
+
+// Показываем имя пользователя
+function showUsername() {
+    try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const display = document.getElementById('usernameDisplay');
+        if (display) {
+            display.textContent = user.username || 'Пользователь';
+        }
+    } catch (e) {
+        // Игнорируем ошибки
+    }
+}
+</script>
+    <div class="app">
+		 <div class="top-section">
+<div class="header">
+    <h1 class="logo">Использование</h1>
+    <div id="authContainer">
+        <!-- Автоматически заполняется через JavaScript -->
+    </div>
+</div>
+			<div class="search-section">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input
+                        type="text"
+                        placeholder="Поиск..."
+                    />
+                </div>
+                <button class="filter-button">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+            </div>
+            </div>
+		</div>
+		        <!-- FLOAT BUTTON -->
+        <button class="fab-button">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+        <!-- FOOTER -->
+        <footer class="bottom-nav">
+            <a href="index.html" class="nav-item">
+                <i class="fa-solid fa-database"></i>
+                <span>Катушки</span>
+            </a>
+            <a href="usage.html" class="nav-item active">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>Использование</span>
+            </a>
+            <a href="stats.html" class="nav-item">
+                <i class="fa-solid fa-chart-column"></i>
+                <span>Статистика</span>
+            </a>
+			<button class="nav-item" onclick="openSettings()">
+				<i class="fa-solid fa-gear"></i>
+				<span>Настройки</span>
+			</button>
+        </footer>
+	</div>
+<!-- МОДАЛКА НАСТРОЕК -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="settingsTitle">Настройки</h2>
+            <button class="modal-close" onclick="closeSettings()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="setting-item">
+                <label id="themeLabel">Темная тема</label>
+                <input type="checkbox" id="darkTheme" checked>
+            </div>
+            
+            <div class="setting-item">
+                <label id="unitsLabel">Единицы измерения</label>
+                <select id="unitsSelect">
+                    <option value="grams">Граммы</option>
+                    <option value="kg">Килограммы</option>
+                </select>
+            </div>
+            
+            <div class="setting-item">
+                <label id="notificationsLabel">Уведомления</label>
+                <input type="checkbox" id="notifications" checked>
+            </div>
+            
+            <div class="setting-item">
+                <label id="languageLabel">Язык</label>
+                <select id="languageSelect" onchange="changeLanguage()">
+                    <option value="ru">Русский</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+            
+            <button class="save-button" onclick="saveSettings()">
+                <span id="saveButtonText">Сохранить</span>
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+// Тексты для двух языков
+const translations = {
+    ru: {
+        title: 'Настройки',
+        theme: 'Темная тема',
+        units: 'Единицы измерения',
+        notifications: 'Уведомления',
+        language: 'Язык',
+        save: 'Сохранить',
+        grams: 'Граммы',
+        kg: 'Килограммы'
+    },
+    en: {
+        title: 'Settings',
+        theme: 'Dark theme',
+        units: 'Units',
+        notifications: 'Notifications',
+        language: 'Language',
+        save: 'Save',
+        grams: 'Grams',
+        kg: 'Kilograms'
+    }
+};
+
+let currentLanguage = 'ru';
+
+function openSettings() {
+    document.getElementById('settingsModal').style.display = 'flex';
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').style.display = 'none';
+}
+
+document.getElementById('settingsModal').addEventListener('click', function(e) {
+    if (e.target === this) closeSettings();
+});
+
+function changeLanguage() {
+    const lang = document.getElementById('languageSelect').value;
+    currentLanguage = lang;
+    updateTexts(lang);
+}
+
+function updateTexts(lang) {
+    const t = translations[lang];
+    
+    document.getElementById('settingsTitle').textContent = t.title;
+    document.getElementById('themeLabel').textContent = t.theme;
+    document.getElementById('unitsLabel').textContent = t.units;
+    document.getElementById('notificationsLabel').textContent = t.notifications;
+    document.getElementById('languageLabel').textContent = t.language;
+    document.getElementById('saveButtonText').textContent = t.save;
+    
+    const unitsSelect = document.getElementById('unitsSelect');
+    unitsSelect.options[0].text = t.grams;
+    unitsSelect.options[1].text = t.kg;
+}
+
+function saveSettings() {
+    const theme = document.getElementById('darkTheme').checked;
+    const units = document.getElementById('unitsSelect').value;
+    const notifications = document.getElementById('notifications').checked;
+    const language = document.getElementById('languageSelect').value;
+    
+    // Сохраняем язык в localStorage
+    localStorage.setItem('language', language);
+    
+    // Здесь можно сохранить остальные настройки
+    console.log('Сохранено:', { theme, units, notifications, language });
+    
+    alert(currentLanguage === 'ru' ? 'Настройки сохранены!' : 'Settings saved!');
+    closeSettings();
+}
+
+window.onload = async function() {
+    // Проверка авторизации
+    await checkAuth();
+    
+    // Восстанавливаем язык
+    const savedLang = localStorage.getItem('language') || 'ru';
+    const langSelect = document.getElementById('languageSelect');
+    if (langSelect) {
+        langSelect.value = savedLang;
+        currentLanguage = savedLang;
+        updateTexts(savedLang);
+    }
+};
+</script>
+</body>
+</html>

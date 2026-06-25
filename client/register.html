@@ -1,0 +1,170 @@
+<!DOCTYPE html> 
+<html lang="ru"> 
+<head>
+    <title>Регистрация - FilamentAccounting</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>FilamentAccounting</h1>
+                <p>Создайте аккаунт</p>
+            </div>
+            
+            <form class="auth-form" id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="username">
+                        <i class="fa-solid fa-user"></i>
+                        Логин
+                    </label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        placeholder="Введите логин" 
+                        required
+                        minlength="3"
+                    />
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fa-solid fa-lock"></i>
+                        Пароль
+                    </label>
+                    <div class="password-wrapper">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            placeholder="Введите пароль (мин. 4 символа)" 
+                            required
+                            minlength="4"
+                        />
+                        <button type="button" class="toggle-password" onclick="togglePassword()">
+                            <i class="fa-solid fa-eye" id="passwordIcon"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="errorMessage" class="error-message" style="display:none;"></div>
+                
+                <button type="submit" class="auth-button" id="registerButton">
+                    <i class="fa-solid fa-user-plus"></i>
+                    Зарегистрироваться
+                </button>
+            </form>
+            
+            <div class="auth-footer">
+                <p>Уже есть аккаунт? <a href="login.html">Войти</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ============================
+        // НАСТРОЙКИ
+        // ============================
+        
+        const API_URL = 'http://186.246.28.163:8000/'; // URL твоего сервера
+        
+        // ============================
+        // ПОКАЗ/СКРЫТИЕ ПАРОЛЯ
+        // ============================
+        
+        function togglePassword() {
+            const password = document.getElementById('password');
+            const icon = document.getElementById('passwordIcon');
+            
+            if (password.type === 'password') {
+                password.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                password.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        }
+        
+        // ============================
+        // РЕГИСТРАЦИЯ
+        // ============================
+        
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('errorMessage');
+            const button = document.getElementById('registerButton');
+            
+            // Скрываем старую ошибку
+            errorDiv.style.display = 'none';
+            
+            // Валидация
+            if (username.length < 3) {
+                showError('Логин должен содержать минимум 3 символа');
+                return;
+            }
+            if (username.length > 50) {
+                showError('Логин должен содержать максимум 50 символов');
+                return;
+            }
+            if (password.length < 4) {
+                showError('Пароль должен содержать минимум 4 символа');
+                return;
+            }
+            if (password.length > 100) {
+                showError('Пароль должен содержать максимум 100 символов');
+                return;
+            }
+            
+            // Блокируем кнопку
+            button.disabled = true;
+            button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Загрузка...';
+            
+            try {
+                // Отправка запроса на сервер
+                const response = await fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                // Проверка ответа
+                if (!response.ok) {
+                    throw new Error(data.error || 'Ошибка регистрации');
+                }
+                
+                // Успешная регистрация
+                if (data.token) {
+                    // Сохраняем JWT токен
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    alert('Регистрация успешна!');
+                    window.location.href = 'index.html';
+                } else {
+                    throw new Error('Токен не получен');
+                }
+                
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                // Разблокируем кнопку
+                button.disabled = false;
+                button.innerHTML = '<i class="fa-solid fa-user-plus"></i> Зарегистрироваться';
+            }
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
