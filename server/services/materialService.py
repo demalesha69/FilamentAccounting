@@ -1,6 +1,7 @@
 from database.models.material import Material
 from server.repositories.materialRepo import MaterialRepository
 
+import uuid
 
 class MaterialService:
 
@@ -28,7 +29,8 @@ class MaterialService:
             color=color,
             initial_mass=initial_mass,
             current_mass=initial_mass,
-            owner_id=owner_id
+            owner_id=owner_id,
+            qr_code=str(uuid.uuid4())
         )
 
         created_material = self.repo.create(
