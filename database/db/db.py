@@ -7,7 +7,12 @@ from sqlalchemy.orm import DeclarativeBase
 
 load_dotenv()
 
-
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
