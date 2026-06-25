@@ -4,7 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from server.response import ApiResponse
 from server.routers.authRouter import authRouter
 
-app = FastAPI()
+app = FastAPI(
+    title="Filament Accounting API"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -13,9 +15,6 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-app = FastAPI(
-    title="Filament Accounting API"
-)
 
 
 # -------------------------
