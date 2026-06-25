@@ -6,6 +6,8 @@ from server.schemas.user import UserLogin
 from server.services.authService import AuthService
 from server.response import ApiResponse
 
+from server.jwt_middleware import get_current_user
+
 authRouter = APIRouter(prefix="/auth", tags=["Auth"])
 
 auth_service = AuthService()
@@ -71,3 +73,15 @@ def login(
             message=str(e),
             status_code=401
         )
+
+@authRouter.get("/verify")
+def verify(
+    current_user = Depends(get_current_user)
+):
+    return ApiResponse.success(
+        "Токен найден",
+        data = {
+            "username":current_user["username"],
+            "user_id": current_user["user_id"]
+        }
+    )
