@@ -19,6 +19,8 @@ class Consumption(Base):
     )
 
     used_mass: Mapped[float] = mapped_column(Float)
+    
+    remain_mass: Mapped[float] = mapped_column(Float)
 
     timestamp: Mapped[datetime] = mapped_column(
         DateTime,

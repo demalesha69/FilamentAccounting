@@ -51,5 +51,6 @@ class Material(Base):
 
     consumptions = relationship(
         "Consumption",
-        back_populates="material"
+        back_populates="material",
+        cascade="all, delete"
     )
