@@ -6,6 +6,8 @@ from server.schemas.user import UserLogin
 from server.services.authService import AuthService
 from server.response import ApiResponse
 
+from server.repositories.userRepo import UserRepository
+
 from server.jwt_middleware import get_current_user
 
 authRouter = APIRouter(prefix="/auth", tags=["Auth"])
@@ -78,10 +80,15 @@ def login(
 def verify(
     current_user = Depends(get_current_user)
 ):
+    user_repo = UserRepository()
+
+    user = user_repo.get_by_id(current_user["user_id"])
+
     return ApiResponse.success(
         "Токен найден",
         data = {
-            "username":current_user["username"],
-            "user_id": current_user["user_id"]
+            "username": user.username,
+            "user_id": current_user["user_id"],
+            "exp": current_user["exp"]
         }
     )
