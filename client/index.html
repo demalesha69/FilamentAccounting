@@ -1,0 +1,702 @@
+<!DOCTYPE html> 
+<html lang="ru"> 
+<head>
+	<title>FilamentAccounting</title>
+	<link rel="stylesheet" href="style.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+	<script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+<script>
+// ============================
+// ПРОВЕРКА АВТОРИЗАЦИИ
+// ============================
+
+const API_URL = 'http://186.246.28.163:8000';
+
+async function checkAuth() {
+    const token = localStorage.getItem('token');
+    
+    // Если токена нет - показываем кнопку "Войти"
+    if (!token) {
+        updateAuthUI(false);
+        return false;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/verify`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Неверный токен');
+        }
+        
+        const data = await response.json();
+        updateAuthUI(true);
+        showUsername();
+        return data.valid;
+        
+    } catch (error) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        updateAuthUI(false);
+        return false;
+    }
+}
+
+// Обновление UI в зависимости от авторизации
+function updateAuthUI(isLoggedIn) {
+    const authContainer = document.getElementById('authContainer');
+    if (!authContainer) return;
+    
+    if (isLoggedIn) {
+        // Показываем имя + кнопку выхода
+        authContainer.innerHTML = `
+            <span style="color:#9ca3af; font-size:14px;" id="usernameDisplay"></span>
+            <button class="icon-button" onclick="logout()" title="Выйти">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        `;
+    } else {
+        // Показываем кнопку "Войти"
+        authContainer.innerHTML = `
+            <a href="login.html" class="icon-button" title="Войти">
+                <i class="fa-solid fa-right-to-bracket"></i>
+            </a>
+        `;
+    }
+}
+
+// Выход
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+}
+
+// Показываем имя пользователя
+function showUsername() {
+    try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const display = document.getElementById('usernameDisplay');
+        if (display) {
+            display.textContent = user.username || 'Пользователь';
+        }
+    } catch (e) {
+        // Игнорируем ошибки
+    }
+}
+</script>
+    <div class="app">
+		 <div class="top-section">
+			<div class="header">
+				<h1 class="logo">Катушки</h1>
+				<div id="authContainer">
+					<!-- Автоматически заполняется через JavaScript -->
+				</div>
+			</div>
+			<div class="search-section">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input
+                        type="text"
+                        placeholder="Поиск филамента..."
+                    />
+                </div>
+				<button class="filter-button" onclick="openFilter()">
+					<i class="fa-solid fa-sliders"></i>
+				</button>
+            </div>
+		</div>
+		<!-- FLOAT BUTTON -->
+		<button class="fab-button" onclick="openAddFilament()">
+			<i class="fa-solid fa-plus"></i>
+		</button>
+        <!-- FOOTER -->
+        <footer class="bottom-nav">
+            <a href="index.html" class="nav-item active">
+                <i class="fa-solid fa-database"></i>
+                <span>Катушки</span>
+            </a>
+            <a href="usage.html" class="nav-item">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>Использование</span>
+            </a>
+            <a href="stats.html" class="nav-item">
+                <i class="fa-solid fa-chart-column"></i>
+                <span>Статистика</span>
+            </a>
+			<button class="nav-item" onclick="openSettings()">
+				<i class="fa-solid fa-gear"></i>
+				<span>Настройки</span>
+			</button>
+        </footer>
+	</div>
+<!-- МОДАЛКА НАСТРОЕК -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="settingsTitle">Настройки</h2>
+            <button class="modal-close" onclick="closeSettings()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="setting-item">
+                <label id="themeLabel">Темная тема</label>
+                <input type="checkbox" id="darkTheme" checked>
+            </div>
+            
+            <div class="setting-item">
+                <label id="unitsLabel">Единицы измерения</label>
+                <select id="unitsSelect">
+                    <option value="grams">Граммы</option>
+                    <option value="kg">Килограммы</option>
+                </select>
+            </div>
+            
+            <div class="setting-item">
+                <label id="notificationsLabel">Уведомления</label>
+                <input type="checkbox" id="notifications" checked>
+            </div>
+            
+            <div class="setting-item">
+                <label id="languageLabel">Язык</label>
+                <select id="languageSelect" onchange="changeLanguage()">
+                    <option value="ru">Русский</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+            
+            <button class="save-button" onclick="saveSettings()">
+                <span id="saveButtonText">Сохранить</span>
+            </button>
+        </div>
+    </div>
+</div>
+<!-- МОДАЛКА ДОБАВЛЕНИЯ КАТУШКИ -->
+<div class="modal-overlay" id="addFilamentModal">
+    <div class="modal modal-wide">
+        <div class="modal-header">
+            <h2 id="addTitle">➕ Добавить катушку</h2>
+            <button class="modal-close" onclick="closeAddFilament()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <!-- Вкладки -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('manual')" id="tabManual">
+                    <i class="fa-solid fa-pen"></i> Вручную
+                </button>
+                <button class="tab" onclick="switchTab('qr')" id="tabQR">
+                    <i class="fa-solid fa-qrcode"></i> QR-код
+                </button>
+            </div>
+            
+            <!-- Ручное добавление -->
+            <div class="tab-content active" id="tabManualContent">
+                <div class="form-group">
+                    <label for="filamentName">Название</label>
+                    <input type="text" id="filamentName" placeholder="Например: PLA" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="filamentColor">Цвет</label>
+                    <div class="color-select">
+                        <input type="text" id="filamentColor" placeholder="Например: Green" />
+                        <div class="color-picker">
+                            <button class="color-option green" onclick="setColor('green')"></button>
+                            <button class="color-option yellow" onclick="setColor('yellow')"></button>
+                            <button class="color-option red" onclick="setColor('red')"></button>
+                            <button class="color-option blue" onclick="setColor('blue')"></button>
+                            <button class="color-option orange" onclick="setColor('orange')"></button>
+                            <button class="color-option purple" onclick="setColor('purple')"></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="filamentWeight">Вес (граммы)</label>
+                    <input type="number" id="filamentWeight" placeholder="1000" value="1000" />
+                </div>
+                
+                <button class="auth-button" onclick="addFilamentManual()">
+                    <i class="fa-solid fa-plus"></i> Добавить катушку
+                </button>
+            </div>
+            
+            <!-- Добавление по QR-коду -->
+            <div class="tab-content" id="tabQRContent">
+                <div class="form-group">
+                    <label for="qrCodeInput">Введите QR-код</label>
+                    <input type="text" id="qrCodeInput" placeholder="Вставьте данные из QR-кода" />
+                </div>
+                
+                <button class="auth-button" onclick="addFilamentByQR()">
+                    <i class="fa-solid fa-qrcode"></i> Добавить по QR
+                </button>
+                
+                <div style="text-align:center; color:#9ca3af; font-size:13px; margin-top:12px;">
+                    <i class="fa-solid fa-info-circle"></i>
+                    QR-код должен содержать: название, цвет, вес
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- МОДАЛКА СОРТИРОВКИ -->
+<div class="modal-overlay" id="filterModal">
+    <div class="modal modal-small">
+        <div class="modal-header">
+            <h2 id="filterTitle">Сортировка</h2>
+            <button class="modal-close" onclick="closeFilter()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <button class="filter-option active" onclick="sortFilaments('default')" id="filterDefault">
+                <i class="fa-solid fa-list"></i>
+                <span>По умолчанию</span>
+            </button>
+            
+            <button class="filter-option" onclick="sortFilaments('name')" id="filterName">
+                <i class="fa-solid fa-font"></i>
+                <span>По названию (А-Я)</span>
+            </button>
+            
+            <button class="filter-option" onclick="sortFilaments('nameDesc')" id="filterNameDesc">
+                <i class="fa-solid fa-font"></i>
+                <span>По названию (Я-А)</span>
+            </button>
+            
+            <button class="filter-option" onclick="sortFilaments('progress')" id="filterProgress">
+                <i class="fa-solid fa-circle"></i>
+                <span>По остатку (возрастание)</span>
+            </button>
+            
+            <button class="filter-option" onclick="sortFilaments('progressDesc')" id="filterProgressDesc">
+                <i class="fa-solid fa-circle"></i>
+                <span>По остатку (убывание)</span>
+            </button>
+            
+            <button class="filter-option" onclick="sortFilaments('color')" id="filterColor">
+                <i class="fa-solid fa-palette"></i>
+                <span>По цвету</span>
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+// Тексты для двух языков
+const translations = {
+    ru: {
+        title: 'Настройки',
+        theme: 'Темная тема',
+        units: 'Единицы измерения',
+        notifications: 'Уведомления',
+        language: 'Язык',
+        save: 'Сохранить',
+        grams: 'Граммы',
+        kg: 'Килограммы'
+    },
+    en: {
+        title: 'Settings',
+        theme: 'Dark theme',
+        units: 'Units',
+        notifications: 'Notifications',
+        language: 'Language',
+        save: 'Save',
+        grams: 'Grams',
+        kg: 'Kilograms'
+    }
+};
+
+let currentLanguage = 'ru';
+
+function openSettings() {
+    document.getElementById('settingsModal').style.display = 'flex';
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').style.display = 'none';
+}
+
+document.getElementById('settingsModal').addEventListener('click', function(e) {
+    if (e.target === this) closeSettings();
+});
+
+function changeLanguage() {
+    const lang = document.getElementById('languageSelect').value;
+    currentLanguage = lang;
+    updateTexts(lang);
+}
+
+function updateTexts(lang) {
+    const t = translations[lang];
+    
+    document.getElementById('settingsTitle').textContent = t.title;
+    document.getElementById('themeLabel').textContent = t.theme;
+    document.getElementById('unitsLabel').textContent = t.units;
+    document.getElementById('notificationsLabel').textContent = t.notifications;
+    document.getElementById('languageLabel').textContent = t.language;
+    document.getElementById('saveButtonText').textContent = t.save;
+    
+    const unitsSelect = document.getElementById('unitsSelect');
+    unitsSelect.options[0].text = t.grams;
+    unitsSelect.options[1].text = t.kg;
+}
+
+function saveSettings() {
+    const theme = document.getElementById('darkTheme').checked;
+    const units = document.getElementById('unitsSelect').value;
+    const notifications = document.getElementById('notifications').checked;
+    const language = document.getElementById('languageSelect').value;
+    
+    // Сохраняем язык в localStorage
+    localStorage.setItem('language', language);
+    
+    // Здесь можно сохранить остальные настройки
+    console.log('Сохранено:', { theme, units, notifications, language });
+    
+    alert(currentLanguage === 'ru' ? 'Настройки сохранены!' : 'Settings saved!');
+    closeSettings();
+}
+
+window.onload = async function() {
+    // Проверка авторизации
+    await checkAuth();
+    
+    // Восстанавливаем язык
+    const savedLang = localStorage.getItem('language') || 'ru';
+    const langSelect = document.getElementById('languageSelect');
+    if (langSelect) {
+        langSelect.value = savedLang;
+        currentLanguage = savedLang;
+        updateTexts(savedLang);
+    }
+    
+    // Загружаем катушки
+    await loadFilaments();
+};
+</script>
+<script>
+// ============================
+// СОРТИРОВКА
+// ============================
+
+let currentSort = 'default';
+
+function openFilter() {
+    document.getElementById('filterModal').style.display = 'flex';
+}
+
+function closeFilter() {
+    document.getElementById('filterModal').style.display = 'none';
+}
+
+// Закрытие по клику на фон
+document.getElementById('filterModal').addEventListener('click', function(e) {
+    if (e.target === this) closeFilter();
+});
+
+function sortFilaments(type) {
+    currentSort = type;
+    
+    // Обновляем активную кнопку
+    document.querySelectorAll('.filter-option').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    const activeBtn = {
+        'default': 'filterDefault',
+        'name': 'filterName',
+        'nameDesc': 'filterNameDesc',
+        'progress': 'filterProgress',
+        'progressDesc': 'filterProgressDesc',
+        'color': 'filterColor'
+    }[type];
+    
+    if (activeBtn) {
+        document.getElementById(activeBtn).classList.add('active');
+    }
+    
+    // Получаем все карточки
+    const grid = document.querySelector('.filament-grid');
+    const cards = Array.from(grid.querySelectorAll('.filament-card'));
+    
+    // Сортируем
+    cards.sort((a, b) => {
+        const getData = (card) => {
+            const name = card.querySelector('.filament-info h2')?.textContent || '';
+            const color = card.querySelector('.filament-color')?.textContent || '';
+            const progressRing = card.querySelector('.progress-ring');
+            const progress = parseInt(progressRing?.style?.getPropertyValue('--progress')) || 0;
+            
+            return { name, color, progress };
+        };
+        
+        const dataA = getData(a);
+        const dataB = getData(b);
+        
+        switch(type) {
+            case 'name':
+                return dataA.name.localeCompare(dataB.name);
+            case 'nameDesc':
+                return dataB.name.localeCompare(dataA.name);
+            case 'progress':
+                return dataA.progress - dataB.progress;
+            case 'progressDesc':
+                return dataB.progress - dataA.progress;
+            case 'color':
+                return dataA.color.localeCompare(dataB.color);
+            default:
+                return 0;
+        }
+    });
+    
+    // Переставляем карточки в сетке
+    cards.forEach(card => grid.appendChild(card));
+    
+    closeFilter();
+}
+</script>
+<script>
+// ============================
+// ДОБАВЛЕНИЕ КАТУШКИ
+// ============================
+
+function openAddFilament() {
+    document.getElementById('addFilamentModal').style.display = 'flex';
+    // Сбрасываем форму
+    document.getElementById('filamentName').value = '';
+    document.getElementById('filamentColor').value = '';
+    document.getElementById('filamentWeight').value = '1000';
+    document.getElementById('qrCodeInput').value = '';
+}
+
+function closeAddFilament() {
+    document.getElementById('addFilamentModal').style.display = 'none';
+}
+
+// Закрытие по клику на фон
+document.getElementById('addFilamentModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAddFilament();
+});
+
+// Переключение вкладок
+function switchTab(tab) {
+    // Обновляем кнопки
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    
+    if (tab === 'manual') {
+        document.getElementById('tabManual').classList.add('active');
+        document.getElementById('tabManualContent').classList.add('active');
+    } else {
+        document.getElementById('tabQR').classList.add('active');
+        document.getElementById('tabQRContent').classList.add('active');
+    }
+}
+
+// Выбор цвета
+function setColor(color) {
+    const colorMap = {
+        'green': 'Green',
+        'yellow': 'Yellow', 
+        'red': 'Red',
+        'blue': 'Blue',
+        'orange': 'Orange',
+        'purple': 'Purple'
+    };
+    document.getElementById('filamentColor').value = colorMap[color] || color;
+}
+
+// Ручное добавление
+async function addFilamentManual() {
+    const name = document.getElementById('filamentName').value.trim();
+    const color = document.getElementById('filamentColor').value.trim();
+    const weight = parseInt(document.getElementById('filamentWeight').value);
+    
+    if (!name) {
+        alert('Введите название катушки');
+        return;
+    }
+    
+    if (!color) {
+        alert('Введите цвет катушки');
+        return;
+    }
+    
+    if (!weight || weight < 1) {
+        alert('Введите корректный вес');
+        return;
+    }
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('Вы не авторизованы');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/filaments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ name, color, weight })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка добавления');
+        }
+        
+        alert('✅ Катушка успешно добавлена!');
+        closeAddFilament();
+        // Обновляем список
+        loadFilaments();
+        
+    } catch (error) {
+        alert('❌ Ошибка: ' + error.message);
+    }
+}
+
+// Добавление по QR-коду
+async function addFilamentByQR() {
+    const qrData = document.getElementById('qrCodeInput').value.trim();
+    
+    if (!qrData) {
+        alert('Введите данные из QR-кода');
+        return;
+    }
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('Вы не авторизованы');
+        return;
+    }
+    
+    try {
+        // Парсим QR-данные (ожидаем JSON)
+        let data;
+        try {
+            data = JSON.parse(qrData);
+        } catch (e) {
+            // Если не JSON, пробуем распарсить как строку
+            const parts = qrData.split('|');
+            data = {
+                name: parts[0] || 'Unknown',
+                color: parts[1] || 'White',
+                weight: parseInt(parts[2]) || 1000
+            };
+        }
+        
+        const response = await fetch(`${API_URL}/filaments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.error || 'Ошибка добавления');
+        }
+        
+        alert('✅ Катушка успешно добавлена по QR-коду!');
+        closeAddFilament();
+        loadFilaments();
+        
+    } catch (error) {
+        alert('❌ Ошибка: ' + error.message);
+    }
+}
+
+// Загрузка списка катушек с сервера
+async function loadFilaments() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+        const response = await fetch(`${API_URL}/filaments`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Ошибка загрузки');
+        }
+        
+        const filaments = await response.json();
+        renderFilaments(filaments);
+        
+    } catch (error) {
+        console.error('Ошибка загрузки катушек:', error);
+    }
+}
+
+// Отрисовка катушек
+function renderFilaments(filaments) {
+    const grid = document.querySelector('.filament-grid');
+    if (!grid) return;
+    
+    if (!filaments || filaments.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align:center; padding:40px; color:#9ca3af;">
+                <i class="fa-solid fa-box-open" style="font-size:48px; margin-bottom:12px; display:block;"></i>
+                <p>Нет катушек. Добавьте первую!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = filaments.map(f => {
+        const colorMap = {
+            'green': '#56d364',
+            'yellow': '#f5c542',
+            'red': '#ff5f5f',
+            'blue': '#58a6ff',
+            'orange': '#ff8c00',
+            'purple': '#a855f7'
+        };
+        
+        const colorHex = colorMap[f.color?.toLowerCase()] || '#8b5cf6';
+        const progress = Math.round((f.used || 0) / f.weight * 100);
+        
+        return `
+            <article class="filament-card">
+                <div class="card-top">
+                    <div class="progress-ring" style="--progress: ${100 - progress}; --ring-color: ${colorHex};">
+                        <span>${100 - progress}%</span>
+                    </div>
+                    <div class="filament-info">
+                        <h2>${f.name}</h2>
+                        <p class="filament-color" style="color: ${colorHex};">${f.color}</p>
+                    </div>
+                </div>
+                <div class="weight-info" style="color: ${colorHex};">
+                    <div class="weight-dot"></div>
+                    <span>${f.used || 0}g / ${f.weight}g</span>
+                </div>
+            </article>
+        `;
+    }).join('');
+}
+</script>
+</body>
+</html>
