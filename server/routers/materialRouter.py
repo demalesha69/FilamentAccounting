@@ -26,7 +26,7 @@ material_service = MaterialService()
 # CREATE MATERIAL
 # -------------------------
 
-@materialRouter.post("/")
+@materialRouter.post("/create")
 def create_material(
     data: MaterialCreate,
     db: Session = Depends(get_db),
