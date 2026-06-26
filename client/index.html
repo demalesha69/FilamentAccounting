@@ -61,7 +61,7 @@
     </footer>
 </div>
 
-<!-- МОДАЛКА НАСТРОЕК -->
+<!-- МОДАЛКИ -->
 <div class="modal-overlay" id="settingsModal">
     <div class="modal">
         <div class="modal-header">
@@ -84,7 +84,6 @@
     </div>
 </div>
 
-<!-- МОДАЛКА ДОБАВЛЕНИЯ КАТУШКИ -->
 <div class="modal-overlay" id="addFilamentModal">
     <div class="modal modal-wide">
         <div class="modal-header">
@@ -127,7 +126,6 @@
     </div>
 </div>
 
-<!-- МОДАЛКА ДЕТАЛЕЙ КАТУШКИ -->
 <div class="modal-overlay" id="detailModal">
     <div class="modal modal-wide">
         <div class="modal-header">
@@ -140,7 +138,6 @@
     </div>
 </div>
 
-<!-- МОДАЛКА СОРТИРОВКИ -->
 <div class="modal-overlay" id="filterModal">
     <div class="modal modal-small">
         <div class="modal-header">
@@ -241,6 +238,25 @@ document.addEventListener('click', function(e) {
         notification.style.display = 'none';
     }
 });
+
+// ============================
+// ФОРМАТИРОВАНИЕ ВРЕМЕНИ (СЕКУНДЫ → ЛОКАЛЬНОЕ)
+// ============================
+
+function formatLocalDate(timestamp) {
+    if (!timestamp) return '';
+    try {
+        let ts = timestamp;
+        if (typeof ts === 'number' && ts < 10000000000) {
+            ts = ts * 1000;
+        }
+        const date = new Date(ts);
+        if (isNaN(date.getTime())) return String(timestamp);
+        return date.toLocaleString();
+    } catch (e) {
+        return String(timestamp);
+    }
+}
 
 // ============================
 // АВТОРИЗАЦИЯ
@@ -418,10 +434,6 @@ async function loadFilaments() {
     }
 }
 
-// ============================
-// ОТРИСОВКА КАТУШЕК
-// ============================
-
 function renderFilaments(filaments) {
     const grid = document.getElementById('filamentGrid');
     if (!grid) return;
@@ -453,10 +465,6 @@ function renderFilaments(filaments) {
         </article>`;
     }).join('');
 }
-
-// ============================
-// ДЕТАЛЬНАЯ МОДАЛКА
-// ============================
 
 function openDetailModal(id) {
     currentFilamentId = id;
@@ -544,7 +552,7 @@ document.getElementById('detailModal').addEventListener('click', function(e) {
 });
 
 // ============================
-// ИСТОРИЯ РАСХОДА
+// ИСТОРИЯ РАСХОДА (timestamp в секундах)
 // ============================
 
 async function loadConsumptionHistory(materialId) {
@@ -579,12 +587,14 @@ async function loadConsumptionHistory(materialId) {
         }
         
         return `<div style="display:flex;flex-direction:column;gap:6px;max-height:150px;overflow-y:auto;padding-right:4px;">
-            ${history.map(item => `
+            ${history.map(item => {
+                const localTime = item.timestamp ? formatLocalDate(item.timestamp) : '';
+                return `
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#1a1d26;border-radius:8px;border-left:3px solid #ff5f5f;">
                     <div style="display:flex;align-items:center;gap:12px;flex:1;">
                         <span style="color:#ffffff;font-size:13px;font-weight:500;">${item.title || 'Без названия'}</span>
                         <span style="color:#9ca3af;font-size:11px;">
-                            <i class="fa-regular fa-calendar"></i> ${item.timestamp ? new Date(item.timestamp).toLocaleString('ru-RU') : ''}
+                            <i class="fa-regular fa-calendar"></i> ${localTime}
                         </span>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;">
@@ -592,7 +602,7 @@ async function loadConsumptionHistory(materialId) {
                         <span style="font-size:15px;font-weight:700;color:#ff5f5f;white-space:nowrap;">-${item.used_mass}g</span>
                     </div>
                 </div>
-            `).join('')}
+            `}).join('')}
         </div>`;
     } catch (error) {
         console.error('Ошибка загрузки истории:', error);
@@ -601,7 +611,7 @@ async function loadConsumptionHistory(materialId) {
 }
 
 // ============================
-// СКАЧИВАНИЕ QR-КОДА
+// ОСТАЛЬНЫЕ ФУНКЦИИ
 // ============================
 
 function downloadQRCode() {
@@ -618,10 +628,6 @@ function downloadQRCode() {
     link.click();
     document.body.removeChild(link);
 }
-
-// ============================
-// УДАЛЕНИЕ КАТУШКИ
-// ============================
 
 async function deleteFilament(id) {
     if (!confirm('Вы уверены, что хотите удалить эту катушку?')) return;
@@ -644,10 +650,6 @@ async function deleteFilament(id) {
         showNotification('Ошибка: ' + error.message, 'error');
     }
 }
-
-// ============================
-// ДОБАВЛЕНИЕ КАТУШКИ
-// ============================
 
 function checkFilamentFields() {
     const name = document.getElementById('filamentName').value.trim();
@@ -683,7 +685,6 @@ function openAddFilament() {
     document.getElementById('filamentType').value = '';
     document.getElementById('filamentColor').value = '';
     document.getElementById('filamentWeight').value = '1000';
-    document.getElementById('qrCodeInput').value = '';
     
     ['filamentName', 'filamentType', 'filamentColor', 'filamentWeight'].forEach(id => {
         document.getElementById(id).style.borderColor = '';
@@ -741,14 +742,10 @@ async function addFilamentManual() {
     }
 }
 
-// ============================
-// ИНИЦИАЛИЗАЦИЯ
-// ============================
-
 window.onload = async function() {
     await checkAuth();
     await loadFilaments();
 };
 </script>
 </body>
-</html>	
+</html>

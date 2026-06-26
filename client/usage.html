@@ -8,7 +8,6 @@
 </head>
 <body>
 
-<!-- УВЕДОМЛЕНИЕ -->
 <div id="notification" class="notification" style="display:none;">
     <div class="notification-content">
         <i class="fa-solid fa-check-circle" id="notificationIcon"></i>
@@ -61,7 +60,6 @@
     </footer>
 </div>
 
-<!-- МОДАЛКА НАСТРОЕК -->
 <div class="modal-overlay" id="settingsModal">
     <div class="modal">
         <div class="modal-header">
@@ -84,7 +82,6 @@
     </div>
 </div>
 
-<!-- МОДАЛКА ДОБАВЛЕНИЯ РАСХОДА -->
 <div class="modal-overlay" id="addConsumptionModal">
     <div class="modal modal-wide">
         <div class="modal-header">
@@ -117,10 +114,8 @@
 
 <script>
 const API_URL = 'http://186.246.28.163:8000';
-
-// ============================
-// УВЕДОМЛЕНИЯ
-// ============================
+let allConsumptions = [];
+let currentConsumptionSort = 'default';
 
 function showNotification(message, type = 'success') {
     const notification = document.getElementById('notification');
@@ -152,6 +147,25 @@ document.addEventListener('click', function(e) {
         notification.style.display = 'none';
     }
 });
+
+// ============================
+// ФОРМАТИРОВАНИЕ ВРЕМЕНИ (СЕКУНДЫ → ЛОКАЛЬНОЕ)
+// ============================
+
+function formatLocalDate(timestamp) {
+    if (!timestamp) return '';
+    try {
+        let ts = timestamp;
+        if (typeof ts === 'number' && ts < 10000000000) {
+            ts = ts * 1000;
+        }
+        const date = new Date(ts);
+        if (isNaN(date.getTime())) return String(timestamp);
+        return date.toLocaleString();
+    } catch (e) {
+        return String(timestamp);
+    }
+}
 
 // ============================
 // АВТОРИЗАЦИЯ
@@ -201,10 +215,6 @@ function showUsername() {
     } catch (e) {}
 }
 
-// ============================
-// НАСТРОЙКИ
-// ============================
-
 function openSettings() {
     document.getElementById('settingsModal').style.display = 'flex';
 }
@@ -228,9 +238,6 @@ function saveSettings() {
 // ============================
 // ЗАГРУЗКА ВСЕХ РАСХОДОВ
 // ============================
-
-let allConsumptions = [];
-let currentConsumptionSort = 'default';
 
 async function loadAllConsumptions() {
     const token = localStorage.getItem('token');
@@ -270,7 +277,9 @@ function renderConsumptions(consumptions) {
         `;
         return;
     }
-    list.innerHTML = consumptions.map(item => `
+    list.innerHTML = consumptions.map(item => {
+        const localTime = item.timestamp ? formatLocalDate(item.timestamp) : '';
+        return `
         <div class="history-item" data-title="${(item.title || '').toLowerCase()}" data-material="${item.material_id || ''}">
             <div class="history-icon" style="color:#8b5cf6;">
                 <i class="fa-solid fa-print"></i>
@@ -278,14 +287,14 @@ function renderConsumptions(consumptions) {
             <div class="history-details">
                 <div class="history-title">${item.title || 'Без названия'}</div>
                 <div class="history-meta">
-                    ${item.timestamp ? new Date(item.timestamp).toLocaleString('ru-RU') : ''} 
+                    ${localTime}
                     • Материал ID: ${item.material_id} 
                     • Остаток: ${item.remain_mass}g
                 </div>
             </div>
             <div class="history-amount-remove">-${item.used_mass}g</div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 function filterHistory() {
@@ -439,10 +448,6 @@ async function createConsumption() {
         showNotification('Ошибка: ' + error.message, 'error');
     }
 }
-
-// ============================
-// ИНИЦИАЛИЗАЦИЯ
-// ============================
 
 window.onload = async function() {
     await checkAuth();

@@ -8,7 +8,6 @@
 </head>
 <body>
 
-<!-- УВЕДОМЛЕНИЕ -->
 <div id="notification" class="notification" style="display:none;">
     <div class="notification-content">
         <i class="fa-solid fa-check-circle" id="notificationIcon"></i>
@@ -21,6 +20,21 @@
         <div class="header">
             <h1 class="logo">Статистика</h1>
             <div id="authContainer"></div>
+        </div>
+        <div class="stats-controls">
+            <div class="stats-period">
+                <button class="period-btn active" onclick="setPeriod('all')" data-period="all">За все время</button>
+                <button class="period-btn" onclick="setPeriod('day')" data-period="day">День</button>
+                <button class="period-btn" onclick="setPeriod('week')" data-period="week">Неделя</button>
+                <button class="period-btn" onclick="setPeriod('month')" data-period="month">Месяц</button>
+                <button class="period-btn" onclick="setPeriod('year')" data-period="year">Год</button>
+            </div>
+            <div class="stats-custom">
+                <input type="date" id="dateFrom" />
+                <span>—</span>
+                <input type="date" id="dateTo" />
+                <button class="period-btn" onclick="setCustomPeriod()">Применить</button>
+            </div>
         </div>
     </div>
 
@@ -43,6 +57,7 @@
                 <div class="stat-label">Использовано грамм</div>
             </div>
         </div>
+        <div class="stats-history" id="statsHistory"></div>
     </main>
 
     <footer class="bottom-nav">
@@ -65,7 +80,6 @@
     </footer>
 </div>
 
-<!-- МОДАЛКА НАСТРОЕК -->
 <div class="modal-overlay" id="settingsModal">
     <div class="modal">
         <div class="modal-header">
@@ -90,10 +104,9 @@
 
 <script>
 const API_URL = 'http://186.246.28.163:8000';
-
-// ============================
-// УВЕДОМЛЕНИЯ
-// ============================
+let allConsumptions = [];
+let currentPeriod = 'all';
+let allFilaments = [];
 
 function showNotification(message, type = 'success') {
     const notification = document.getElementById('notification');
@@ -125,6 +138,40 @@ document.addEventListener('click', function(e) {
         notification.style.display = 'none';
     }
 });
+
+// ============================
+// ФОРМАТИРОВАНИЕ ВРЕМЕНИ (СЕКУНДЫ → ЛОКАЛЬНОЕ)
+// ============================
+
+function formatLocalDate(timestamp) {
+    if (!timestamp) return '';
+    try {
+        let ts = timestamp;
+        if (typeof ts === 'number' && ts < 10000000000) {
+            ts = ts * 1000;
+        }
+        const date = new Date(ts);
+        if (isNaN(date.getTime())) return String(timestamp);
+        return date.toLocaleString();
+    } catch (e) {
+        return String(timestamp);
+    }
+}
+
+function formatLocalDateShort(timestamp) {
+    if (!timestamp) return '';
+    try {
+        let ts = timestamp;
+        if (typeof ts === 'number' && ts < 10000000000) {
+            ts = ts * 1000;
+        }
+        const date = new Date(ts);
+        if (isNaN(date.getTime())) return String(timestamp);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    } catch (e) {
+        return String(timestamp);
+    }
+}
 
 // ============================
 // АВТОРИЗАЦИЯ
@@ -174,10 +221,6 @@ function showUsername() {
     } catch (e) {}
 }
 
-// ============================
-// НАСТРОЙКИ
-// ============================
-
 function openSettings() {
     document.getElementById('settingsModal').style.display = 'flex';
 }
@@ -199,7 +242,7 @@ function saveSettings() {
 }
 
 // ============================
-// ЗАГРУЗКА СТАТИСТИКИ
+// ЗАГРУЗКА ДАННЫХ
 // ============================
 
 async function loadStats() {
@@ -209,27 +252,109 @@ async function loadStats() {
         return;
     }
     try {
-        const response = await fetch(`${API_URL}/materials/`, {
+        const responseFilaments = await fetch(`${API_URL}/materials/`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             }
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || data.error || 'Ошибка загрузки');
-        const filaments = data.data || [];
-        updateStats(filaments);
+        const filamentsData = await responseFilaments.json();
+        if (!responseFilaments.ok) throw new Error(filamentsData.message || filamentsData.error || 'Ошибка загрузки катушек');
+        allFilaments = filamentsData.data || [];
+        
+        const responseConsumptions = await fetch(`${API_URL}/consumptions/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const consumptionsData = await responseConsumptions.json();
+        if (!responseConsumptions.ok) throw new Error(consumptionsData.message || consumptionsData.error || 'Ошибка загрузки расходов');
+        allConsumptions = consumptionsData.data || [];
+        
+        updateStats(currentPeriod);
     } catch (error) {
         console.error('Ошибка загрузки статистики:', error);
         showNotification('Ошибка загрузки статистики', 'error');
     }
 }
 
-function updateStats(filaments) {
-    const totalCount = filaments.length;
-    const totalInitialMass = filaments.reduce((sum, f) => sum + (f.initial_mass || 0), 0);
-    const totalCurrentMass = filaments.reduce((sum, f) => sum + (f.current_mass || 0), 0);
+// ============================
+// ФИЛЬТР ПО ПЕРИОДУ
+// ============================
+
+function getDateRange(period) {
+    const now = new Date();
+    const from = new Date();
+    let to = new Date();
+    
+    switch(period) {
+        case 'day':
+            from.setHours(0, 0, 0, 0);
+            break;
+        case 'week':
+            from.setDate(now.getDate() - 7);
+            break;
+        case 'month':
+            from.setMonth(now.getMonth() - 1);
+            break;
+        case 'year':
+            from.setFullYear(now.getFullYear() - 1);
+            break;
+        case 'all':
+        default:
+            from.setFullYear(2000);
+            break;
+    }
+    return { from, to: now };
+}
+
+function filterConsumptionsByPeriod(period, customFrom = null, customTo = null) {
+    let from, to;
+    if (customFrom && customTo) {
+        from = new Date(customFrom);
+        to = new Date(customTo);
+        to.setHours(23, 59, 59, 999);
+    } else {
+        const range = getDateRange(period);
+        from = range.from;
+        to = range.to;
+    }
+    
+    return allConsumptions.filter(item => {
+        const date = new Date(item.timestamp);
+        return date >= from && date <= to;
+    });
+}
+
+function setPeriod(period) {
+    currentPeriod = period;
+    document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
+    const btn = document.querySelector(`.period-btn[data-period="${period}"]`);
+    if (btn) btn.classList.add('active');
+    updateStats(period);
+}
+
+function setCustomPeriod() {
+    const from = document.getElementById('dateFrom').value;
+    const to = document.getElementById('dateTo').value;
+    if (!from || !to) {
+        showNotification('Выберите обе даты', 'error');
+        return;
+    }
+    document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
+    currentPeriod = 'custom';
+    updateStats('custom', from, to);
+}
+
+function updateStats(period, customFrom = null, customTo = null) {
+    const filtered = filterConsumptionsByPeriod(period, customFrom, customTo);
+    
+    const totalCount = allFilaments.length;
+    const totalInitialMass = allFilaments.reduce((sum, f) => sum + (f.initial_mass || 0), 0);
+    const totalCurrentMass = allFilaments.reduce((sum, f) => sum + (f.current_mass || 0), 0);
     const totalUsedMass = totalInitialMass - totalCurrentMass;
     const avgProgress = totalCount > 0 ? Math.round(totalCurrentMass / totalInitialMass * 100) : 0;
     
@@ -237,11 +362,59 @@ function updateStats(filaments) {
     document.getElementById('totalMass').textContent = totalInitialMass;
     document.getElementById('avgProgress').textContent = avgProgress + '%';
     document.getElementById('usedMass').textContent = totalUsedMass;
+    
+    renderStatsHistory(filtered);
 }
 
-// ============================
-// ИНИЦИАЛИЗАЦИЯ
-// ============================
+function renderStatsHistory(consumptions) {
+    const container = document.getElementById('statsHistory');
+    if (!consumptions || consumptions.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center;padding:40px;color:#9ca3af;">
+                <i class="fa-solid fa-inbox" style="font-size:48px;display:block;margin-bottom:12px;opacity:0.5;"></i>
+                <p>За выбранный период расходов не было</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const grouped = {};
+    consumptions.forEach(item => {
+        const date = new Date(item.timestamp);
+        const key = date.toLocaleDateString();
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(item);
+    });
+    
+    let html = '';
+    for (const [date, items] of Object.entries(grouped)) {
+        const totalUsed = items.reduce((sum, i) => sum + i.used_mass, 0);
+        html += `
+            <div class="stats-day">
+                <div class="stats-day-header">
+                    <span class="stats-day-date">${date}</span>
+                    <span class="stats-day-total">Всего: -${totalUsed}g</span>
+                </div>
+                <div class="stats-day-items">
+        `;
+        items.forEach(item => {
+            const localTime = item.timestamp ? formatLocalDateShort(item.timestamp) : '';
+            html += `
+                <div class="stats-day-item">
+                    <span class="stats-day-item-title">${item.title || 'Без названия'}</span>
+                    <span class="stats-day-item-time">${localTime}</span>
+                    <span class="stats-day-item-amount">-${item.used_mass}g</span>
+                </div>
+            `;
+        });
+        html += `
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
 
 window.onload = async function() {
     await checkAuth();
