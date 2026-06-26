@@ -1,6 +1,7 @@
 <!DOCTYPE html> 
 <html lang="ru"> 
 <head>
+    <meta charset="UTF-8">
     <title>Вход - FilamentAccounting</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
@@ -60,15 +61,7 @@
     </div>
     
     <script>
-        // ============================
-        // НАСТРОЙКИ
-        // ============================
-        
-        const API_URL = 'http://186.246.28.163:8000/'; // URL твоего сервера
-        
-        // ============================
-        // ПОКАЗ/СКРЫТИЕ ПАРОЛЯ
-        // ============================
+        const API_URL = 'http://186.246.28.163:8000';
         
         function toggleLoginPassword() {
             const password = document.getElementById('loginPassword');
@@ -83,10 +76,6 @@
             }
         }
         
-        // ============================
-        // ВХОД
-        // ============================
-        
         async function handleLogin(event) {
             event.preventDefault();
             
@@ -95,22 +84,18 @@
             const errorDiv = document.getElementById('errorMessage');
             const button = document.getElementById('loginButton');
             
-            // Скрываем старую ошибку
             errorDiv.style.display = 'none';
             
-            // Валидация
             if (!username || !password) {
                 showError('Заполните все поля');
                 return;
             }
             
-            // Блокируем кнопку
             button.disabled = true;
             button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Загрузка...';
             
             try {
-                // Отправка запроса на сервер
-                const response = await fetch(`${API_URL}/login`, {
+                const response = await fetch(`${API_URL}/auth/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -120,27 +105,52 @@
                 
                 const data = await response.json();
                 
-                // Проверка ответа
-                if (!response.ok) {
-                    throw new Error(data.error || 'Ошибка входа');
+                if (data.status === 401) {
+                    showError(data.message || 'Неверный логин или пароль');
+                    return;
                 }
                 
-                // Успешный вход
-                if (data.token) {
-                    // Сохраняем JWT токен
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
+                // ============================================
+                // ПОИСК ТОКЕНА В РАЗНЫХ МЕСТАХ
+                // ============================================
+                let token = null;
+                let user = null;
+                
+                if (data.data?.token) {
+                    token = data.data.token;
+                    user = data.data.user || { username: username };
+                } else if (data.token) {
+                    token = data.token;
+                    user = data.user || { username: username };
+                } else if (data.access_token) {
+                    token = data.access_token;
+                    user = data.user || { username: username };
+                } else if (data.accessToken) {
+                    token = data.accessToken;
+                    user = data.user || { username: username };
+                }
+                
+                if (token) {
+                    localStorage.setItem('token', token);
+                    localStorage.setItem('user', JSON.stringify(user));
                     
-                    alert('Вход выполнен успешно!');
+                    console.log('✅ ТОКЕН СОХРАНЁН:', token);
+                    console.log('✅ ПОЛЬЗОВАТЕЛЬ СОХРАНЁН:', user);
+                    
+                    // Проверка, что сохранилось
+                    console.log('Проверка localStorage:', localStorage.getItem('token'));
+                    
                     window.location.href = 'index.html';
                 } else {
-                    throw new Error('Токен не получен');
+                    console.error('❌ ТОКЕН НЕ НАЙДЕН!');
+                    console.error('Вот что пришло от сервера:', data);
+                    showError('Токен не получен от сервера. Смотри консоль (F12)');
                 }
                 
             } catch (error) {
                 showError(error.message);
+                console.error('❌ ОШИБКА:', error);
             } finally {
-                // Разблокируем кнопку
                 button.disabled = false;
                 button.innerHTML = '<i class="fa-solid fa-sign-in-alt"></i> Войти';
             }

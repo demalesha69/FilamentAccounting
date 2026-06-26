@@ -1,6 +1,7 @@
 <!DOCTYPE html> 
 <html lang="ru"> 
 <head>
+<meta charset="UTF-8">
     <title>Регистрация - FilamentAccounting</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
@@ -62,15 +63,7 @@
     </div>
     
     <script>
-        // ============================
-        // НАСТРОЙКИ
-        // ============================
-        
-        const API_URL = 'http://186.246.28.163:8000/'; // URL твоего сервера
-        
-        // ============================
-        // ПОКАЗ/СКРЫТИЕ ПАРОЛЯ
-        // ============================
+        const API_URL = 'http://186.246.28.163:8000';
         
         function togglePassword() {
             const password = document.getElementById('password');
@@ -85,10 +78,6 @@
             }
         }
         
-        // ============================
-        // РЕГИСТРАЦИЯ
-        // ============================
-        
         async function handleRegister(event) {
             event.preventDefault();
             
@@ -97,10 +86,8 @@
             const errorDiv = document.getElementById('errorMessage');
             const button = document.getElementById('registerButton');
             
-            // Скрываем старую ошибку
             errorDiv.style.display = 'none';
             
-            // Валидация
             if (username.length < 3) {
                 showError('Логин должен содержать минимум 3 символа');
                 return;
@@ -118,13 +105,11 @@
                 return;
             }
             
-            // Блокируем кнопку
             button.disabled = true;
             button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Загрузка...';
             
             try {
-                // Отправка запроса на сервер
-                const response = await fetch(`${API_URL}/register`, {
+                const response = await fetch(`${API_URL}/auth/register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -133,28 +118,36 @@
                 });
                 
                 const data = await response.json();
+                console.log('Ответ сервера (регистрация):', data);
                 
-                // Проверка ответа
-                if (!response.ok) {
-                    throw new Error(data.error || 'Ошибка регистрации');
+                if (data.status === 400) {
+                    showError(data.message || 'Пользователь уже зарегистрирован');
+                    return;
                 }
                 
-                // Успешная регистрация
-                if (data.token) {
-                    // Сохраняем JWT токен
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
+                if (data.status === 201) {
+                    const token = data.data?.token;
+                    const user = data.data?.user || { username: username };
                     
-                    alert('Регистрация успешна!');
-                    window.location.href = 'index.html';
+                    if (token) {
+                        localStorage.setItem('token', token);
+                        localStorage.setItem('user', JSON.stringify(user));
+                        
+                        console.log('✅ Токен сохранён:', token);
+                        console.log('✅ Пользователь сохранён:', user);
+                        
+                        window.location.href = 'index.html';
+                    } else {
+                        throw new Error('Токен не получен от сервера');
+                    }
                 } else {
-                    throw new Error('Токен не получен');
+                    throw new Error(data.message || data.error || 'Ошибка регистрации');
                 }
                 
             } catch (error) {
                 showError(error.message);
+                console.error('Ошибка:', error);
             } finally {
-                // Разблокируем кнопку
                 button.disabled = false;
                 button.innerHTML = '<i class="fa-solid fa-user-plus"></i> Зарегистрироваться';
             }
