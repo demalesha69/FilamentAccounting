@@ -24,10 +24,15 @@ class ConsumptionService:
             material_id
         )
 
+        if not material:
+            raise ValueError(
+                "Катушка не найдена"
+            )
+
         if material.owner_id != owner_id:
             raise PermissionError(
                 "Доступ запрещен"
-            ) 
+            )
 
         remain_mass = material.current_mass - used_mass 
 
@@ -73,10 +78,15 @@ class ConsumptionService:
             material_id
         )
 
+        if not material:
+            raise ValueError(
+                "Катушка не найдена"
+            )
+
         if material.owner_id != owner_id:
             raise PermissionError(
                 "Доступ запрещен"
-            ) 
+            )
         
         consumptions = self.repo.get_all_by_material(
             db,
@@ -88,7 +98,7 @@ class ConsumptionService:
                 "id": consumption.id,
                 "title": consumption.title,
                 "used_mass": consumption.used_mass,
-                "timestamp": consumption.timestamp,
+                "timestamp": consumption.timestamp.isoformat(),
                 "remain_mass": consumption.remain_mass
             }
 
@@ -110,7 +120,7 @@ class ConsumptionService:
                 "id": consumption.id,
                 "title": consumption.title,
                 "used_mass": consumption.used_mass,
-                "timestamp": consumption.timestamp,
+                "timestamp": consumption.timestamp.isoformat(),
                 "remain_mass": consumption.remain_mass,
                 "material_id": consumption.material_id
             }
