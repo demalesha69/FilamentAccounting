@@ -40,10 +40,15 @@ class StatisticService:
 
         first_consumption = self.consumption_repo.get_first(
             db,
-            owner_id
+            owner_id,
+            start_timestamp
         )
 
-        first_consumption_timestamp = None if not first_consumption else first_consumption.timestamp()
+        first_consumption_timestamp = (
+            None
+            if not first_consumption
+            else first_consumption.timestamp.timestamp()
+        )
 
         return {
             "total_used_mass": total_used_mass or 0,
