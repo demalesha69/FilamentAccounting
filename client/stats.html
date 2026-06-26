@@ -8,6 +8,7 @@
 </head>
 <body>
 
+<!-- УВЕДОМЛЕНИЕ -->
 <div id="notification" class="notification" style="display:none;">
     <div class="notification-content">
         <i class="fa-solid fa-check-circle" id="notificationIcon"></i>
@@ -41,20 +42,20 @@
     <main class="content">
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-value" id="totalUsed">0</div>
+                <div class="stat-label">Использовано (грамм)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalMaterials">0</div>
                 <div class="stat-label">Всего катушек</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="totalMass">0</div>
-                <div class="stat-label">Всего грамм</div>
+                <div class="stat-value" id="totalOperations">0</div>
+                <div class="stat-label">Операций расхода</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="avgProgress">0%</div>
-                <div class="stat-label">Средний остаток</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="usedMass">0</div>
-                <div class="stat-label">Использовано грамм</div>
+                <div class="stat-value" id="avgPerDay">0</div>
+                <div class="stat-label">Среднее в день (г)</div>
             </div>
         </div>
         <div class="stats-history" id="statsHistory"></div>
@@ -80,6 +81,7 @@
     </footer>
 </div>
 
+<!-- МОДАЛКА НАСТРОЕК -->
 <div class="modal-overlay" id="settingsModal">
     <div class="modal">
         <div class="modal-header">
@@ -104,9 +106,13 @@
 
 <script>
 const API_URL = 'http://186.246.28.163:8000';
-let allConsumptions = [];
 let currentPeriod = 'all';
-let allFilaments = [];
+let currentStartTimestamp = null;
+let currentEndTimestamp = null;
+
+// ============================
+// УВЕДОМЛЕНИЯ
+// ============================
 
 function showNotification(message, type = 'success') {
     const notification = document.getElementById('notification');
@@ -140,37 +146,45 @@ document.addEventListener('click', function(e) {
 });
 
 // ============================
-// ФОРМАТИРОВАНИЕ ВРЕМЕНИ (СЕКУНДЫ → ЛОКАЛЬНОЕ)
+// ФОРМАТИРОВАНИЕ ВРЕМЕНИ
 // ============================
-
-function formatLocalDate(timestamp) {
-    if (!timestamp) return '';
-    try {
-        let ts = timestamp;
-        if (typeof ts === 'number' && ts < 10000000000) {
-            ts = ts * 1000;
-        }
-        const date = new Date(ts);
-        if (isNaN(date.getTime())) return String(timestamp);
-        return date.toLocaleString();
-    } catch (e) {
-        return String(timestamp);
-    }
-}
 
 function formatLocalDateShort(timestamp) {
     if (!timestamp) return '';
     try {
-        let ts = timestamp;
-        if (typeof ts === 'number' && ts < 10000000000) {
-            ts = ts * 1000;
-        }
-        const date = new Date(ts);
+        const date = new Date(timestamp * 1000);
         if (isNaN(date.getTime())) return String(timestamp);
         return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
     } catch (e) {
         return String(timestamp);
     }
+}
+
+function getDateRange(period) {
+    const now = Math.floor(Date.now() / 1000);
+    let start = 0;
+    
+    switch(period) {
+        case 'day':
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            start = Math.floor(today.getTime() / 1000);
+            break;
+        case 'week':
+            start = now - 7 * 24 * 60 * 60;
+            break;
+        case 'month':
+            start = now - 30 * 24 * 60 * 60;
+            break;
+        case 'year':
+            start = now - 365 * 24 * 60 * 60;
+            break;
+        case 'all':
+        default:
+            start = 0;
+            break;
+    }
+    return { start, end: now };
 }
 
 // ============================
@@ -221,6 +235,10 @@ function showUsername() {
     } catch (e) {}
 }
 
+// ============================
+// НАСТРОЙКИ
+// ============================
+
 function openSettings() {
     document.getElementById('settingsModal').style.display = 'flex';
 }
@@ -242,99 +260,110 @@ function saveSettings() {
 }
 
 // ============================
-// ЗАГРУЗКА ДАННЫХ
+// ЗАГРУЗКА СТАТИСТИКИ (GET /statistics)
 // ============================
 
-async function loadStats() {
+async function loadStats(startTimestamp = null, endTimestamp = null) {
     const token = localStorage.getItem('token');
     if (!token) {
         showNotification('Вы не авторизованы', 'error');
         return;
     }
+    
     try {
-        const responseFilaments = await fetch(`${API_URL}/materials/`, {
+        let url = `${API_URL}/statistics`;
+        const params = [];
+        
+        if (startTimestamp !== null) {
+            params.push(`start_timestamp=${startTimestamp}`);
+        }
+        if (endTimestamp !== null) {
+            params.push(`end_timestamp=${endTimestamp}`);
+        }
+        if (params.length > 0) {
+            url += '?' + params.join('&');
+        }
+        
+        console.log('Запрос статистики:', url);
+        
+        const response = await fetch(url, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             }
         });
-        const filamentsData = await responseFilaments.json();
-        if (!responseFilaments.ok) throw new Error(filamentsData.message || filamentsData.error || 'Ошибка загрузки катушек');
-        allFilaments = filamentsData.data || [];
         
-        const responseConsumptions = await fetch(`${API_URL}/consumptions/`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        const consumptionsData = await responseConsumptions.json();
-        if (!responseConsumptions.ok) throw new Error(consumptionsData.message || consumptionsData.error || 'Ошибка загрузки расходов');
-        allConsumptions = consumptionsData.data || [];
+        const data = await response.json();
+        console.log('Полный ответ статистики:', data);
         
-        updateStats(currentPeriod);
+        // === ИСПРАВЛЕНИЕ: Проверяем статус из data ===
+        if (data.status != 200) {
+            throw new Error(data.message || 'Ошибка загрузки статистики');
+        }
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        // === ИСПРАВЛЕНИЕ: Правильно извлекаем данные ===
+        let statsData = data.data;
+    
+        
+        console.log('Данные для обновления:', statsData);
+        updateStats(statsData);
+        
     } catch (error) {
         console.error('Ошибка загрузки статистики:', error);
-        showNotification('Ошибка загрузки статистики', 'error');
+        showNotification('Ошибка загрузки статистики: ' + error.message, 'error');
     }
+}
+
+function updateStats(data) {
+    console.log('updateStats получил:', data);
+    
+    // Безопасное извлечение значений
+    const totalUsed = data.total_used_mass;
+    const materialsCount = data.materials_count;
+    const consumptionsCount = data.consumptions_count;
+    
+    console.log('Парсинг:', { totalUsed, materialsCount, consumptionsCount });
+    
+    // Среднее в день (за период)
+    let avgPerDay = 0;
+    if (currentPeriod !== 'all' && currentPeriod !== 'custom') {
+        const range = getDateRange(currentPeriod);
+        const days = Math.max(1, Math.ceil((range.end - range.start) / (24 * 60 * 60)));
+        avgPerDay = totalUsed / days;
+    } else if (currentPeriod === 'all' && totalUsed > 0 && data.first_consumption_timestamp) {
+        // Для "за все время" считаем среднее по дням с момента первого расхода
+        const firstTs = data.first_consumption_timestamp;
+        const now = Math.floor(Date.now() / 1000);
+        const days = Math.max(1, Math.ceil((now - firstTs) / (24 * 60 * 60)));
+        avgPerDay = totalUsed / days;
+    }
+    
+    document.getElementById('totalUsed').textContent = totalUsed.toFixed(1);
+    document.getElementById('totalMaterials').textContent = materialsCount;
+    document.getElementById('totalOperations').textContent = consumptionsCount;
+    document.getElementById('avgPerDay').textContent = avgPerDay > 0 ? avgPerDay.toFixed(1) : '—';
 }
 
 // ============================
-// ФИЛЬТР ПО ПЕРИОДУ
+// ПЕРИОДЫ
 // ============================
-
-function getDateRange(period) {
-    const now = new Date();
-    const from = new Date();
-    let to = new Date();
-    
-    switch(period) {
-        case 'day':
-            from.setHours(0, 0, 0, 0);
-            break;
-        case 'week':
-            from.setDate(now.getDate() - 7);
-            break;
-        case 'month':
-            from.setMonth(now.getMonth() - 1);
-            break;
-        case 'year':
-            from.setFullYear(now.getFullYear() - 1);
-            break;
-        case 'all':
-        default:
-            from.setFullYear(2000);
-            break;
-    }
-    return { from, to: now };
-}
-
-function filterConsumptionsByPeriod(period, customFrom = null, customTo = null) {
-    let from, to;
-    if (customFrom && customTo) {
-        from = new Date(customFrom);
-        to = new Date(customTo);
-        to.setHours(23, 59, 59, 999);
-    } else {
-        const range = getDateRange(period);
-        from = range.from;
-        to = range.to;
-    }
-    
-    return allConsumptions.filter(item => {
-        const date = new Date(item.timestamp);
-        return date >= from && date <= to;
-    });
-}
 
 function setPeriod(period) {
     currentPeriod = period;
     document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
     const btn = document.querySelector(`.period-btn[data-period="${period}"]`);
     if (btn) btn.classList.add('active');
-    updateStats(period);
+    
+    const range = getDateRange(period);
+    currentStartTimestamp = range.start;
+    currentEndTimestamp = range.end;
+    
+    console.log('Период:', period, 'с:', currentStartTimestamp, 'по:', currentEndTimestamp);
+    loadStats(currentStartTimestamp, currentEndTimestamp);
 }
 
 function setCustomPeriod() {
@@ -344,81 +373,28 @@ function setCustomPeriod() {
         showNotification('Выберите обе даты', 'error');
         return;
     }
+    
     document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
     currentPeriod = 'custom';
-    updateStats('custom', from, to);
+    
+    const startDate = new Date(from);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(to);
+    endDate.setHours(23, 59, 59, 999);
+    
+    currentStartTimestamp = Math.floor(startDate.getTime() / 1000);
+    currentEndTimestamp = Math.floor(endDate.getTime() / 1000);
+    
+    loadStats(currentStartTimestamp, currentEndTimestamp);
 }
 
-function updateStats(period, customFrom = null, customTo = null) {
-    const filtered = filterConsumptionsByPeriod(period, customFrom, customTo);
-    
-    const totalCount = allFilaments.length;
-    const totalInitialMass = allFilaments.reduce((sum, f) => sum + (f.initial_mass || 0), 0);
-    const totalCurrentMass = allFilaments.reduce((sum, f) => sum + (f.current_mass || 0), 0);
-    const totalUsedMass = totalInitialMass - totalCurrentMass;
-    const avgProgress = totalCount > 0 ? Math.round(totalCurrentMass / totalInitialMass * 100) : 0;
-    
-    document.getElementById('totalCount').textContent = totalCount;
-    document.getElementById('totalMass').textContent = totalInitialMass;
-    document.getElementById('avgProgress').textContent = avgProgress + '%';
-    document.getElementById('usedMass').textContent = totalUsedMass;
-    
-    renderStatsHistory(filtered);
-}
-
-function renderStatsHistory(consumptions) {
-    const container = document.getElementById('statsHistory');
-    if (!consumptions || consumptions.length === 0) {
-        container.innerHTML = `
-            <div style="text-align:center;padding:40px;color:#9ca3af;">
-                <i class="fa-solid fa-inbox" style="font-size:48px;display:block;margin-bottom:12px;opacity:0.5;"></i>
-                <p>За выбранный период расходов не было</p>
-            </div>
-        `;
-        return;
-    }
-    
-    const grouped = {};
-    consumptions.forEach(item => {
-        const date = new Date(item.timestamp);
-        const key = date.toLocaleDateString();
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(item);
-    });
-    
-    let html = '';
-    for (const [date, items] of Object.entries(grouped)) {
-        const totalUsed = items.reduce((sum, i) => sum + i.used_mass, 0);
-        html += `
-            <div class="stats-day">
-                <div class="stats-day-header">
-                    <span class="stats-day-date">${date}</span>
-                    <span class="stats-day-total">Всего: -${totalUsed}g</span>
-                </div>
-                <div class="stats-day-items">
-        `;
-        items.forEach(item => {
-            const localTime = item.timestamp ? formatLocalDateShort(item.timestamp) : '';
-            html += `
-                <div class="stats-day-item">
-                    <span class="stats-day-item-title">${item.title || 'Без названия'}</span>
-                    <span class="stats-day-item-time">${localTime}</span>
-                    <span class="stats-day-item-amount">-${item.used_mass}g</span>
-                </div>
-            `;
-        });
-        html += `
-                </div>
-            </div>
-        `;
-    }
-    
-    container.innerHTML = html;
-}
+// ============================
+// ИНИЦИАЛИЗАЦИЯ
+// ============================
 
 window.onload = async function() {
     await checkAuth();
-    await loadStats();
+    setPeriod('all');
 };
 </script>
 </body>
