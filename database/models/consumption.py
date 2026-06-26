@@ -18,8 +18,12 @@ class Consumption(Base):
         String(100)
     )
 
+    owner_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id")
+    )
+
     used_mass: Mapped[float] = mapped_column(Float)
-    
+
     remain_mass: Mapped[float] = mapped_column(Float)
 
     timestamp: Mapped[datetime] = mapped_column(
