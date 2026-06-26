@@ -98,7 +98,7 @@ class ConsumptionService:
                 "id": consumption.id,
                 "title": consumption.title,
                 "used_mass": consumption.used_mass,
-                "timestamp": consumption.timestamp.isoformat(),
+                "timestamp": consumption.timestamp.timestamp(),
                 "remain_mass": consumption.remain_mass
             }
 
@@ -120,7 +120,7 @@ class ConsumptionService:
                 "id": consumption.id,
                 "title": consumption.title,
                 "used_mass": consumption.used_mass,
-                "timestamp": consumption.timestamp.isoformat(),
+                "timestamp": consumption.timestamp.timestamp(),
                 "remain_mass": consumption.remain_mass,
                 "material_id": consumption.material_id
             }
