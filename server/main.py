@@ -5,6 +5,7 @@ from server.response import ApiResponse
 from server.routers.authRouter import authRouter
 from server.routers.materialRouter import materialRouter
 from server.routers.consumptionRouter import consumptionlRouter
+from server.routers.statisticRouter import statisticRouter
 
 app = FastAPI(
     title="Filament Accounting API"
@@ -26,6 +27,7 @@ app.add_middleware(
 app.include_router(authRouter)
 app.include_router(materialRouter)
 app.include_router(consumptionlRouter)
+app.include_router(statisticRouter)
 
 # -------------------------
 # ROOT TEST
