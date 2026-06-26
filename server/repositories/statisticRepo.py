@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -14,14 +16,18 @@ class StatisticsRepository:
         start_timestamp: int,
         end_timestamp: int
     ):
+
+        start_date = datetime.fromtimestamp(start_timestamp)
+        end_date = datetime.fromtimestamp(end_timestamp)
+
         return (
             db.query(
                 func.sum(Consumption.used_mass)
             )
             .filter(
                 Consumption.owner_id == owner_id,
-                Consumption.timestamp.timestamp() >= start_timestamp,
-                Consumption.timestamp.timestamp() <= end_timestamp
+                Consumption.timestamp >= start_date,
+                Consumption.timestamp <= end_date
             )
             .scalar()
         )
@@ -31,6 +37,7 @@ class StatisticsRepository:
         db: Session,
         owner_id: int
     ):
+
         return (
             db.query(Material)
             .filter(
@@ -46,12 +53,16 @@ class StatisticsRepository:
         start_timestamp: int,
         end_timestamp: int
     ):
+
+        start_date = datetime.fromtimestamp(start_timestamp)
+        end_date = datetime.fromtimestamp(end_timestamp)
+
         return (
             db.query(Consumption)
             .filter(
                 Consumption.owner_id == owner_id,
-                Consumption.timestamp.timestamp() >= start_timestamp,
-                Consumption.timestamp.timestamp() <= end_timestamp
+                Consumption.timestamp >= start_date,
+                Consumption.timestamp <= end_date
             )
             .count()
         )
@@ -63,6 +74,10 @@ class StatisticsRepository:
         start_timestamp: int,
         end_timestamp: int
     ):
+
+        start_date = datetime.fromtimestamp(start_timestamp)
+        end_date = datetime.fromtimestamp(end_timestamp)
+
         return (
             db.query(
                 Material.id,
@@ -75,8 +90,8 @@ class StatisticsRepository:
             )
             .filter(
                 Material.owner_id == owner_id,
-                Consumption.timestamp.timestamp() >= start_timestamp,
-                Consumption.timestamp.timestamp() <= end_timestamp
+                Consumption.timestamp >= start_date,
+                Consumption.timestamp <= end_date
             )
             .group_by(
                 Material.id,
