@@ -8,144 +8,13 @@
 </head>
 <body>
 
-<script>
-const API_URL = 'http://186.246.28.163:8000';
-
-// ============================
-// АВТОРИЗАЦИЯ
-// ============================
-
-async function checkAuth() {
-    const token = localStorage.getItem('token');
-    console.log('checkAuth: токен =', token);
-    
-    if (!token) {
-        updateAuthUI(false);
-        return false;
-    }
-    updateAuthUI(true);
-    return true;
-}
-
-function updateAuthUI(isLoggedIn) {
-    const container = document.getElementById('authContainer');
-    console.log('updateAuthUI: isLoggedIn =', isLoggedIn, 'container =', container);
-    
-    if (!container) return;
-    
-    if (isLoggedIn) {
-        container.innerHTML = `
-            <span style="color:#9ca3af; font-size:14px;" id="usernameDisplay"></span>
-            <button class="icon-button" onclick="logout()" title="Выйти">
-                <i class="fa-solid fa-right-from-bracket"></i>
-            </button>
-        `;
-        console.log('Контейнер обновлён, вызываем showUsername()');
-        showUsername();
-    } else {
-        container.innerHTML = `
-            <a href="login.html" class="icon-button" title="Войти">
-                <i class="fa-solid fa-right-to-bracket"></i>
-            </a>
-        `;
-    }
-}
-
-function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = 'login.html';
-}
-
-function showUsername() {
-    try {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        const display = document.getElementById('usernameDisplay');
-        console.log('showUsername: user =', user, 'display =', display);
-        
-        if (display) {
-            display.textContent = user.username || 'Пользователь';
-            console.log('Имя установлено:', display.textContent);
-        } else {
-            console.log('Элемент usernameDisplay НЕ НАЙДЕН');
-        }
-    } catch (e) {
-        console.log('Ошибка showUsername:', e);
-    }
-}
-
-// ============================
-// ЗАГРУЗКА СТАТИСТИКИ
-// ============================
-
-async function loadStats() {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    try {
-        const response = await fetch(`${API_URL}/materials/`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || data.error || 'Ошибка загрузки');
-        const filaments = data.data || [];
-        updateStats(filaments);
-    } catch (error) {
-        console.error('Ошибка загрузки статистики:', error);
-    }
-}
-
-function updateStats(filaments) {
-    const totalCount = filaments.length;
-    const totalInitialMass = filaments.reduce((sum, f) => sum + (f.initial_mass || 0), 0);
-    const totalCurrentMass = filaments.reduce((sum, f) => sum + (f.current_mass || 0), 0);
-    const totalUsedMass = totalInitialMass - totalCurrentMass;
-    const avgProgress = totalCount > 0 ? Math.round(totalCurrentMass / totalInitialMass * 100) : 0;
-    
-    document.getElementById('totalCount').textContent = totalCount;
-    document.getElementById('totalMass').textContent = totalInitialMass;
-    document.getElementById('avgProgress').textContent = avgProgress + '%';
-    document.getElementById('usedMass').textContent = totalUsedMass;
-}
-
-// ============================
-// НАСТРОЙКИ
-// ============================
-
-function openSettings() {
-    document.getElementById('settingsModal').style.display = 'flex';
-}
-
-function closeSettings() {
-    document.getElementById('settingsModal').style.display = 'none';
-}
-
-document.getElementById('settingsModal').addEventListener('click', function(e) {
-    if (e.target === this) closeSettings();
-});
-
-function saveSettings() {
-    const theme = document.getElementById('darkTheme').checked;
-    const units = document.getElementById('unitsSelect').value;
-    const notifications = document.getElementById('notifications').checked;
-    console.log('Сохранено:', { theme, units, notifications });
-    alert('Настройки сохранены!');
-    closeSettings();
-}
-
-// ============================
-// ИНИЦИАЛИЗАЦИЯ
-// ============================
-
-window.onload = async function() {
-    console.log('window.onload stats.html');
-    await checkAuth();
-    await loadStats();
-};
-</script>
+<!-- УВЕДОМЛЕНИЕ -->
+<div id="notification" class="notification" style="display:none;">
+    <div class="notification-content">
+        <i class="fa-solid fa-check-circle" id="notificationIcon"></i>
+        <span id="notificationMessage">Успешно!</span>
+    </div>
+</div>
 
 <div class="app">
     <div class="top-section">
@@ -211,13 +80,6 @@ window.onload = async function() {
                 <input type="checkbox" id="darkTheme" checked>
             </div>
             <div class="setting-item">
-                <label>Единицы измерения</label>
-                <select id="unitsSelect">
-                    <option value="grams">Граммы</option>
-                    <option value="kg">Килограммы</option>
-                </select>
-            </div>
-            <div class="setting-item">
                 <label>Уведомления</label>
                 <input type="checkbox" id="notifications" checked>
             </div>
@@ -225,5 +87,166 @@ window.onload = async function() {
         </div>
     </div>
 </div>
+
+<script>
+const API_URL = 'http://186.246.28.163:8000';
+
+// ============================
+// УВЕДОМЛЕНИЯ
+// ============================
+
+function showNotification(message, type = 'success') {
+    const notification = document.getElementById('notification');
+    if (!notification) return;
+    const messageEl = document.getElementById('notificationMessage');
+    const iconEl = document.getElementById('notificationIcon');
+    
+    notification.className = 'notification';
+    notification.classList.add(type);
+    
+    const icons = {
+        success: 'fa-solid fa-check-circle',
+        error: 'fa-solid fa-circle-exclamation',
+        info: 'fa-solid fa-circle-info'
+    };
+    iconEl.className = icons[type] || icons.success;
+    messageEl.textContent = message;
+    notification.style.display = 'block';
+    
+    clearTimeout(notification._timeout);
+    notification._timeout = setTimeout(() => {
+        notification.style.display = 'none';
+    }, 3000);
+}
+
+document.addEventListener('click', function(e) {
+    const notification = document.getElementById('notification');
+    if (notification && notification.contains(e.target)) {
+        notification.style.display = 'none';
+    }
+});
+
+// ============================
+// АВТОРИЗАЦИЯ
+// ============================
+
+async function checkAuth() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        updateAuthUI(false);
+        return false;
+    }
+    updateAuthUI(true);
+    showUsername();
+    return true;
+}
+
+function updateAuthUI(isLoggedIn) {
+    const container = document.getElementById('authContainer');
+    if (!container) return;
+    if (isLoggedIn) {
+        container.innerHTML = `
+            <span style="color:#9ca3af; font-size:14px;" id="usernameDisplay"></span>
+            <button class="icon-button" onclick="logout()" title="Выйти">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        `;
+    } else {
+        container.innerHTML = `
+            <a href="login.html" class="icon-button" title="Войти">
+                <i class="fa-solid fa-right-to-bracket"></i>
+            </a>
+        `;
+    }
+}
+
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+}
+
+function showUsername() {
+    try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const display = document.getElementById('usernameDisplay');
+        if (display) display.textContent = user.username || 'Пользователь';
+    } catch (e) {}
+}
+
+// ============================
+// НАСТРОЙКИ
+// ============================
+
+function openSettings() {
+    document.getElementById('settingsModal').style.display = 'flex';
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').style.display = 'none';
+}
+
+document.getElementById('settingsModal').addEventListener('click', function(e) {
+    if (e.target === this) closeSettings();
+});
+
+function saveSettings() {
+    const theme = document.getElementById('darkTheme').checked;
+    const notifications = document.getElementById('notifications').checked;
+    console.log('Сохранено:', { theme, notifications });
+    showNotification('Настройки сохранены!', 'success');
+    closeSettings();
+}
+
+// ============================
+// ЗАГРУЗКА СТАТИСТИКИ
+// ============================
+
+async function loadStats() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        showNotification('Вы не авторизованы', 'error');
+        return;
+    }
+    try {
+        const response = await fetch(`${API_URL}/materials/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || data.error || 'Ошибка загрузки');
+        const filaments = data.data || [];
+        updateStats(filaments);
+    } catch (error) {
+        console.error('Ошибка загрузки статистики:', error);
+        showNotification('Ошибка загрузки статистики', 'error');
+    }
+}
+
+function updateStats(filaments) {
+    const totalCount = filaments.length;
+    const totalInitialMass = filaments.reduce((sum, f) => sum + (f.initial_mass || 0), 0);
+    const totalCurrentMass = filaments.reduce((sum, f) => sum + (f.current_mass || 0), 0);
+    const totalUsedMass = totalInitialMass - totalCurrentMass;
+    const avgProgress = totalCount > 0 ? Math.round(totalCurrentMass / totalInitialMass * 100) : 0;
+    
+    document.getElementById('totalCount').textContent = totalCount;
+    document.getElementById('totalMass').textContent = totalInitialMass;
+    document.getElementById('avgProgress').textContent = avgProgress + '%';
+    document.getElementById('usedMass').textContent = totalUsedMass;
+}
+
+// ============================
+// ИНИЦИАЛИЗАЦИЯ
+// ============================
+
+window.onload = async function() {
+    await checkAuth();
+    await loadStats();
+};
+</script>
 </body>
 </html>

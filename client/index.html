@@ -5,9 +5,16 @@
     <title>FilamentAccounting</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
+
+<!-- УВЕДОМЛЕНИЕ -->
+<div id="notification" class="notification" style="display:none;">
+    <div class="notification-content">
+        <i class="fa-solid fa-check-circle" id="notificationIcon"></i>
+        <span id="notificationMessage">Успешно!</span>
+    </div>
+</div>
 
 <div class="app">
     <div class="top-section">
@@ -69,13 +76,6 @@
                 <input type="checkbox" id="darkTheme" checked>
             </div>
             <div class="setting-item">
-                <label>Единицы измерения</label>
-                <select id="unitsSelect">
-                    <option value="grams">Граммы</option>
-                    <option value="kg">Килограммы</option>
-                </select>
-            </div>
-            <div class="setting-item">
                 <label>Уведомления</label>
                 <input type="checkbox" id="notifications" checked>
             </div>
@@ -94,60 +94,35 @@
             </button>
         </div>
         <div class="modal-body">
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab('manual')" id="tabManual">
-                    <i class="fa-solid fa-pen"></i> Вручную
-                </button>
-                <button class="tab" onclick="switchTab('qr')" id="tabQR">
-                    <i class="fa-solid fa-qrcode"></i> QR-код
-                </button>
+            <div class="form-group">
+                <label for="filamentName">Название</label>
+                <input type="text" id="filamentName" placeholder="PLA" />
             </div>
-            
-            <div class="tab-content active" id="tabManualContent">
-                <div class="form-group">
-                    <label for="filamentName">Название</label>
-                    <input type="text" id="filamentName" placeholder="PLA" />
-                </div>
-                <div class="form-group">
-                    <label for="filamentType">Тип материала</label>
-                    <input type="text" id="filamentType" placeholder="PLA, PETG, ABS" />
-                </div>
-                <div class="form-group">
-                    <label for="filamentColor">Цвет</label>
-                    <div class="color-select">
-                        <input type="text" id="filamentColor" placeholder="Green" />
-                        <div class="color-picker">
-                            <button class="color-option green" onclick="setColor('green')"></button>
-                            <button class="color-option yellow" onclick="setColor('yellow')"></button>
-                            <button class="color-option red" onclick="setColor('red')"></button>
-                            <button class="color-option blue" onclick="setColor('blue')"></button>
-                            <button class="color-option orange" onclick="setColor('orange')"></button>
-                            <button class="color-option purple" onclick="setColor('purple')"></button>
-                        </div>
+            <div class="form-group">
+                <label for="filamentType">Тип материала</label>
+                <input type="text" id="filamentType" placeholder="PLA, PETG, ABS" />
+            </div>
+            <div class="form-group">
+                <label for="filamentColor">Цвет</label>
+                <div class="color-select">
+                    <input type="text" id="filamentColor" placeholder="Green" />
+                    <div class="color-picker">
+                        <button class="color-option green" onclick="setColor('green')"></button>
+                        <button class="color-option yellow" onclick="setColor('yellow')"></button>
+                        <button class="color-option red" onclick="setColor('red')"></button>
+                        <button class="color-option blue" onclick="setColor('blue')"></button>
+                        <button class="color-option orange" onclick="setColor('orange')"></button>
+                        <button class="color-option purple" onclick="setColor('purple')"></button>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="filamentWeight">Вес (граммы)</label>
-                    <input type="number" id="filamentWeight" placeholder="1000" value="1000" />
-                </div>
-                <button class="auth-button" onclick="addFilamentManual()">
-                    <i class="fa-solid fa-plus"></i> Добавить катушку
-                </button>
             </div>
-            
-            <div class="tab-content" id="tabQRContent">
-                <div class="form-group">
-                    <label for="qrCodeInput">Введите QR-код</label>
-                    <input type="text" id="qrCodeInput" placeholder='{"name":"PLA","material_type":"PLA","color":"Green","initial_mass":1000}' />
-                </div>
-                <button class="auth-button" onclick="addFilamentByQR()">
-                    <i class="fa-solid fa-qrcode"></i> Добавить по QR
-                </button>
-                <div style="text-align:center; color:#9ca3af; font-size:13px; margin-top:12px;">
-                    <i class="fa-solid fa-info-circle"></i>
-                    Формат: {"name":"PLA","material_type":"PLA","color":"Green","initial_mass":1000}
-                </div>
+            <div class="form-group">
+                <label for="filamentWeight">Вес (граммы)</label>
+                <input type="number" id="filamentWeight" placeholder="1000" value="1000" />
             </div>
+            <button class="auth-button" id="addFilamentBtn" onclick="addFilamentManual()" disabled>
+                <i class="fa-solid fa-plus"></i> Добавить катушку
+            </button>
         </div>
     </div>
 </div>
@@ -233,6 +208,41 @@ let currentFilterType = 'all';
 let currentFilamentId = null;
 
 // ============================
+// УВЕДОМЛЕНИЯ
+// ============================
+
+function showNotification(message, type = 'success') {
+    const notification = document.getElementById('notification');
+    if (!notification) return;
+    const messageEl = document.getElementById('notificationMessage');
+    const iconEl = document.getElementById('notificationIcon');
+    
+    notification.className = 'notification';
+    notification.classList.add(type);
+    
+    const icons = {
+        success: 'fa-solid fa-check-circle',
+        error: 'fa-solid fa-circle-exclamation',
+        info: 'fa-solid fa-circle-info'
+    };
+    iconEl.className = icons[type] || icons.success;
+    messageEl.textContent = message;
+    notification.style.display = 'block';
+    
+    clearTimeout(notification._timeout);
+    notification._timeout = setTimeout(() => {
+        notification.style.display = 'none';
+    }, 3000);
+}
+
+document.addEventListener('click', function(e) {
+    const notification = document.getElementById('notification');
+    if (notification && notification.contains(e.target)) {
+        notification.style.display = 'none';
+    }
+});
+
+// ============================
 // АВТОРИЗАЦИЯ
 // ============================
 
@@ -298,10 +308,9 @@ document.getElementById('settingsModal').addEventListener('click', function(e) {
 
 function saveSettings() {
     const theme = document.getElementById('darkTheme').checked;
-    const units = document.getElementById('unitsSelect').value;
     const notifications = document.getElementById('notifications').checked;
-    console.log('Сохранено:', { theme, units, notifications });
-    alert('Настройки сохранены!');
+    console.log('Сохранено:', { theme, notifications });
+    showNotification('Настройки сохранены!', 'success');
     closeSettings();
 }
 
@@ -405,6 +414,7 @@ async function loadFilaments() {
         applyFiltersAndSort();
     } catch (error) {
         console.error('Ошибка загрузки катушек:', error);
+        showNotification('Ошибка загрузки катушек', 'error');
     }
 }
 
@@ -451,7 +461,10 @@ function renderFilaments(filaments) {
 function openDetailModal(id) {
     currentFilamentId = id;
     const filament = allFilaments.find(f => f.id === id);
-    if (!filament) { alert('Катушка не найдена'); return; }
+    if (!filament) {
+        showNotification('Катушка не найдена', 'error');
+        return;
+    }
     
     const modal = document.getElementById('detailModal');
     const body = document.getElementById('detailBody');
@@ -531,7 +544,7 @@ document.getElementById('detailModal').addEventListener('click', function(e) {
 });
 
 // ============================
-// ИСТОРИЯ РАСХОДА (API /consumptions/{material_id})
+// ИСТОРИЯ РАСХОДА
 // ============================
 
 async function loadConsumptionHistory(materialId) {
@@ -593,7 +606,10 @@ async function loadConsumptionHistory(materialId) {
 
 function downloadQRCode() {
     const img = document.getElementById('qrCodeImage');
-    if (!img) { alert('QR-код не найден'); return; }
+    if (!img) {
+        showNotification('QR-код не найден', 'error');
+        return;
+    }
     const link = document.createElement('a');
     link.download = `qr-code-${currentFilamentId || 'filament'}.png`;
     link.href = img.src;
@@ -610,7 +626,10 @@ function downloadQRCode() {
 async function deleteFilament(id) {
     if (!confirm('Вы уверены, что хотите удалить эту катушку?')) return;
     const token = localStorage.getItem('token');
-    if (!token) { alert('Вы не авторизованы'); return; }
+    if (!token) {
+        showNotification('Вы не авторизованы', 'error');
+        return;
+    }
     try {
         const response = await fetch(`${API_URL}/materials/${id}`, {
             method: 'DELETE',
@@ -618,17 +637,45 @@ async function deleteFilament(id) {
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || data.error || 'Ошибка удаления');
-        alert('Катушка успешно удалена!');
+        showNotification('Катушка успешно удалена!', 'success');
         closeDetailModal();
         loadFilaments();
     } catch (error) {
-        alert('Ошибка: ' + error.message);
+        showNotification('Ошибка: ' + error.message, 'error');
     }
 }
 
 // ============================
 // ДОБАВЛЕНИЕ КАТУШКИ
 // ============================
+
+function checkFilamentFields() {
+    const name = document.getElementById('filamentName').value.trim();
+    const type = document.getElementById('filamentType').value.trim();
+    const color = document.getElementById('filamentColor').value.trim();
+    const weight = document.getElementById('filamentWeight').value.trim();
+    const button = document.getElementById('addFilamentBtn');
+    
+    if (name && type && color && weight && parseFloat(weight) > 0) {
+        button.disabled = false;
+        button.style.opacity = '1';
+        button.style.cursor = 'pointer';
+    } else {
+        button.disabled = true;
+        button.style.opacity = '0.5';
+        button.style.cursor = 'not-allowed';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    ['filamentName', 'filamentType', 'filamentColor', 'filamentWeight'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', checkFilamentFields);
+            el.addEventListener('change', checkFilamentFields);
+        }
+    });
+});
 
 function openAddFilament() {
     document.getElementById('addFilamentModal').style.display = 'flex';
@@ -637,6 +684,11 @@ function openAddFilament() {
     document.getElementById('filamentColor').value = '';
     document.getElementById('filamentWeight').value = '1000';
     document.getElementById('qrCodeInput').value = '';
+    
+    ['filamentName', 'filamentType', 'filamentColor', 'filamentWeight'].forEach(id => {
+        document.getElementById(id).style.borderColor = '';
+    });
+    checkFilamentFields();
 }
 
 function closeAddFilament() {
@@ -647,21 +699,10 @@ document.getElementById('addFilamentModal').addEventListener('click', function(e
     if (e.target === this) closeAddFilament();
 });
 
-function switchTab(tab) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    if (tab === 'manual') {
-        document.getElementById('tabManual').classList.add('active');
-        document.getElementById('tabManualContent').classList.add('active');
-    } else {
-        document.getElementById('tabQR').classList.add('active');
-        document.getElementById('tabQRContent').classList.add('active');
-    }
-}
-
 function setColor(color) {
     const map = { 'green': 'Green', 'yellow': 'Yellow', 'red': 'Red', 'blue': 'Blue', 'orange': 'Orange', 'purple': 'Purple' };
     document.getElementById('filamentColor').value = map[color] || color;
+    checkFilamentFields();
 }
 
 async function addFilamentManual() {
@@ -669,12 +710,18 @@ async function addFilamentManual() {
     const type = document.getElementById('filamentType').value.trim();
     const color = document.getElementById('filamentColor').value.trim();
     const weight = parseFloat(document.getElementById('filamentWeight').value);
-    if (!name) { alert('Введите название катушки'); return; }
-    if (!type) { alert('Введите тип материала'); return; }
-    if (!color) { alert('Введите цвет катушки'); return; }
-    if (!weight || weight < 1) { alert('Введите корректный вес'); return; }
+    
+    if (!name || !type || !color || !weight || weight < 1) {
+        showNotification('Заполните все поля корректно', 'error');
+        return;
+    }
+    
     const token = localStorage.getItem('token');
-    if (!token) { alert('Вы не авторизованы'); return; }
+    if (!token) {
+        showNotification('Вы не авторизованы', 'error');
+        return;
+    }
+    
     try {
         const response = await fetch(`${API_URL}/materials/create`, {
             method: 'POST',
@@ -686,40 +733,11 @@ async function addFilamentManual() {
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || data.error || 'Ошибка добавления');
-        alert('Катушка успешно добавлена!');
+        showNotification('Катушка успешно добавлена!', 'success');
         closeAddFilament();
         loadFilaments();
     } catch (error) {
-        alert('Ошибка: ' + error.message);
-    }
-}
-
-async function addFilamentByQR() {
-    const qrData = document.getElementById('qrCodeInput').value.trim();
-    if (!qrData) { alert('Введите данные из QR-кода'); return; }
-    const token = localStorage.getItem('token');
-    if (!token) { alert('Вы не авторизованы'); return; }
-    try {
-        let data;
-        try { data = JSON.parse(qrData); } catch(e) {
-            const parts = qrData.split('|');
-            data = { name: parts[0] || 'Unknown', material_type: parts[1] || parts[0] || 'Unknown', color: parts[2] || 'White', initial_mass: parseFloat(parts[3]) || 1000 };
-        }
-        const response = await fetch(`${API_URL}/materials/create`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(data)
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || result.error || 'Ошибка добавления');
-        alert('Катушка успешно добавлена по QR-коду!');
-        closeAddFilament();
-        loadFilaments();
-    } catch (error) {
-        alert('Ошибка: ' + error.message);
+        showNotification('Ошибка: ' + error.message, 'error');
     }
 }
 
@@ -733,4 +751,4 @@ window.onload = async function() {
 };
 </script>
 </body>
-</html>
+</html>	

@@ -8,8 +8,150 @@
 </head>
 <body>
 
+<!-- УВЕДОМЛЕНИЕ -->
+<div id="notification" class="notification" style="display:none;">
+    <div class="notification-content">
+        <i class="fa-solid fa-check-circle" id="notificationIcon"></i>
+        <span id="notificationMessage">Успешно!</span>
+    </div>
+</div>
+
+<div class="app">
+    <div class="top-section">
+        <div class="header">
+            <h1 class="logo">Использование</h1>
+            <div id="authContainer"></div>
+        </div>
+        <div class="search-section">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Поиск..." oninput="filterHistory()" />
+            </div>
+            <button class="filter-button" onclick="toggleSort()" title="Сортировка">
+                <i class="fa-solid fa-arrow-up-wide-short"></i>
+            </button>
+        </div>
+    </div>
+
+    <main class="content">
+        <div class="history-list" id="historyList"></div>
+    </main>
+
+    <button class="fab-button" onclick="openAddConsumption()">
+        <i class="fa-solid fa-plus"></i>
+    </button>
+
+    <footer class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <i class="fa-solid fa-database"></i>
+            <span>Катушки</span>
+        </a>
+        <a href="usage.html" class="nav-item active">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Использование</span>
+        </a>
+        <a href="stats.html" class="nav-item">
+            <i class="fa-solid fa-chart-column"></i>
+            <span>Статистика</span>
+        </a>
+        <button class="nav-item" onclick="openSettings()">
+            <i class="fa-solid fa-gear"></i>
+            <span>Настройки</span>
+        </button>
+    </footer>
+</div>
+
+<!-- МОДАЛКА НАСТРОЕК -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Настройки</h2>
+            <button class="modal-close" onclick="closeSettings()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="setting-item">
+                <label>Темная тема</label>
+                <input type="checkbox" id="darkTheme" checked>
+            </div>
+            <div class="setting-item">
+                <label>Уведомления</label>
+                <input type="checkbox" id="notifications" checked>
+            </div>
+            <button class="save-button" onclick="saveSettings()">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛКА ДОБАВЛЕНИЯ РАСХОДА -->
+<div class="modal-overlay" id="addConsumptionModal">
+    <div class="modal modal-wide">
+        <div class="modal-header">
+            <h2>Добавить расход</h2>
+            <button class="modal-close" onclick="closeAddConsumption()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="consumptionMaterialSelect"><i class="fa-solid fa-box"></i> Катушка</label>
+                <select id="consumptionMaterialSelect">
+                    <option value="">Загрузка...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="consumptionTitle"><i class="fa-solid fa-pen"></i> Название действия</label>
+                <input type="text" id="consumptionTitle" placeholder="Печать детали" />
+            </div>
+            <div class="form-group">
+                <label for="consumptionMass"><i class="fa-solid fa-weight-scale"></i> Использовано (граммы)</label>
+                <input type="number" id="consumptionMass" placeholder="50" value="10" />
+            </div>
+            <button class="auth-button" id="addConsumptionBtn" onclick="createConsumption()" disabled>
+                <i class="fa-solid fa-floppy-disk"></i> Сохранить расход
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 const API_URL = 'http://186.246.28.163:8000';
+
+// ============================
+// УВЕДОМЛЕНИЯ
+// ============================
+
+function showNotification(message, type = 'success') {
+    const notification = document.getElementById('notification');
+    if (!notification) return;
+    const messageEl = document.getElementById('notificationMessage');
+    const iconEl = document.getElementById('notificationIcon');
+    
+    notification.className = 'notification';
+    notification.classList.add(type);
+    
+    const icons = {
+        success: 'fa-solid fa-check-circle',
+        error: 'fa-solid fa-circle-exclamation',
+        info: 'fa-solid fa-circle-info'
+    };
+    iconEl.className = icons[type] || icons.success;
+    messageEl.textContent = message;
+    notification.style.display = 'block';
+    
+    clearTimeout(notification._timeout);
+    notification._timeout = setTimeout(() => {
+        notification.style.display = 'none';
+    }, 3000);
+}
+
+document.addEventListener('click', function(e) {
+    const notification = document.getElementById('notification');
+    if (notification && notification.contains(e.target)) {
+        notification.style.display = 'none';
+    }
+});
 
 // ============================
 // АВТОРИЗАЦИЯ
@@ -36,7 +178,6 @@ function updateAuthUI(isLoggedIn) {
                 <i class="fa-solid fa-right-from-bracket"></i>
             </button>
         `;
-        showUsername();
     } else {
         container.innerHTML = `
             <a href="login.html" class="icon-button" title="Войти">
@@ -56,12 +197,32 @@ function showUsername() {
     try {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         const display = document.getElementById('usernameDisplay');
-        if (display) {
-            display.textContent = user.username || 'Пользователь';
-        }
-    } catch (e) {
-        console.log('Ошибка отображения имени пользователя:', e);
-    }
+        if (display) display.textContent = user.username || 'Пользователь';
+    } catch (e) {}
+}
+
+// ============================
+// НАСТРОЙКИ
+// ============================
+
+function openSettings() {
+    document.getElementById('settingsModal').style.display = 'flex';
+}
+
+function closeSettings() {
+    document.getElementById('settingsModal').style.display = 'none';
+}
+
+document.getElementById('settingsModal').addEventListener('click', function(e) {
+    if (e.target === this) closeSettings();
+});
+
+function saveSettings() {
+    const theme = document.getElementById('darkTheme').checked;
+    const notifications = document.getElementById('notifications').checked;
+    console.log('Сохранено:', { theme, notifications });
+    showNotification('Настройки сохранены!', 'success');
+    closeSettings();
 }
 
 // ============================
@@ -94,6 +255,7 @@ async function loadAllConsumptions() {
                 Ошибка загрузки истории
             </div>
         `;
+        showNotification('Ошибка загрузки истории', 'error');
     }
 }
 
@@ -166,6 +328,33 @@ function toggleSort() {
 // ДОБАВЛЕНИЕ РАСХОДА
 // ============================
 
+function checkConsumptionFields() {
+    const materialId = document.getElementById('consumptionMaterialSelect').value;
+    const title = document.getElementById('consumptionTitle').value.trim();
+    const mass = document.getElementById('consumptionMass').value.trim();
+    const button = document.getElementById('addConsumptionBtn');
+    
+    if (materialId && title && mass && parseFloat(mass) > 0) {
+        button.disabled = false;
+        button.style.opacity = '1';
+        button.style.cursor = 'pointer';
+    } else {
+        button.disabled = true;
+        button.style.opacity = '0.5';
+        button.style.cursor = 'not-allowed';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    ['consumptionMaterialSelect', 'consumptionTitle', 'consumptionMass'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', checkConsumptionFields);
+            el.addEventListener('change', checkConsumptionFields);
+        }
+    });
+});
+
 async function loadFilamentsForSelect() {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -187,8 +376,10 @@ async function loadFilamentsForSelect() {
             option.textContent = `${f.name} (${f.color || 'без цвета'}) — ${f.current_mass || 0}g / ${f.initial_mass}g`;
             select.appendChild(option);
         });
+        checkConsumptionFields();
     } catch (error) {
         console.error('Ошибка загрузки катушек:', error);
+        showNotification('Ошибка загрузки катушек', 'error');
     }
 }
 
@@ -197,6 +388,9 @@ function openAddConsumption() {
     document.getElementById('consumptionTitle').value = '';
     document.getElementById('consumptionMass').value = '10';
     loadFilamentsForSelect();
+    ['consumptionMaterialSelect', 'consumptionTitle', 'consumptionMass'].forEach(id => {
+        document.getElementById(id).style.borderColor = '';
+    });
 }
 
 function closeAddConsumption() {
@@ -212,12 +406,16 @@ async function createConsumption() {
     const title = document.getElementById('consumptionTitle').value.trim();
     const usedMass = parseFloat(document.getElementById('consumptionMass').value);
     
-    if (!materialId) { alert('Выберите катушку'); return; }
-    if (!title) { alert('Введите название действия'); return; }
-    if (!usedMass || usedMass <= 0) { alert('Введите корректную массу'); return; }
+    if (!materialId || !title || !usedMass || usedMass <= 0) {
+        showNotification('Заполните все поля корректно', 'error');
+        return;
+    }
     
     const token = localStorage.getItem('token');
-    if (!token) { alert('Вы не авторизованы'); return; }
+    if (!token) {
+        showNotification('Вы не авторизованы', 'error');
+        return;
+    }
     
     try {
         const response = await fetch(`${API_URL}/consumptions/create`, {
@@ -232,45 +430,14 @@ async function createConsumption() {
                 used_mass: usedMass
             })
         });
-        
         const data = await response.json();
-        console.log('Ответ сервера (расход):', data);
-        
-        if (!response.ok) {
-            throw new Error(data.message || data.error || 'Ошибка создания расхода');
-        }
-        
-        alert('Расход успешно добавлен!');
+        if (!response.ok) throw new Error(data.message || data.error || 'Ошибка создания расхода');
+        showNotification('Расход успешно добавлен!', 'success');
         closeAddConsumption();
         await loadAllConsumptions();
     } catch (error) {
-        alert('Ошибка: ' + error.message);
+        showNotification('Ошибка: ' + error.message, 'error');
     }
-}
-
-// ============================
-// НАСТРОЙКИ
-// ============================
-
-function openSettings() {
-    document.getElementById('settingsModal').style.display = 'flex';
-}
-
-function closeSettings() {
-    document.getElementById('settingsModal').style.display = 'none';
-}
-
-document.getElementById('settingsModal').addEventListener('click', function(e) {
-    if (e.target === this) closeSettings();
-});
-
-function saveSettings() {
-    const theme = document.getElementById('darkTheme').checked;
-    const units = document.getElementById('unitsSelect').value;
-    const notifications = document.getElementById('notifications').checked;
-    console.log('Сохранено:', { theme, units, notifications });
-    alert('Настройки сохранены!');
-    closeSettings();
 }
 
 // ============================
@@ -282,111 +449,5 @@ window.onload = async function() {
     await loadAllConsumptions();
 };
 </script>
-
-<div class="app">
-    <div class="top-section">
-        <div class="header">
-            <h1 class="logo">Использование</h1>
-            <div id="authContainer"></div>
-        </div>
-        <div class="search-section">
-            <div class="search-box">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="searchInput" placeholder="Поиск..." oninput="filterHistory()" />
-            </div>
-            <button class="filter-button" onclick="toggleSort()" title="Сортировка">
-                <i class="fa-solid fa-arrow-up-wide-short"></i>
-            </button>
-        </div>
-    </div>
-
-    <main class="content">
-        <div class="history-list" id="historyList"></div>
-    </main>
-
-    <button class="fab-button" onclick="openAddConsumption()">
-        <i class="fa-solid fa-plus"></i>
-    </button>
-
-    <footer class="bottom-nav">
-        <a href="index.html" class="nav-item">
-            <i class="fa-solid fa-database"></i>
-            <span>Катушки</span>
-        </a>
-        <a href="usage.html" class="nav-item active">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-            <span>Использование</span>
-        </a>
-        <a href="stats.html" class="nav-item">
-            <i class="fa-solid fa-chart-column"></i>
-            <span>Статистика</span>
-        </a>
-        <button class="nav-item" onclick="openSettings()">
-            <i class="fa-solid fa-gear"></i>
-            <span>Настройки</span>
-        </button>
-    </footer>
-</div>
-
-<!-- МОДАЛКА НАСТРОЕК -->
-<div class="modal-overlay" id="settingsModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h2>Настройки</h2>
-            <button class="modal-close" onclick="closeSettings()">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-        <div class="modal-body">
-            <div class="setting-item">
-                <label>Темная тема</label>
-                <input type="checkbox" id="darkTheme" checked>
-            </div>
-            <div class="setting-item">
-                <label>Единицы измерения</label>
-                <select id="unitsSelect">
-                    <option value="grams">Граммы</option>
-                    <option value="kg">Килограммы</option>
-                </select>
-            </div>
-            <div class="setting-item">
-                <label>Уведомления</label>
-                <input type="checkbox" id="notifications" checked>
-            </div>
-            <button class="save-button" onclick="saveSettings()">Сохранить</button>
-        </div>
-    </div>
-</div>
-
-<!-- МОДАЛКА ДОБАВЛЕНИЯ РАСХОДА -->
-<div class="modal-overlay" id="addConsumptionModal">
-    <div class="modal modal-wide">
-        <div class="modal-header">
-            <h2>Добавить расход</h2>
-            <button class="modal-close" onclick="closeAddConsumption()">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label for="consumptionMaterialSelect">Катушка</label>
-                <select id="consumptionMaterialSelect">
-                    <option value="">Загрузка...</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="consumptionTitle">Название действия</label>
-                <input type="text" id="consumptionTitle" placeholder="Печать детали" />
-            </div>
-            <div class="form-group">
-                <label for="consumptionMass">Использовано (граммы)</label>
-                <input type="number" id="consumptionMass" placeholder="50" value="10" />
-            </div>
-            <button class="auth-button" onclick="createConsumption()">
-                <i class="fa-solid fa-floppy-disk"></i> Сохранить расход
-            </button>
-        </div>
-    </div>
-</div>
 </body>
 </html>

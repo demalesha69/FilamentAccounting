@@ -134,22 +134,22 @@
                     localStorage.setItem('token', token);
                     localStorage.setItem('user', JSON.stringify(user));
                     
-                    console.log('✅ ТОКЕН СОХРАНЁН:', token);
-                    console.log('✅ ПОЛЬЗОВАТЕЛЬ СОХРАНЁН:', user);
+                    console.log('ТОКЕН СОХРАНЁН:', token);
+                    console.log('ПОЛЬЗОВАТЕЛЬ СОХРАНЁН:', user);
                     
                     // Проверка, что сохранилось
                     console.log('Проверка localStorage:', localStorage.getItem('token'));
                     
                     window.location.href = 'index.html';
                 } else {
-                    console.error('❌ ТОКЕН НЕ НАЙДЕН!');
+                    console.error('ТОКЕН НЕ НАЙДЕН!');
                     console.error('Вот что пришло от сервера:', data);
                     showError('Токен не получен от сервера. Смотри консоль (F12)');
                 }
                 
             } catch (error) {
                 showError(error.message);
-                console.error('❌ ОШИБКА:', error);
+                console.error('ОШИБКА:', error);
             } finally {
                 button.disabled = false;
                 button.innerHTML = '<i class="fa-solid fa-sign-in-alt"></i> Войти';

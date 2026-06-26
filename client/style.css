@@ -781,3 +781,419 @@ body {
     color: #9ca3af;
     font-size: 14px;
 }
+
+/* =========================
+   MOBILE ADAPTIVE (УВЕЛИЧЕННЫЙ)
+========================= */
+
+@media (max-width: 480px) {
+    /* Общий масштаб */
+    html {
+        font-size: 18px;
+    }
+    
+    body {
+        font-size: 18px;
+    }
+    
+    .logo {
+        font-size: 26px !important;
+    }
+    
+    .top-section {
+        padding: 16px !important;
+    }
+    
+    .header {
+        gap: 10px !important;
+        margin-bottom: 14px !important;
+    }
+    
+    .icon-button {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 18px !important;
+    }
+    
+    #usernameDisplay {
+        font-size: 16px !important;
+    }
+    
+    .search-box {
+        height: 52px !important;
+        padding: 0 16px !important;
+        border-radius: 14px !important;
+    }
+    
+    .search-box input {
+        font-size: 17px !important;
+    }
+    
+    .search-box i {
+        font-size: 18px !important;
+    }
+    
+    .filter-button {
+        height: 52px !important;
+        width: 52px !important;
+        font-size: 18px !important;
+        border-radius: 14px !important;
+    }
+    
+    .content {
+        padding: 170px 16px 155px !important;
+    }
+    
+    .filament-grid {
+        gap: 14px !important;
+    }
+    
+    .filament-card {
+        padding: 16px !important;
+        min-height: 160px !important;
+        border-radius: 18px !important;
+    }
+    
+    .progress-ring {
+        --size: 64px !important;
+    }
+    
+    .progress-ring::before {
+        width: 46px !important;
+        height: 46px !important;
+    }
+    
+    .progress-ring span {
+        font-size: 14px !important;
+    }
+    
+    .filament-info h2 {
+        font-size: 18px !important;
+    }
+    
+    .filament-color {
+        font-size: 14px !important;
+    }
+    
+    .weight-info {
+        font-size: 14px !important;
+    }
+    
+    .fab-button {
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 22px !important;
+        right: 16px !important;
+        bottom: 85px !important;
+    }
+    
+    .bottom-nav {
+        height: 68px !important;
+    }
+    
+    .nav-item i {
+        font-size: 20px !important;
+    }
+    
+    .nav-item span {
+        font-size: 12px !important;
+    }
+    
+    /* =========================
+       МОДАЛКИ НА ТЕЛЕФОНЕ
+    ========================= */
+    
+    .modal {
+        padding: 24px !important;
+        max-width: 96% !important;
+        width: 96% !important;
+        max-height: 92vh !important;
+        border-radius: 24px !important;
+        overflow-y: auto !important;
+    }
+    
+    .modal-header {
+        margin-bottom: 20px !important;
+    }
+    
+    .modal-header h2 {
+        font-size: 22px !important;
+    }
+    
+    .modal-close {
+        font-size: 26px !important;
+        padding: 4px 12px !important;
+    }
+    
+    .modal-body {
+        gap: 18px !important;
+    }
+    
+    /* Поля ввода */
+    .form-group label {
+        font-size: 16px !important;
+        margin-bottom: 4px !important;
+    }
+    
+    .form-group label i {
+        font-size: 16px !important;
+    }
+    
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group input[type="password"],
+    .form-group input[type="number"],
+    .form-group select {
+        padding: 14px 18px !important;
+        font-size: 17px !important;
+        border-radius: 14px !important;
+        height: 54px !important;
+    }
+    
+    .password-wrapper input {
+        padding-right: 52px !important;
+    }
+    
+    .toggle-password {
+        right: 16px !important;
+        font-size: 18px !important;
+    }
+    
+    /* Кнопки */
+    .auth-button {
+        padding: 16px !important;
+        font-size: 18px !important;
+        border-radius: 14px !important;
+        min-height: 54px !important;
+    }
+    
+    .save-button {
+        padding: 16px !important;
+        font-size: 17px !important;
+        border-radius: 14px !important;
+    }
+    
+    /* Вкладки */
+    .tabs {
+        gap: 10px !important;
+        border-radius: 14px !important;
+        padding: 6px !important;
+    }
+    
+    .tabs .tab {
+        padding: 12px !important;
+        font-size: 16px !important;
+        border-radius: 12px !important;
+    }
+    
+    /* Цвета */
+    .color-option {
+        width: 36px !important;
+        height: 36px !important;
+    }
+    
+    .color-picker {
+        gap: 10px !important;
+    }
+    
+    /* Фильтры в модалке сортировки */
+    .filter-option {
+        padding: 14px 18px !important;
+        font-size: 17px !important;
+        border-radius: 14px !important;
+        min-height: 52px !important;
+    }
+    
+    .filter-option i {
+        font-size: 20px !important;
+        width: 24px !important;
+    }
+    
+    .filter-label {
+        font-size: 15px !important;
+    }
+    
+    .filter-reset {
+        padding: 14px !important;
+        font-size: 17px !important;
+        border-radius: 14px !important;
+        min-height: 52px !important;
+    }
+    
+    .filter-divider {
+        margin: 12px 0 !important;
+    }
+    
+    /* =========================
+       ИСТОРИЯ НА ТЕЛЕФОНЕ
+    ========================= */
+    
+    .history-item {
+        padding: 16px 18px !important;
+        gap: 14px !important;
+        border-radius: 16px !important;
+    }
+    
+    .history-icon {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 18px !important;
+    }
+    
+    .history-title {
+        font-size: 17px !important;
+    }
+    
+    .history-meta {
+        font-size: 14px !important;
+    }
+    
+    .history-amount-remove,
+    .history-amount-add {
+        font-size: 17px !important;
+    }
+    
+    /* =========================
+       СТАТИСТИКА НА ТЕЛЕФОНЕ
+    ========================= */
+    
+    .stats-grid {
+        gap: 14px !important;
+    }
+    
+    .stat-card {
+        padding: 20px !important;
+        border-radius: 16px !important;
+    }
+    
+    .stat-value {
+        font-size: 34px !important;
+    }
+    
+    .stat-label {
+        font-size: 15px !important;
+    }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 360px) {
+    .filament-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .logo {
+        font-size: 20px !important;
+    }
+    
+    .modal {
+        padding: 18px !important;
+    }
+    
+    .content {
+        padding: 160px 12px 150px !important;
+    }
+}
+/* =========================
+   МОДАЛКА ДОБАВЛЕНИЯ КАТУШКИ НА ТЕЛЕФОНЕ
+========================= */
+
+@media (max-width: 480px) {
+    .modal-wide {
+        max-width: 98% !important;
+        padding: 22px !important;
+    }
+    
+    #addFilamentModal .modal-body {
+        gap: 16px !important;
+    }
+    
+    #addFilamentModal .form-group input {
+        font-size: 18px !important;
+        padding: 16px 18px !important;
+        height: 56px !important;
+    }
+    
+    #addFilamentModal .auth-button {
+        font-size: 18px !important;
+        padding: 16px !important;
+        height: 56px !important;
+    }
+    
+    /* Модалка деталей */
+    #detailBody .progress-ring {
+        --size: 90px !important;
+    }
+    
+    #detailBody .progress-ring span {
+        font-size: 18px !important;
+    }
+    
+    #detailBody h2 {
+        font-size: 20px !important;
+    }
+    
+    #detailBody p {
+        font-size: 17px !important;
+    }
+    
+    #detailBody .weight-info {
+        font-size: 14px !important;
+    }
+}
+
+/* =========================
+   SELECT STYLING
+========================= */
+
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: #232734;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 15px;
+    width: 100%;
+    cursor: pointer;
+    transition: border-color 0.3s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 40px;
+}
+
+select:focus {
+    outline: none;
+    border-color: #8b5cf6;
+}
+
+select option {
+    background: #1a1d26;
+    color: #ffffff;
+    padding: 8px;
+}
+
+select option:hover {
+    background: #8b5cf6;
+}
+
+select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* =========================
+   DISABLED BUTTON
+========================= */
+
+.auth-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.auth-button:disabled:hover {
+    opacity: 0.5;
+    transform: none;
+}
