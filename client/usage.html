@@ -1,68 +1,44 @@
 <!DOCTYPE html> 
 <html lang="ru"> 
 <head>
-	<title>FilamentAccounting</title>
-	<link rel="stylesheet" href="style.css" />
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+<meta charset="UTF-8">
+    <title>Использование - FilamentAccounting</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 </head>
 <body>
-<script>
-// ============================
-// ПРОВЕРКА АВТОРИЗАЦИИ
-// ============================
 
+<script>
 const API_URL = 'http://186.246.28.163:8000';
+
+// ============================
+// АВТОРИЗАЦИЯ
+// ============================
 
 async function checkAuth() {
     const token = localStorage.getItem('token');
-    
-    // Если токена нет - показываем кнопку "Войти"
     if (!token) {
         updateAuthUI(false);
         return false;
     }
-    
-    try {
-        const response = await fetch(`${API_URL}/verify`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Неверный токен');
-        }
-        
-        const data = await response.json();
-        updateAuthUI(true);
-        showUsername();
-        return data.valid;
-        
-    } catch (error) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        updateAuthUI(false);
-        return false;
-    }
+    updateAuthUI(true);
+    showUsername();
+    return true;
 }
 
-// Обновление UI в зависимости от авторизации
 function updateAuthUI(isLoggedIn) {
-    const authContainer = document.getElementById('authContainer');
-    if (!authContainer) return;
-    
+    const container = document.getElementById('authContainer');
+    if (!container) return;
     if (isLoggedIn) {
-        // Показываем имя + кнопку выхода
-        authContainer.innerHTML = `
+        container.innerHTML = `
             <span style="color:#9ca3af; font-size:14px;" id="usernameDisplay"></span>
             <button class="icon-button" onclick="logout()" title="Выйти">
                 <i class="fa-solid fa-right-from-bracket"></i>
             </button>
         `;
+        showUsername();
     } else {
-        // Показываем кнопку "Войти"
-        authContainer.innerHTML = `
+        container.innerHTML = `
             <a href="login.html" class="icon-button" title="Войти">
                 <i class="fa-solid fa-right-to-bracket"></i>
             </a>
@@ -70,14 +46,12 @@ function updateAuthUI(isLoggedIn) {
     }
 }
 
-// Выход
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = 'login.html';
 }
 
-// Показываем имя пользователя
 function showUsername() {
     try {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -86,125 +60,197 @@ function showUsername() {
             display.textContent = user.username || 'Пользователь';
         }
     } catch (e) {
-        // Игнорируем ошибки
+        console.log('Ошибка отображения имени пользователя:', e);
     }
 }
-</script>
-    <div class="app">
-		 <div class="top-section">
-<div class="header">
-    <h1 class="logo">Использование</h1>
-    <div id="authContainer">
-        <!-- Автоматически заполняется через JavaScript -->
-    </div>
-</div>
-			<div class="search-section">
-                <div class="search-box">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input
-                        type="text"
-                        placeholder="Поиск..."
-                    />
-                </div>
-                <button class="filter-button">
-                    <i class="fa-solid fa-sliders"></i>
-                </button>
-            </div>
-            </div>
-		</div>
-		        <!-- FLOAT BUTTON -->
-        <button class="fab-button">
-            <i class="fa-solid fa-plus"></i>
-        </button>
-        <!-- FOOTER -->
-        <footer class="bottom-nav">
-            <a href="index.html" class="nav-item">
-                <i class="fa-solid fa-database"></i>
-                <span>Катушки</span>
-            </a>
-            <a href="usage.html" class="nav-item active">
-                <i class="fa-solid fa-clock-rotate-left"></i>
-                <span>Использование</span>
-            </a>
-            <a href="stats.html" class="nav-item">
-                <i class="fa-solid fa-chart-column"></i>
-                <span>Статистика</span>
-            </a>
-			<button class="nav-item" onclick="openSettings()">
-				<i class="fa-solid fa-gear"></i>
-				<span>Настройки</span>
-			</button>
-        </footer>
-	</div>
-<!-- МОДАЛКА НАСТРОЕК -->
-<div class="modal-overlay" id="settingsModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h2 id="settingsTitle">Настройки</h2>
-            <button class="modal-close" onclick="closeSettings()">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-        
-        <div class="modal-body">
-            <div class="setting-item">
-                <label id="themeLabel">Темная тема</label>
-                <input type="checkbox" id="darkTheme" checked>
-            </div>
-            
-            <div class="setting-item">
-                <label id="unitsLabel">Единицы измерения</label>
-                <select id="unitsSelect">
-                    <option value="grams">Граммы</option>
-                    <option value="kg">Килограммы</option>
-                </select>
-            </div>
-            
-            <div class="setting-item">
-                <label id="notificationsLabel">Уведомления</label>
-                <input type="checkbox" id="notifications" checked>
-            </div>
-            
-            <div class="setting-item">
-                <label id="languageLabel">Язык</label>
-                <select id="languageSelect" onchange="changeLanguage()">
-                    <option value="ru">Русский</option>
-                    <option value="en">English</option>
-                </select>
-            </div>
-            
-            <button class="save-button" onclick="saveSettings()">
-                <span id="saveButtonText">Сохранить</span>
-            </button>
-        </div>
-    </div>
-</div>
-<script>
-// Тексты для двух языков
-const translations = {
-    ru: {
-        title: 'Настройки',
-        theme: 'Темная тема',
-        units: 'Единицы измерения',
-        notifications: 'Уведомления',
-        language: 'Язык',
-        save: 'Сохранить',
-        grams: 'Граммы',
-        kg: 'Килограммы'
-    },
-    en: {
-        title: 'Settings',
-        theme: 'Dark theme',
-        units: 'Units',
-        notifications: 'Notifications',
-        language: 'Language',
-        save: 'Save',
-        grams: 'Grams',
-        kg: 'Kilograms'
-    }
-};
 
-let currentLanguage = 'ru';
+// ============================
+// ЗАГРУЗКА ВСЕХ РАСХОДОВ
+// ============================
+
+let allConsumptions = [];
+let currentConsumptionSort = 'default';
+
+async function loadAllConsumptions() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+        const response = await fetch(`${API_URL}/consumptions/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || data.error || 'Ошибка загрузки');
+        allConsumptions = data.data || [];
+        renderConsumptions(allConsumptions);
+    } catch (error) {
+        console.error('Ошибка загрузки расходов:', error);
+        document.getElementById('historyList').innerHTML = `
+            <div style="text-align:center;padding:40px;color:#ff5f5f;">
+                <i class="fa-solid fa-circle-exclamation" style="font-size:48px;display:block;margin-bottom:12px;"></i>
+                Ошибка загрузки истории
+            </div>
+        `;
+    }
+}
+
+function renderConsumptions(consumptions) {
+    const list = document.getElementById('historyList');
+    if (!consumptions || consumptions.length === 0) {
+        list.innerHTML = `
+            <div style="text-align:center;padding:40px;color:#9ca3af;">
+                <i class="fa-solid fa-inbox" style="font-size:48px;display:block;margin-bottom:12px;opacity:0.5;"></i>
+                <p>История расходов пуста</p>
+            </div>
+        `;
+        return;
+    }
+    list.innerHTML = consumptions.map(item => `
+        <div class="history-item" data-title="${(item.title || '').toLowerCase()}" data-material="${item.material_id || ''}">
+            <div class="history-icon" style="color:#8b5cf6;">
+                <i class="fa-solid fa-print"></i>
+            </div>
+            <div class="history-details">
+                <div class="history-title">${item.title || 'Без названия'}</div>
+                <div class="history-meta">
+                    ${item.timestamp ? new Date(item.timestamp).toLocaleString('ru-RU') : ''} 
+                    • Материал ID: ${item.material_id} 
+                    • Остаток: ${item.remain_mass}g
+                </div>
+            </div>
+            <div class="history-amount-remove">-${item.used_mass}g</div>
+        </div>
+    `).join('');
+}
+
+function filterHistory() {
+    const query = document.getElementById('searchInput').value.toLowerCase().trim();
+    document.querySelectorAll('.history-item').forEach(item => {
+        const title = item.dataset.title || '';
+        const material = item.dataset.material || '';
+        item.style.display = (title.includes(query) || material.includes(query)) ? 'flex' : 'none';
+    });
+}
+
+function toggleSort() {
+    const types = ['default', 'dateDesc', 'dateAsc', 'title', 'amount'];
+    const currentIndex = types.indexOf(currentConsumptionSort);
+    const nextIndex = (currentIndex + 1) % types.length;
+    currentConsumptionSort = types[nextIndex];
+    
+    let sorted = [...allConsumptions];
+    switch(currentConsumptionSort) {
+        case 'dateDesc':
+            sorted.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            break;
+        case 'dateAsc':
+            sorted.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            break;
+        case 'title':
+            sorted.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+            break;
+        case 'amount':
+            sorted.sort((a, b) => a.used_mass - b.used_mass);
+            break;
+        default:
+            break;
+    }
+    renderConsumptions(sorted);
+    filterHistory();
+}
+
+// ============================
+// ДОБАВЛЕНИЕ РАСХОДА
+// ============================
+
+async function loadFilamentsForSelect() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+        const response = await fetch(`${API_URL}/materials/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || data.error || 'Ошибка загрузки');
+        const select = document.getElementById('consumptionMaterialSelect');
+        select.innerHTML = '<option value="">Выберите катушку</option>';
+        (data.data || []).forEach(f => {
+            const option = document.createElement('option');
+            option.value = f.id;
+            option.textContent = `${f.name} (${f.color || 'без цвета'}) — ${f.current_mass || 0}g / ${f.initial_mass}g`;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки катушек:', error);
+    }
+}
+
+function openAddConsumption() {
+    document.getElementById('addConsumptionModal').style.display = 'flex';
+    document.getElementById('consumptionTitle').value = '';
+    document.getElementById('consumptionMass').value = '10';
+    loadFilamentsForSelect();
+}
+
+function closeAddConsumption() {
+    document.getElementById('addConsumptionModal').style.display = 'none';
+}
+
+document.getElementById('addConsumptionModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAddConsumption();
+});
+
+async function createConsumption() {
+    const materialId = document.getElementById('consumptionMaterialSelect').value;
+    const title = document.getElementById('consumptionTitle').value.trim();
+    const usedMass = parseFloat(document.getElementById('consumptionMass').value);
+    
+    if (!materialId) { alert('Выберите катушку'); return; }
+    if (!title) { alert('Введите название действия'); return; }
+    if (!usedMass || usedMass <= 0) { alert('Введите корректную массу'); return; }
+    
+    const token = localStorage.getItem('token');
+    if (!token) { alert('Вы не авторизованы'); return; }
+    
+    try {
+        const response = await fetch(`${API_URL}/consumptions/create`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                material_id: parseInt(materialId),
+                title: title,
+                used_mass: usedMass
+            })
+        });
+        
+        const data = await response.json();
+        console.log('Ответ сервера (расход):', data);
+        
+        if (!response.ok) {
+            throw new Error(data.message || data.error || 'Ошибка создания расхода');
+        }
+        
+        alert('Расход успешно добавлен!');
+        closeAddConsumption();
+        await loadAllConsumptions();
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    }
+}
+
+// ============================
+// НАСТРОЙКИ
+// ============================
 
 function openSettings() {
     document.getElementById('settingsModal').style.display = 'flex';
@@ -218,56 +264,129 @@ document.getElementById('settingsModal').addEventListener('click', function(e) {
     if (e.target === this) closeSettings();
 });
 
-function changeLanguage() {
-    const lang = document.getElementById('languageSelect').value;
-    currentLanguage = lang;
-    updateTexts(lang);
-}
-
-function updateTexts(lang) {
-    const t = translations[lang];
-    
-    document.getElementById('settingsTitle').textContent = t.title;
-    document.getElementById('themeLabel').textContent = t.theme;
-    document.getElementById('unitsLabel').textContent = t.units;
-    document.getElementById('notificationsLabel').textContent = t.notifications;
-    document.getElementById('languageLabel').textContent = t.language;
-    document.getElementById('saveButtonText').textContent = t.save;
-    
-    const unitsSelect = document.getElementById('unitsSelect');
-    unitsSelect.options[0].text = t.grams;
-    unitsSelect.options[1].text = t.kg;
-}
-
 function saveSettings() {
     const theme = document.getElementById('darkTheme').checked;
     const units = document.getElementById('unitsSelect').value;
     const notifications = document.getElementById('notifications').checked;
-    const language = document.getElementById('languageSelect').value;
-    
-    // Сохраняем язык в localStorage
-    localStorage.setItem('language', language);
-    
-    // Здесь можно сохранить остальные настройки
-    console.log('Сохранено:', { theme, units, notifications, language });
-    
-    alert(currentLanguage === 'ru' ? 'Настройки сохранены!' : 'Settings saved!');
+    console.log('Сохранено:', { theme, units, notifications });
+    alert('Настройки сохранены!');
     closeSettings();
 }
 
+// ============================
+// ИНИЦИАЛИЗАЦИЯ
+// ============================
+
 window.onload = async function() {
-    // Проверка авторизации
     await checkAuth();
-    
-    // Восстанавливаем язык
-    const savedLang = localStorage.getItem('language') || 'ru';
-    const langSelect = document.getElementById('languageSelect');
-    if (langSelect) {
-        langSelect.value = savedLang;
-        currentLanguage = savedLang;
-        updateTexts(savedLang);
-    }
+    await loadAllConsumptions();
 };
 </script>
+
+<div class="app">
+    <div class="top-section">
+        <div class="header">
+            <h1 class="logo">Использование</h1>
+            <div id="authContainer"></div>
+        </div>
+        <div class="search-section">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Поиск..." oninput="filterHistory()" />
+            </div>
+            <button class="filter-button" onclick="toggleSort()" title="Сортировка">
+                <i class="fa-solid fa-arrow-up-wide-short"></i>
+            </button>
+        </div>
+    </div>
+
+    <main class="content">
+        <div class="history-list" id="historyList"></div>
+    </main>
+
+    <button class="fab-button" onclick="openAddConsumption()">
+        <i class="fa-solid fa-plus"></i>
+    </button>
+
+    <footer class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <i class="fa-solid fa-database"></i>
+            <span>Катушки</span>
+        </a>
+        <a href="usage.html" class="nav-item active">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Использование</span>
+        </a>
+        <a href="stats.html" class="nav-item">
+            <i class="fa-solid fa-chart-column"></i>
+            <span>Статистика</span>
+        </a>
+        <button class="nav-item" onclick="openSettings()">
+            <i class="fa-solid fa-gear"></i>
+            <span>Настройки</span>
+        </button>
+    </footer>
+</div>
+
+<!-- МОДАЛКА НАСТРОЕК -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Настройки</h2>
+            <button class="modal-close" onclick="closeSettings()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="setting-item">
+                <label>Темная тема</label>
+                <input type="checkbox" id="darkTheme" checked>
+            </div>
+            <div class="setting-item">
+                <label>Единицы измерения</label>
+                <select id="unitsSelect">
+                    <option value="grams">Граммы</option>
+                    <option value="kg">Килограммы</option>
+                </select>
+            </div>
+            <div class="setting-item">
+                <label>Уведомления</label>
+                <input type="checkbox" id="notifications" checked>
+            </div>
+            <button class="save-button" onclick="saveSettings()">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<!-- МОДАЛКА ДОБАВЛЕНИЯ РАСХОДА -->
+<div class="modal-overlay" id="addConsumptionModal">
+    <div class="modal modal-wide">
+        <div class="modal-header">
+            <h2>Добавить расход</h2>
+            <button class="modal-close" onclick="closeAddConsumption()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="consumptionMaterialSelect">Катушка</label>
+                <select id="consumptionMaterialSelect">
+                    <option value="">Загрузка...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="consumptionTitle">Название действия</label>
+                <input type="text" id="consumptionTitle" placeholder="Печать детали" />
+            </div>
+            <div class="form-group">
+                <label for="consumptionMass">Использовано (граммы)</label>
+                <input type="number" id="consumptionMass" placeholder="50" value="10" />
+            </div>
+            <button class="auth-button" onclick="createConsumption()">
+                <i class="fa-solid fa-floppy-disk"></i> Сохранить расход
+            </button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
