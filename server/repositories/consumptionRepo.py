@@ -57,6 +57,20 @@ class ConsumptionRepository:
             .all()
         )
 
+    def get_first(
+        self,
+        db: Session,
+        owner_id: int
+    ) -> Consumption | None:
+
+        return (
+            db.query(Consumption)
+            .filter(Consumption.owner_id == owner_id)
+            .order_by(Consumption.timestamp.asc())
+            .first()
+        )
+        
+
     # -------------------------
     # GET BY ID
     # -------------------------

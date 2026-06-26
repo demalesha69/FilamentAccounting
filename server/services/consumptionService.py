@@ -66,6 +66,25 @@ class ConsumptionService:
             "owner_id": created_consumption.owner_id
         }
 
+    def get_first(
+        self,
+        db,
+        owner_id: int,
+    ) -> dict:
+        result = self.repo.get_first(
+            db,
+            owner_id
+        )
+
+        return {
+                "id": result.id,
+                "title": result.title,
+                "used_mass": result.used_mass,
+                "timestamp": result.timestamp.timestamp(),
+                "remain_mass": result.remain_mass,
+                "material_id": result.material_id
+            }
+
     def get_all_material_comsuptions(
         self,
         db,
