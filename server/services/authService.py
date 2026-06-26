@@ -72,7 +72,7 @@ class AuthService:
 
         if not user:
             raise ValueError(
-                "User not found"
+                "Пользователь не найден"
             )
 
         is_valid = self.hash_service.verify_password(
@@ -82,7 +82,7 @@ class AuthService:
 
         if not is_valid:
             raise ValueError(
-                "Wrong password"
+                "Пароль неверный"
             )
 
         token = self.hash_service.create_token(

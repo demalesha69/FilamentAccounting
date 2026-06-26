@@ -63,7 +63,15 @@
     </div>
     
     <script>
-        const API_URL = 'http://186.246.28.163:8000';
+        // ============================
+        // НАСТРОЙКИ
+        // ============================
+        
+        const API_URL = 'http://186.246.28.163:8000/'; // URL твоего сервера
+        
+        // ============================
+        // ПОКАЗ/СКРЫТИЕ ПАРОЛЯ
+        // ============================
         
         function togglePassword() {
             const password = document.getElementById('password');
@@ -109,7 +117,8 @@
             button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Загрузка...';
             
             try {
-                const response = await fetch(`${API_URL}/auth/register`, {
+                // Отправка запроса на сервер
+                const response = await fetch(`${API_URL}/register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
