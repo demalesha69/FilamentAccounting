@@ -20,8 +20,8 @@ class StatisticsRepository:
             )
             .filter(
                 Consumption.owner_id == owner_id,
-                Consumption.timestamp >= start_timestamp,
-                Consumption.timestamp <= end_timestamp
+                Consumption.timestamp.timestamp() >= start_timestamp,
+                Consumption.timestamp.timestamp() <= end_timestamp
             )
             .scalar()
         )
@@ -50,8 +50,8 @@ class StatisticsRepository:
             db.query(Consumption)
             .filter(
                 Consumption.owner_id == owner_id,
-                Consumption.timestamp >= start_timestamp,
-                Consumption.timestamp <= end_timestamp
+                Consumption.timestamp.timestamp() >= start_timestamp,
+                Consumption.timestamp.timestamp() <= end_timestamp
             )
             .count()
         )
@@ -75,8 +75,8 @@ class StatisticsRepository:
             )
             .filter(
                 Material.owner_id == owner_id,
-                Consumption.timestamp >= start_timestamp,
-                Consumption.timestamp <= end_timestamp
+                Consumption.timestamp.timestamp() >= start_timestamp,
+                Consumption.timestamp.timestamp() <= end_timestamp
             )
             .group_by(
                 Material.id,
