@@ -783,11 +783,10 @@ body {
 }
 
 /* =========================
-   MOBILE ADAPTIVE (УВЕЛИЧЕННЫЙ)
+   MOBILE ADAPTIVE
 ========================= */
 
 @media (max-width: 480px) {
-    /* Общий масштаб */
     html {
         font-size: 18px;
     }
@@ -899,10 +898,6 @@ body {
         font-size: 12px !important;
     }
     
-    /* =========================
-       МОДАЛКИ НА ТЕЛЕФОНЕ
-    ========================= */
-    
     .modal {
         padding: 24px !important;
         max-width: 96% !important;
@@ -929,7 +924,6 @@ body {
         gap: 18px !important;
     }
     
-    /* Поля ввода */
     .form-group label {
         font-size: 16px !important;
         margin-bottom: 4px !important;
@@ -959,7 +953,6 @@ body {
         font-size: 18px !important;
     }
     
-    /* Кнопки */
     .auth-button {
         padding: 16px !important;
         font-size: 18px !important;
@@ -973,7 +966,6 @@ body {
         border-radius: 14px !important;
     }
     
-    /* Вкладки */
     .tabs {
         gap: 10px !important;
         border-radius: 14px !important;
@@ -986,7 +978,6 @@ body {
         border-radius: 12px !important;
     }
     
-    /* Цвета */
     .color-option {
         width: 36px !important;
         height: 36px !important;
@@ -996,7 +987,6 @@ body {
         gap: 10px !important;
     }
     
-    /* Фильтры в модалке сортировки */
     .filter-option {
         padding: 14px 18px !important;
         font-size: 17px !important;
@@ -1024,10 +1014,6 @@ body {
         margin: 12px 0 !important;
     }
     
-    /* =========================
-       ИСТОРИЯ НА ТЕЛЕФОНЕ
-    ========================= */
-    
     .history-item {
         padding: 16px 18px !important;
         gap: 14px !important;
@@ -1053,10 +1039,6 @@ body {
         font-size: 17px !important;
     }
     
-    /* =========================
-       СТАТИСТИКА НА ТЕЛЕФОНЕ
-    ========================= */
-    
     .stats-grid {
         gap: 14px !important;
     }
@@ -1075,7 +1057,6 @@ body {
     }
 }
 
-/* Для очень маленьких экранов */
 @media (max-width: 360px) {
     .filament-grid {
         grid-template-columns: 1fr !important;
@@ -1093,9 +1074,6 @@ body {
         padding: 160px 12px 150px !important;
     }
 }
-/* =========================
-   МОДАЛКА ДОБАВЛЕНИЯ КАТУШКИ НА ТЕЛЕФОНЕ
-========================= */
 
 @media (max-width: 480px) {
     .modal-wide {
@@ -1119,7 +1097,6 @@ body {
         height: 56px !important;
     }
     
-    /* Модалка деталей */
     #detailBody .progress-ring {
         --size: 90px !important;
     }
@@ -1140,10 +1117,6 @@ body {
         font-size: 14px !important;
     }
 }
-
-/* =========================
-   SELECT STYLING
-========================= */
 
 select {
     appearance: none;
@@ -1175,18 +1148,10 @@ select option {
     padding: 8px;
 }
 
-select option:hover {
-    background: #8b5cf6;
-}
-
 select:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
-
-/* =========================
-   DISABLED BUTTON
-========================= */
 
 .auth-button:disabled {
     opacity: 0.5;
@@ -1197,10 +1162,6 @@ select:disabled {
     opacity: 0.5;
     transform: none;
 }
-
-/* =========================
-   STATS CONTROLS
-========================= */
 
 .stats-controls {
     display: flex;
@@ -1263,10 +1224,6 @@ select:disabled {
     border-color: #8b5cf6;
     color: #8b5cf6;
 }
-
-/* =========================
-   STATS HISTORY
-========================= */
 
 .stats-history {
     margin-top: 20px;
