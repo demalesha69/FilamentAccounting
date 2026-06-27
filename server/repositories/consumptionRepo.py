@@ -1,20 +1,12 @@
+from datetime import datetime
+
 from sqlalchemy.orm import Session
 
 from database.models.consumption import Consumption
 
-from datetime import datetime
-
 class ConsumptionRepository:
 
-    # -------------------------
-    # CREATE
-    # -------------------------
-
-    def create(
-        self,
-        db: Session,
-        consumption: Consumption
-    ) -> Consumption:
+    def create(self, db: Session, consumption: Consumption) -> Consumption:
 
         db.add(consumption)
 
@@ -24,15 +16,7 @@ class ConsumptionRepository:
 
         return consumption
 
-    # -------------------------
-    # GET ALL
-    # -------------------------
-
-    def get_all_by_material(
-        self,
-        db: Session,
-        material_id: int
-    ) -> list[Consumption]:
+    def get_all_by_material(self, db: Session, material_id: int) -> list[Consumption]:
 
         return (
             db.query(Consumption)
@@ -41,15 +25,7 @@ class ConsumptionRepository:
             .all()
         )
 
-    # -------------------------
-    # GET ALL BY USER
-    # ------------------------- 
-
-    def get_all_by_user(
-        self,
-        db: Session,
-        owner_id: int
-    ) -> list[Consumption]:
+    def get_all_by_user(self, db: Session, owner_id: int) -> list[Consumption]:
 
         return (
             db.query(Consumption)
@@ -57,17 +33,8 @@ class ConsumptionRepository:
             .order_by(Consumption.timestamp.desc())
             .all()
         )
-        
 
-    
-
-
-    def get_first(
-        self,
-        db: Session,
-        owner_id: int,
-        start_day: int
-    ) -> Consumption | None:
+    def get_first(self, db: Session, owner_id: int, start_day: int) -> Consumption | None:
 
         start_date = datetime.fromtimestamp(start_day)
 
@@ -81,31 +48,15 @@ class ConsumptionRepository:
             .first()
         )
 
-    # -------------------------
-    # GET BY ID
-    # -------------------------
-
-    def get_by_id(
-        self,
-        db: Session,
-        consumption_id: int
-    ) -> Consumption | None:
+    def get_by_id(self, db: Session, consumption_id: int) -> Consumption | None:
 
         return (
             db.query(Consumption)
             .filter(Consumption.id == consumption_id)
             .first()
         )
-
-    # -------------------------
-    # DELETE
-    # -------------------------
-
-    def delete(
-        self,
-        db: Session,
-        consumption: Consumption
-    ):
+    
+    def delete(self, db: Session, consumption: Consumption):
 
         db.delete(consumption)
 

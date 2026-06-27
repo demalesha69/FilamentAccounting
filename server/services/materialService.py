@@ -1,42 +1,44 @@
+import uuid
+
 from database.models.material import Material
+
 from server.repositories.materialRepo import MaterialRepository
 
-import uuid
+from server.schemas.material import MaterialCreate
+
+from server.exceptions.materialExceptions import (
+    MaterialNotFound, 
+)
+
+from server.exceptions.authExceptions import AccessDenied
 
 class MaterialService:
 
+    """
+    Сервис предназначен для работы с катушками  
+    """
+
     def __init__(self):
-
         self.repo = MaterialRepository()
-
-    # -------------------------
-    # CREATE MATERIAL
-    # -------------------------
 
     def create_material(
         self,
         db,
         owner_id: int,
-        name: str,
-        material_type: str,
-        color: str,
-        initial_mass: float
+        data: MaterialCreate
     ) -> dict:
 
         material = Material(
-            name=name,
-            type=material_type,
-            color=color,
-            initial_mass=initial_mass,
-            current_mass=initial_mass,
+            name=data.name,
+            type=data.material_type,
+            color=data.color,
+            initial_mass=data.initial_mass,
+            current_mass=data.initial_mass,
             owner_id=owner_id,
             qr_code=str(uuid.uuid4())
         )
 
-        created_material = self.repo.create(
-            db,
-            material
-        )
+        created_material = self.repo.create(db, material)
 
         return {
             "id": created_material.id,
@@ -47,20 +49,9 @@ class MaterialService:
             "current_mass": created_material.initial_mass
         }
 
-    # -------------------------
-    # GET ALL MATERIALS
-    # -------------------------
+    def get_all_materials(self, db, owner_id: int) -> list[dict]:
 
-    def get_all_materials(
-        self,
-        db,
-        owner_id: int
-    ) -> list[dict]:
-
-        materials = self.repo.get_all_by_owner(
-            db,
-            owner_id
-        )
+        materials = self.repo.get_all_by_owner(db, owner_id)
 
         return [
             {
@@ -75,25 +66,15 @@ class MaterialService:
             for material in materials
         ]
 
-    # -------------------------
-    # GET MATERIAL BY ID
-    # -------------------------
+    def get_material_by_id(self, db, owner_id: int, material_id: int) -> dict:
 
-    def get_material_by_id(
-        self,
-        db,
-        owner_id: int,
-        material_id: int
-    ) -> dict:
-
-        material = self.repo.get_user_material_by_id(
-            db,
-            owner_id,
-            material_id
-        )
+        material = self.repo.get_by_id(db, material_id)
 
         if not material:
-            raise ValueError
+            raise MaterialNotFound()
+
+        if material.owner_id != owner_id:
+            raise AccessDenied()
 
         return {
             "id": material.id,
@@ -104,10 +85,6 @@ class MaterialService:
             "current_mass": material.remaining_mass
         }
 
-    # -------------------------
-    # UPDATE REMAINING MASS
-    # -------------------------
-
     def update_remaining_mass(
         self,
         db,
@@ -116,14 +93,13 @@ class MaterialService:
         remaining_mass: float
     ) -> dict:
 
-        material = self.repo.get_user_material_by_id(
-            db,
-            owner_id,
-            material_id
-        )
+        material = self.repo.get_by_id(db, material_id)
 
         if not material:
-            raise ValueError
+            raise MaterialNotFound()
+
+        if material.owner_id != owner_id:
+            raise AccessDenied()
 
         material.current_mass = remaining_mass
 
@@ -131,30 +107,19 @@ class MaterialService:
 
         return {
             "id": material.id,
-            "current_mass": material.remaining_mass
+            "current_mass": material.current_mass
         }
 
-    # -------------------------
-    # DELETE MATERIAL
-    # -------------------------
+    def delete_material(self, db, owner_id: int, material_id: int) -> bool:
 
-    def delete_material(
-        self,
-        db,
-        owner_id: int,
-        material_id: int
-    ):
-
-        material = self.repo.get_user_material_by_id(
-            db,
-            owner_id,
-            material_id
-        )
+        material = self.repo.get_by_id(db, material_id)
 
         if not material:
-            raise ValueError
+            raise MaterialNotFound()
 
-        self.repo.delete(
-            db,
-            material
-        )
+        if material.owner_id != owner_id:
+            raise AccessDenied()
+
+        self.repo.delete(db, material)
+
+        return True

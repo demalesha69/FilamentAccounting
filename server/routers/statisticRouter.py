@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from database.db.db import get_db
+
 from server.services.statisticService import StatisticService
+
 from server.response import ApiResponse
 from server.jwt_middleware import get_current_user
 
@@ -18,14 +20,8 @@ statistic_service = StatisticService()
 def get_statistic(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
-
-    start_timestamp: int = Query(
-        0
-    ),
-
-    end_timestamp: int = Query(
-        None
-    )
+    start_timestamp: int = Query(0),
+    end_timestamp: int = Query(None)
 ):
     result = statistic_service.get_summary(
         db,

@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 
+from server.exceptions.materialExceptions import MaterialInvalidData
 
 class MaterialCreate(BaseModel):
 
@@ -21,10 +22,13 @@ class MaterialCreate(BaseModel):
     initial_mass: float = Field(
         gt=0
     )
+    
+    @field_validator("name", "material_type", "color")
+    @classmethod
+    def validate_str_fields(cls, field: str, info: ValidationInfo) -> str:
+        field = field.strip()
 
+        if not field:
+            raise MaterialInvalidData(f"{info.field_name} не может быть пустым")
 
-class MaterialUpdateMass(BaseModel):
-
-    remaining_mass: float = Field(
-        ge=0
-    )
+        return field

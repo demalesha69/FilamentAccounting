@@ -21,57 +21,26 @@ consumptionlRouter = APIRouter(
 consumption_service = ConsumptionService()
 
 
-# -------------------------
-# CREATE CONSUMPTION
-# -------------------------
-
 @consumptionlRouter.post("/create")
-def create_consumption(
-    data: ConsumptionCreate,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
+def create_consumption(data: ConsumptionCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
 
-    try:
+    result = consumption_service.create_consumption(
+        db,
+        current_user["user_id"],
+        data.material_id,
+        data.title,
+        data.used_mass
+    )
 
-        result = consumption_service.create_consumption(
-            db,
-            current_user["user_id"],
-            data.material_id,
-            data.title,
-            data.used_mass
-        )
+    return ApiResponse.success(
+        message="Запись использования добавлена",
+        data=result,
+        status_code=201
+    )
 
-        return ApiResponse.success(
-            message="Лог использования добавлен",
-            data=result,
-            status_code=201
-        )
-
-    except PermissionError as e:
-        return ApiResponse.error(
-            message=e,
-            status_code=403
-        )
-
-    except ValueError as e:
-
-        return ApiResponse.error(
-            message=e,
-            status_code=400
-        )
-
-
-# -------------------------
-# GET ALL CONSUMPTIONS BY MATERIAL
-# -------------------------
 
 @consumptionlRouter.get("/{material_id}")
-def get_all_consumptions_by_material(
-    material_id: int,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
+def get_all_consumptions_by_material(material_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
 
     result = consumption_service.get_all_material_comsuptions(
         db,
@@ -85,15 +54,8 @@ def get_all_consumptions_by_material(
     )
 
 
-# -------------------------
-# GET CONSUMPTION BY USER
-# -------------------------
-
 @consumptionlRouter.get("/")
-def get_consumptions_by_user(
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
+def get_consumptions_by_user(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
 
     result = consumption_service.get_all_user_consumptions(
         db,
