@@ -82,7 +82,7 @@ class MaterialService:
             "type": material.type,
             "color": material.color,
             "initial_mass": material.initial_mass,
-            "current_mass": material.remaining_mass
+            "current_mass": material.current_mass
         }
 
     def update_remaining_mass(
