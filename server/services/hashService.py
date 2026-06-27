@@ -16,7 +16,8 @@ class HashService:
         schemes=["bcrypt"],
         deprecated="auto"
     )
-    
+
+    ALGORITHM = "HS256"
     SECRET_KEY = "supersecretcat"
     EXPIRE_DAYS = 7
 
