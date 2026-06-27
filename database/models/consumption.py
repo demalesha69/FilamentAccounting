@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 
 from sqlalchemy import Float, ForeignKey, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -18,11 +18,17 @@ class Consumption(Base):
         String(100)
     )
 
+    owner_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id")
+    )
+
     used_mass: Mapped[float] = mapped_column(Float)
+
+    remain_mass: Mapped[float] = mapped_column(Float)
 
     timestamp: Mapped[datetime] = mapped_column(
         DateTime,
-        default=datetime.utcnow
+        default=datetime.now(UTC)
     )
 
     material = relationship(

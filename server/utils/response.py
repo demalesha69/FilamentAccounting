@@ -6,11 +6,7 @@ from fastapi.responses import JSONResponse
 class ApiResponse:
 
     @staticmethod
-    def success(
-        message: str = "Success",
-        data: Any = None,
-        status_code: int = 200
-    ) -> JSONResponse:
+    def success(message: str = "Успех", status_code: int = 200, data: Any = None) -> JSONResponse:
 
         return JSONResponse(
             status_code=status_code,
@@ -23,11 +19,7 @@ class ApiResponse:
         )
 
     @staticmethod
-    def error(
-        message: str = "Error",
-        status_code: int = 400,
-        data: Any = None
-    ) -> JSONResponse:
+    def error(message: str = "Ошибка", status_code: int = 400, data: Any = None) -> JSONResponse:
 
         return JSONResponse(
             status_code=status_code,
