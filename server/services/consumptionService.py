@@ -34,7 +34,7 @@ class ConsumptionService:
             material_id=data.material_id,
             title=data.title,
             used_mass=data.used_mass,
-            remain_mass=data.remain_mass,
+            remain_mass=remain_mass,
             owner_id=owner_id
         )
 
