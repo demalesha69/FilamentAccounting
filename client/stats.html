@@ -8,144 +8,12 @@
 </head>
 <body>
 
-<script>
-const API_URL = 'http://186.246.28.163:8000';
-
-// ============================
-// АВТОРИЗАЦИЯ
-// ============================
-
-async function checkAuth() {
-    const token = localStorage.getItem('token');
-    console.log('checkAuth: токен =', token);
-    
-    if (!token) {
-        updateAuthUI(false);
-        return false;
-    }
-    updateAuthUI(true);
-    return true;
-}
-
-function updateAuthUI(isLoggedIn) {
-    const container = document.getElementById('authContainer');
-    console.log('updateAuthUI: isLoggedIn =', isLoggedIn, 'container =', container);
-    
-    if (!container) return;
-    
-    if (isLoggedIn) {
-        container.innerHTML = `
-            <span style="color:#9ca3af; font-size:14px;" id="usernameDisplay"></span>
-            <button class="icon-button" onclick="logout()" title="Выйти">
-                <i class="fa-solid fa-right-from-bracket"></i>
-            </button>
-        `;
-        console.log('Контейнер обновлён, вызываем showUsername()');
-        showUsername();
-    } else {
-        container.innerHTML = `
-            <a href="login.html" class="icon-button" title="Войти">
-                <i class="fa-solid fa-right-to-bracket"></i>
-            </a>
-        `;
-    }
-}
-
-function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = 'login.html';
-}
-
-function showUsername() {
-    try {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        const display = document.getElementById('usernameDisplay');
-        console.log('showUsername: user =', user, 'display =', display);
-        
-        if (display) {
-            display.textContent = user.username || 'Пользователь';
-            console.log('Имя установлено:', display.textContent);
-        } else {
-            console.log('Элемент usernameDisplay НЕ НАЙДЕН');
-        }
-    } catch (e) {
-        console.log('Ошибка showUsername:', e);
-    }
-}
-
-// ============================
-// ЗАГРУЗКА СТАТИСТИКИ
-// ============================
-
-async function loadStats() {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    try {
-        const response = await fetch(`${API_URL}/materials/`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || data.error || 'Ошибка загрузки');
-        const filaments = data.data || [];
-        updateStats(filaments);
-    } catch (error) {
-        console.error('Ошибка загрузки статистики:', error);
-    }
-}
-
-function updateStats(filaments) {
-    const totalCount = filaments.length;
-    const totalInitialMass = filaments.reduce((sum, f) => sum + (f.initial_mass || 0), 0);
-    const totalCurrentMass = filaments.reduce((sum, f) => sum + (f.current_mass || 0), 0);
-    const totalUsedMass = totalInitialMass - totalCurrentMass;
-    const avgProgress = totalCount > 0 ? Math.round(totalCurrentMass / totalInitialMass * 100) : 0;
-    
-    document.getElementById('totalCount').textContent = totalCount;
-    document.getElementById('totalMass').textContent = totalInitialMass;
-    document.getElementById('avgProgress').textContent = avgProgress + '%';
-    document.getElementById('usedMass').textContent = totalUsedMass;
-}
-
-// ============================
-// НАСТРОЙКИ
-// ============================
-
-function openSettings() {
-    document.getElementById('settingsModal').style.display = 'flex';
-}
-
-function closeSettings() {
-    document.getElementById('settingsModal').style.display = 'none';
-}
-
-document.getElementById('settingsModal').addEventListener('click', function(e) {
-    if (e.target === this) closeSettings();
-});
-
-function saveSettings() {
-    const theme = document.getElementById('darkTheme').checked;
-    const units = document.getElementById('unitsSelect').value;
-    const notifications = document.getElementById('notifications').checked;
-    console.log('Сохранено:', { theme, units, notifications });
-    alert('Настройки сохранены!');
-    closeSettings();
-}
-
-// ============================
-// ИНИЦИАЛИЗАЦИЯ
-// ============================
-
-window.onload = async function() {
-    console.log('window.onload stats.html');
-    await checkAuth();
-    await loadStats();
-};
-</script>
+<div id="notification" class="notification" style="display:none;">
+    <div class="notification-content">
+        <i class="fa-solid fa-check-circle" id="notificationIcon"></i>
+        <span id="notificationMessage">Успешно!</span>
+    </div>
+</div>
 
 <div class="app">
     <div class="top-section">
@@ -153,27 +21,43 @@ window.onload = async function() {
             <h1 class="logo">Статистика</h1>
             <div id="authContainer"></div>
         </div>
+        <div class="stats-controls">
+            <div class="stats-period">
+                <button class="period-btn active" onclick="setPeriod('all')" data-period="all">За все время</button>
+                <button class="period-btn" onclick="setPeriod('day')" data-period="day">День</button>
+                <button class="period-btn" onclick="setPeriod('week')" data-period="week">Неделя</button>
+                <button class="period-btn" onclick="setPeriod('month')" data-period="month">Месяц</button>
+                <button class="period-btn" onclick="setPeriod('year')" data-period="year">Год</button>
+            </div>
+            <div class="stats-custom">
+                <input type="date" id="dateFrom" />
+                <span>—</span>
+                <input type="date" id="dateTo" />
+                <button class="period-btn" onclick="setCustomPeriod()">Применить</button>
+            </div>
+        </div>
     </div>
 
     <main class="content">
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-value" id="totalUsed">0</div>
+                <div class="stat-label">Использовано (грамм)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalMaterials">0</div>
                 <div class="stat-label">Всего катушек</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="totalMass">0</div>
-                <div class="stat-label">Всего грамм</div>
+                <div class="stat-value" id="totalOperations">0</div>
+                <div class="stat-label">Операций расхода</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="avgProgress">0%</div>
-                <div class="stat-label">Средний остаток</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="usedMass">0</div>
-                <div class="stat-label">Использовано грамм</div>
+                <div class="stat-value" id="avgPerDay">0</div>
+                <div class="stat-label">Среднее в день (г)</div>
             </div>
         </div>
+        <div class="stats-history" id="statsHistory"></div>
     </main>
 
     <footer class="bottom-nav">
@@ -196,7 +80,6 @@ window.onload = async function() {
     </footer>
 </div>
 
-<!-- МОДАЛКА НАСТРОЕК -->
 <div class="modal-overlay" id="settingsModal">
     <div class="modal">
         <div class="modal-header">
@@ -211,13 +94,6 @@ window.onload = async function() {
                 <input type="checkbox" id="darkTheme" checked>
             </div>
             <div class="setting-item">
-                <label>Единицы измерения</label>
-                <select id="unitsSelect">
-                    <option value="grams">Граммы</option>
-                    <option value="kg">Килограммы</option>
-                </select>
-            </div>
-            <div class="setting-item">
                 <label>Уведомления</label>
                 <input type="checkbox" id="notifications" checked>
             </div>
@@ -225,5 +101,7 @@ window.onload = async function() {
         </div>
     </div>
 </div>
+
+<script src="js/stats.js"></script>
 </body>
 </html>
