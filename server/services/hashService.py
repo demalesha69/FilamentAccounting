@@ -17,6 +17,7 @@ class HashService:
         deprecated="auto"
     )
     
+    SECRET_KEY = "supersecretcat"
     EXPIRE_DAYS = 7
 
     def hash_password(self, password: str) -> str:
