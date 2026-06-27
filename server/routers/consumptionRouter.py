@@ -27,9 +27,7 @@ def create_consumption(data: ConsumptionCreate, db: Session = Depends(get_db), c
     result = consumption_service.create_consumption(
         db,
         current_user["user_id"],
-        data.material_id,
-        data.title,
-        data.used_mass
+        data
     )
 
     return ApiResponse.success(
