@@ -9,8 +9,8 @@ from server.schemas.consumption import ConsumptionCreate
 
 from server.services.consumptionService import ConsumptionService
 
-from server.response import ApiResponse
-from server.jwt_middleware import get_current_user
+from server.utils.response import ApiResponse
+from server.utils.jwt_middleware import get_current_user
 
 
 consumptionlRouter = APIRouter(
