@@ -5,8 +5,6 @@ from database.db.db import get_db
 from server.schemas.user import UserLogin
 from server.services.authService import AuthService
 
-from server.repositories.userRepo import UserRepository
-
 from server.utils.jwt_middleware import get_current_user
 from server.utils.response import ApiResponse
 

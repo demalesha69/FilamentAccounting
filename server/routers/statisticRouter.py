@@ -5,8 +5,8 @@ from database.db.db import get_db
 
 from server.services.statisticService import StatisticService
 
-from server.response import ApiResponse
-from server.jwt_middleware import get_current_user
+from server.utils.response import ApiResponse
+from server.utils.jwt_middleware import get_current_user
 
 statisticRouter = APIRouter(
     prefix="/statistics",
