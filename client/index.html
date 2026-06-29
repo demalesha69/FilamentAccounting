@@ -79,13 +79,40 @@
             </button>
         </div>
         <div class="modal-body">
-            <div id="qr-reader" style="width:100%;"></div>
-            <div id="qr-reader-results" style="margin-top:12px; text-align:center; color:#9ca3af; font-size:14px;">
-                Наведите камеру на QR-код катушки
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <!-- Выбор способа сканирования -->
+                <div style="display:flex; gap:10px;">
+                    <button class="auth-button" id="scanCameraBtn" onclick="switchScanMethod('camera')" style="flex:1; background:#3b82f6;">
+                        <i class="fa-solid fa-camera"></i> Камера
+                    </button>
+                    <button class="auth-button" id="scanFileBtn" onclick="switchScanMethod('file')" style="flex:1; background:#8b5cf6;">
+                        <i class="fa-solid fa-image"></i> Файл
+                    </button>
+                </div>
+                
+                <!-- Область для камеры -->
+                <div id="qrCameraArea">
+                    <div id="qr-reader" style="width:100%; min-height:250px;"></div>
+                    <div id="qr-reader-results" style="margin-top:12px; text-align:center; color:#9ca3af; font-size:14px; min-height:40px;">
+                        Наведите камеру на QR-код или загрузите изображение
+                    </div>
+                    <button class="auth-button" id="qrScannerToggleBtn" onclick="toggleQRScanner()" style="width:100%;">
+                        <i class="fa-solid fa-play"></i> Запустить камеру
+                    </button>
+                </div>
+                
+                <!-- Область для загрузки файла -->
+                <div id="qrFileArea" style="display:none; flex-direction:column; gap:12px;">
+                    <div style="border:2px dashed rgba(255,255,255,0.1); border-radius:16px; padding:30px; text-align:center; background:#1a1d26; cursor:pointer;" 
+                         onclick="document.getElementById('qrFileInput').click()">
+                        <i class="fa-solid fa-cloud-arrow-up" style="font-size:48px; color:#6b7280; display:block; margin-bottom:12px;"></i>
+                        <p style="color:#9ca3af; font-size:14px;">Нажмите или перетащите изображение</p>
+                        <p style="color:#6b7280; font-size:12px; margin-top:4px;">Поддерживаются: PNG, JPG, WebP</p>
+                    </div>
+                    <input type="file" id="qrFileInput" accept="image/*" style="display:none;" onchange="scanQRFromFile(event)" />
+                    <div id="qrFileResult" style="text-align:center; color:#9ca3af; font-size:14px; min-height:30px;"></div>
+                </div>
             </div>
-            <button class="auth-button" id="qrScannerToggleBtn" onclick="toggleQRScanner()" style="width:100%;">
-                <i class="fa-solid fa-play"></i> Запустить камеру
-            </button>
         </div>
     </div>
 </div>
@@ -128,7 +155,7 @@
             </div>
             <div class="form-group">
                 <label for="filamentType">Тип материала</label>
-                <select id="filamentType">
+                <select id="filamentType" onchange="updateAdvancedDefaults()">
                     <option value="">Выберите тип</option>
                     <option value="PLA">PLA</option>
                     <option value="PETG">PETG</option>
@@ -182,10 +209,28 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="filamentWeight">Вес</label>
+                <label for="filamentWeight">Вес (граммы)</label>
                 <input type="number" id="filamentWeight" placeholder="1000" value="1000" min="1" max="1000000" step="1" maxlength="8" oninput="if(this.value.length > 8) this.value = this.value.slice(0,8); checkFilamentFields()" />
                 <small style="color:#9ca3af; font-size:12px; margin-top:4px;">Максимальный вес: 1 тонна (1 000 000 г)</small>
             </div>
+            
+            <!-- Расширенные настройки -->
+            <div style="margin-top:4px;">
+                <button class="auth-button" onclick="toggleAdvancedSettings()" type="button" style="background:#232734; color:#9ca3af; font-size:14px; padding:10px; margin-top:0;">
+                    <i class="fa-solid fa-gear" id="advancedIcon"></i> Расширенные настройки
+                </button>
+                <div id="advancedSettings" style="display:none; margin-top:12px; padding:12px; background:#232734; border-radius:12px;">
+                    <div class="form-group">
+                        <label for="filamentDensity">Плотность (г/см³)</label>
+                        <input type="number" id="filamentDensity" placeholder="1.24" step="0.01" min="0.1" max="10" value="1.24" />
+                    </div>
+                    <div class="form-group">
+                        <label for="filamentDiameter">Диаметр (мм)</label>
+                        <input type="number" id="filamentDiameter" placeholder="1.75" step="0.01" min="0.5" max="5" value="1.75" />
+                    </div>
+                </div>
+            </div>
+            
             <button class="auth-button" id="addFilamentBtn" onclick="addFilamentManual()" disabled>
                 <i class="fa-solid fa-plus"></i> Добавить катушку
             </button>

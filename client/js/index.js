@@ -1,10 +1,31 @@
-const API_URL = 'http://186.246.28.163:8000';
+const API_URL = '/api';
 let allFilaments = [];
 let currentSort = 'default';
 let currentFilterType = 'all';
 let currentFilamentId = null;
 
 const MAX_FILAMENT_WEIGHT = 1000000;
+
+// Стандартные значения плотности и диаметра для разных типов материалов
+const MATERIAL_DEFAULTS = {
+    'PLA': { density: 1.24, diameter: 1.75 },
+    'PETG': { density: 1.27, diameter: 1.75 },
+    'ABS': { density: 1.04, diameter: 1.75 },
+    'HIPS': { density: 1.04, diameter: 1.75 },
+    'SBS': { density: 1.02, diameter: 1.75 },
+    'TPU': { density: 1.20, diameter: 1.75 },
+    'NYLON': { density: 1.14, diameter: 1.75 },
+    'ASA': { density: 1.07, diameter: 1.75 },
+    'PP': { density: 0.90, diameter: 1.75 },
+    'PC': { density: 1.20, diameter: 1.75 },
+    'POM': { density: 1.41, diameter: 1.75 },
+    'PMMA': { density: 1.18, diameter: 1.75 },
+    'PEEK': { density: 1.32, diameter: 1.75 },
+    'Ceramo': { density: 1.20, diameter: 1.75 },
+    'PVA': { density: 1.19, diameter: 1.75 },
+    'WAX': { density: 0.95, diameter: 1.75 },
+    'Clearing': { density: 1.00, diameter: 1.75 }
+};
 
 const COLOR_MAP = {
     'green': '#22c55e',
@@ -141,6 +162,29 @@ function formatLocalDate(timestamp) {
         return date.toLocaleString();
     } catch (e) {
         return String(timestamp);
+    }
+}
+
+// ===== РАСШИРЕННЫЕ НАСТРОЙКИ =====
+
+function toggleAdvancedSettings() {
+    const settings = document.getElementById('advancedSettings');
+    const icon = document.getElementById('advancedIcon');
+    if (settings.style.display === 'none') {
+        settings.style.display = 'block';
+        icon.className = 'fa-solid fa-gear fa-spin';
+    } else {
+        settings.style.display = 'none';
+        icon.className = 'fa-solid fa-gear';
+    }
+}
+
+function updateAdvancedDefaults() {
+    const type = document.getElementById('filamentType').value;
+    const defaults = MATERIAL_DEFAULTS[type];
+    if (defaults) {
+        document.getElementById('filamentDensity').value = defaults.density;
+        document.getElementById('filamentDiameter').value = defaults.diameter;
     }
 }
 
@@ -433,37 +477,74 @@ function renderFilaments(filaments) {
 
 // ===== ДЕТАЛИ КАТУШКИ =====
 
-function openDetailModal(id) {
+async function openDetailModal(id) {
     currentFilamentId = id;
-    const filament = allFilaments.find(f => f.id === id);
-    if (!filament) {
-        showNotification('Катушка не найдена', 'error');
+    
+    // Используем новый эндпоинт /materials/id/{material_id}
+    const token = localStorage.getItem('token');
+    if (!token) {
+        showNotification('Вы не авторизованы', 'error');
         return;
     }
     
-    const modal = document.getElementById('detailModal');
-    const body = document.getElementById('detailBody');
-    
-    const colorKey = (filament.color || '').toLowerCase();
-    const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
-    const ringColor = RING_COLOR_MAP[colorKey] || '#8b5cf6';
-    const colorName = COLOR_NAMES[colorKey] || filament.color || 'Без цвета';
-    const progress = Math.round(((filament.current_mass || 0) / (filament.initial_mass || 1)) * 100);
-    const used = (filament.initial_mass || 0) - (filament.current_mass || 0);
-    const isEmpty = (filament.current_mass || 0) <= 0;
-    
-    const currentWeight = formatWeight(filament.current_mass || 0);
-    const initialWeight = formatWeight(filament.initial_mass || 0);
-    const usedWeight = formatWeight(used);
-    
-    const ringStyle = colorKey === 'multicolor' 
-        ? `background: conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) calc(var(--progress) * 1%);`
-        : `--ring-color:${ringColor}; background: conic-gradient(var(--ring-color) calc(var(--progress) * 1%), #2b2f3a 0);`;
-    
-    const qrData = JSON.stringify({ id: filament.id, name: filament.name, material_type: filament.material_type, color: filament.color, initial_mass: filament.initial_mass, current_mass: filament.current_mass });
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
-    
-    loadConsumptionHistory(id).then(historyHtml => {
+    try {
+        const response = await fetch(`${API_URL}/materials/id/${id}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            redirectToLogin();
+            return;
+        }
+        
+        if (response.status === 404) {
+            showNotification('Катушка не найдена', 'error');
+            return;
+        }
+        
+        const data = await response.json();
+        if (data.status !== 200) {
+            throw new Error(data.message || 'Ошибка загрузки катушки');
+        }
+        
+        const filament = data.data;
+        if (!filament) {
+            showNotification('Катушка не найдена', 'error');
+            return;
+        }
+        
+        const modal = document.getElementById('detailModal');
+        const body = document.getElementById('detailBody');
+        
+        const colorKey = (filament.color || '').toLowerCase();
+        const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
+        const ringColor = RING_COLOR_MAP[colorKey] || '#8b5cf6';
+        const colorName = COLOR_NAMES[colorKey] || filament.color || 'Без цвета';
+        const progress = Math.round(((filament.current_mass || 0) / (filament.initial_mass || 1)) * 100);
+        const used = (filament.initial_mass || 0) - (filament.current_mass || 0);
+        const isEmpty = (filament.current_mass || 0) <= 0;
+        
+        const currentWeight = formatWeight(filament.current_mass || 0);
+        const initialWeight = formatWeight(filament.initial_mass || 0);
+        const usedWeight = formatWeight(used);
+        
+        const ringStyle = colorKey === 'multicolor' 
+            ? `background: conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) calc(var(--progress) * 1%);`
+            : `--ring-color:${ringColor}; background: conic-gradient(var(--ring-color) calc(var(--progress) * 1%), #2b2f3a 0);`;
+        
+        // QR-код теперь использует новый эндпоинт /materials/qrcode/{qr_code}
+        // Для генерации QR-кода используем ID катушки
+        const qrCodeData = String(filament.id);
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeData)}`;
+        
+        const historyHtml = await loadConsumptionHistory(id);
+        
         body.innerHTML = `
             <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; ${isEmpty ? 'opacity:0.6;' : ''}">
                 <div style="flex:1; min-width:200px;">
@@ -474,6 +555,7 @@ function openDetailModal(id) {
                         <div>
                             <h2 style="color:#ffffff; font-size:22px; margin-bottom:4px;">${filament.name} ${isEmpty ? '📦' : ''}</h2>
                             <p style="color:${isEmpty ? '#6b7280' : colorHex}; font-size:16px; font-weight:600;">${colorName} ${filament.material_type ? '• ' + filament.material_type : ''}</p>
+                            ${filament.density ? `<p style="color:#9ca3af; font-size:13px;">Плотность: ${filament.density} г/см³ • Диаметр: ${filament.diameter || 1.75} мм</p>` : ''}
                             ${isEmpty ? `<p style="color:#ff5f5f; font-size:14px; margin-top:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Катушка пуста</p>` : ''}
                         </div>
                     </div>
@@ -518,7 +600,10 @@ function openDetailModal(id) {
             </div>
         `;
         modal.style.display = 'flex';
-    });
+    } catch (error) {
+        console.error('Ошибка загрузки катушки:', error);
+        showNotification('Ошибка загрузки катушки: ' + error.message, 'error');
+    }
 }
 
 function closeDetailModal() {
@@ -676,6 +761,11 @@ function openAddFilament() {
     document.getElementById('filamentType').value = '';
     document.getElementById('filamentColor').value = '';
     document.getElementById('filamentWeight').value = '1000';
+    // Сбрасываем расширенные настройки
+    document.getElementById('filamentDensity').value = '1.24';
+    document.getElementById('filamentDiameter').value = '1.75';
+    document.getElementById('advancedSettings').style.display = 'none';
+    document.getElementById('advancedIcon').className = 'fa-solid fa-gear';
     ['filamentName', 'filamentType', 'filamentColor', 'filamentWeight'].forEach(id => {
         document.getElementById(id).style.borderColor = '';
     });
@@ -708,6 +798,11 @@ async function addFilamentManual() {
     const material_type = document.getElementById('filamentType').value.trim();
     const color = document.getElementById('filamentColor').value.trim();
     const initial_mass = parseFloat(document.getElementById('filamentWeight').value);
+    
+    // Получаем расширенные настройки
+    let density = parseFloat(document.getElementById('filamentDensity').value) || 1.24;
+    let diameter = parseFloat(document.getElementById('filamentDiameter').value) || 1.75;
+    
     if (!name || !material_type || !color || !initial_mass || initial_mass < 1) {
         showNotification('Заполните все поля корректно', 'error');
         return;
@@ -716,6 +811,15 @@ async function addFilamentManual() {
         showNotification(`Максимальный вес катушки: 1 тонна (${MAX_FILAMENT_WEIGHT} г)`, 'error');
         return;
     }
+    if (density < 0.1 || density > 10) {
+        showNotification('Плотность должна быть от 0.1 до 10 г/см³', 'error');
+        return;
+    }
+    if (diameter < 0.5 || diameter > 5) {
+        showNotification('Диаметр должен быть от 0.5 до 5 мм', 'error');
+        return;
+    }
+    
     const token = localStorage.getItem('token');
     if (!token) {
         showNotification('Вы не авторизованы', 'error');
@@ -728,7 +832,14 @@ async function addFilamentManual() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ name, material_type, color, initial_mass })
+            body: JSON.stringify({ 
+                name, 
+                material_type, 
+                color, 
+                initial_mass,
+                density: density,
+                diameter: diameter
+            })
         });
         if (response.status === 401) {
             localStorage.removeItem('token');
@@ -752,36 +863,116 @@ async function addFilamentManual() {
 
 let html5QrCode = null;
 let isScannerRunning = false;
+let currentScanMethod = 'camera'; // 'camera' или 'file'
+
+function switchScanMethod(method) {
+    currentScanMethod = method;
+    const cameraBtn = document.getElementById('scanCameraBtn');
+    const fileBtn = document.getElementById('scanFileBtn');
+    const cameraArea = document.getElementById('qrCameraArea');
+    const fileArea = document.getElementById('qrFileArea');
+    
+    if (method === 'camera') {
+        cameraBtn.style.background = '#3b82f6';
+        fileBtn.style.background = '#8b5cf6';
+        cameraArea.style.display = 'block';
+        fileArea.style.display = 'none';
+        if (!isScannerRunning) {
+            const resultsDiv = document.getElementById('qr-reader-results');
+            resultsDiv.textContent = 'Нажмите "Запустить камеру" для начала сканирования';
+            resultsDiv.style.color = '#9ca3af';
+        }
+    } else {
+        fileBtn.style.background = '#3b82f6';
+        cameraBtn.style.background = '#8b5cf6';
+        cameraArea.style.display = 'none';
+        fileArea.style.display = 'flex';
+        if (isScannerRunning) {
+            stopQRScanner();
+        }
+        document.getElementById('qrFileResult').textContent = 'Выберите изображение с QR-кодом';
+        document.getElementById('qrFileResult').style.color = '#9ca3af';
+    }
+}
 
 function openQRScanner() {
     const modal = document.getElementById('qrScannerModal');
     modal.style.display = 'flex';
-    const resultsDiv = document.getElementById('qr-reader-results');
-    resultsDiv.textContent = 'Нажмите кнопку для запуска сканирования';
-    resultsDiv.style.color = '#9ca3af';
-    const readerElement = document.getElementById('qr-reader');
-    readerElement.innerHTML = '';
-    // Сбрасываем состояние кнопки
-    const toggleBtn = document.getElementById('qrScannerToggleBtn');
-    toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
-    toggleBtn.style.background = '#8b5cf6';
-    isScannerRunning = false;
+    clearQRScanner();
+    switchScanMethod('camera');
 }
 
 function closeQRScanner() {
     stopQRScanner();
     document.getElementById('qrScannerModal').style.display = 'none';
+    clearQRScanner();
+}
+
+function clearQRScanner() {
+    const resultsDiv = document.getElementById('qr-reader-results');
+    if (resultsDiv) {
+        resultsDiv.textContent = 'Нажмите кнопку для запуска сканирования';
+        resultsDiv.style.color = '#9ca3af';
+        resultsDiv.innerHTML = '';
+    }
+    
+    const fileResult = document.getElementById('qrFileResult');
+    if (fileResult) {
+        fileResult.textContent = 'Выберите изображение с QR-кодом';
+        fileResult.style.color = '#9ca3af';
+        fileResult.innerHTML = '';
+    }
+    
+    const fileInput = document.getElementById('qrFileInput');
+    if (fileInput) {
+        fileInput.value = '';
+    }
+    
+    const readerElement = document.getElementById('qr-reader');
+    if (readerElement) {
+        readerElement.innerHTML = '';
+    }
+    
+    const toggleBtn = document.getElementById('qrScannerToggleBtn');
+    if (toggleBtn) {
+        toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
+        toggleBtn.style.background = '#8b5cf6';
+    }
+    
+    isScannerRunning = false;
+    
+    if (html5QrCode) {
+        try {
+            html5QrCode.clear();
+        } catch (e) {}
+        html5QrCode = null;
+    }
 }
 
 document.getElementById('qrScannerModal').addEventListener('click', function(e) {
-    if (e.target === this) closeQRScanner();
+    if (e.target === this) {
+        closeQRScanner();
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('qrScannerModal');
+        if (modal && modal.style.display === 'flex') {
+            closeQRScanner();
+        }
+    }
 });
 
 function toggleQRScanner() {
-    if (isScannerRunning) {
-        stopQRScanner();
+    if (currentScanMethod === 'camera') {
+        if (isScannerRunning) {
+            stopQRScanner();
+        } else {
+            startQRScanner();
+        }
     } else {
-        startQRScanner();
+        document.getElementById('qrFileInput').click();
     }
 }
 
@@ -794,15 +985,38 @@ async function startQRScanner() {
         return;
     }
     
+    const readerElement = document.getElementById('qr-reader');
+    readerElement.innerHTML = '';
+    
     try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            resultsDiv.textContent = 'Ваш браузер не поддерживает доступ к камере';
-            resultsDiv.style.color = '#ff5f5f';
+            resultsDiv.innerHTML = `
+                <div style="color:#f59e0b; padding:8px;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Камера недоступна. Используйте загрузку файла.
+                </div>
+            `;
             return;
         }
         
         resultsDiv.textContent = 'Запрос доступа к камере...';
         resultsDiv.style.color = '#9ca3af';
+        
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            stream.getTracks().forEach(track => track.stop());
+        } catch (permError) {
+            if (permError.name === 'NotAllowedError' || permError.name === 'PermissionDeniedError') {
+                resultsDiv.innerHTML = `
+                    <div style="color:#f59e0b; padding:8px;">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        Доступ к камере запрещен. Используйте загрузку файла.
+                    </div>
+                `;
+                return;
+            }
+            throw permError;
+        }
         
         html5QrCode = new Html5Qrcode("qr-reader");
         
@@ -814,11 +1028,10 @@ async function startQRScanner() {
         
         isScannerRunning = true;
         
-        // Меняем кнопку
         toggleBtn.innerHTML = '<i class="fa-solid fa-stop"></i> Остановить сканирование';
         toggleBtn.style.background = '#ef4444';
         
-        resultsDiv.textContent = '📷 Сканирование... Наведите на QR-код';
+        resultsDiv.textContent = 'Сканирование... Наведите на QR-код';
         resultsDiv.style.color = '#4ade80';
         
         await html5QrCode.start(
@@ -830,59 +1043,164 @@ async function startQRScanner() {
         
     } catch (error) {
         console.error('Ошибка запуска сканера:', error);
-        resultsDiv.textContent = 'Ошибка доступа к камере: ' + error.message;
-        resultsDiv.style.color = '#ff5f5f';
+        resultsDiv.innerHTML = `
+            <div style="color:#ff5f5f; padding:8px;">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                Ошибка: ${error.message || 'Неизвестная ошибка'}
+            </div>
+        `;
         isScannerRunning = false;
-        // Возвращаем кнопку в исходное состояние
         toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
         toggleBtn.style.background = '#8b5cf6';
-        showNotification('Ошибка доступа к камере: ' + error.message, 'error');
     }
 }
 
-function onScanSuccess(decodedText, decodedResult) {
-    stopQRScanner();
+// ===== СКАНИРОВАНИЕ ИЗ ФАЙЛА =====
+
+async function scanQRFromFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
     
-    const resultsDiv = document.getElementById('qr-reader-results');
-    resultsDiv.textContent = 'QR-код успешно распознан!';
-    resultsDiv.style.color = '#4ade80';
+    const resultDiv = document.getElementById('qrFileResult');
+    resultDiv.textContent = 'Обработка изображения...';
+    resultDiv.style.color = '#9ca3af';
+    resultDiv.innerHTML = '';
     
     try {
-        const data = JSON.parse(decodedText);
-        console.log('QR-код данные:', data);
-        
-        if (data.id && data.name) {
-            const filament = allFilaments.find(f => f.id === data.id);
-            if (filament) {
-                showNotification(`Найдена катушка: ${filament.name}`, 'success');
-                closeQRScanner();
-                openDetailModal(filament.id);
-            } else {
-                showNotification('Катушка не найдена в базе. Заполните форму.', 'info');
-                closeQRScanner();
-                document.getElementById('filamentName').value = data.name || '';
-                document.getElementById('filamentType').value = data.material_type || '';
-                document.getElementById('filamentColor').value = data.color || '';
-                document.getElementById('filamentWeight').value = data.initial_mass || 1000;
-                checkFilamentFields();
-                openAddFilament();
-            }
-        } else {
-            showNotification('Неверный формат QR-кода', 'error');
+        if (file.size > 10 * 1024 * 1024) {
+            resultDiv.innerHTML = '<span style="color:#ff5f5f;">Файл слишком большой (макс 10 МБ)</span>';
+            return;
         }
-    } catch (e) {
-        console.error('Ошибка парсинга QR:', e);
-        const filamentId = parseInt(decodedText);
-        if (!isNaN(filamentId)) {
-            const filament = allFilaments.find(f => f.id === filamentId);
-            if (filament) {
-                showNotification(`Найдена катушка: ${filament.name}`, 'success');
-                closeQRScanner();
-                openDetailModal(filamentId);
+        
+        if (!file.type.startsWith('image/')) {
+            resultDiv.innerHTML = '<span style="color:#ff5f5f;">Пожалуйста, выберите изображение</span>';
+            return;
+        }
+        
+        const readerElement = document.getElementById('qr-reader');
+        readerElement.innerHTML = '';
+        
+        const fileScanner = new Html5Qrcode("qr-reader");
+        const result = await fileScanner.scanFile(file, true);
+        
+        if (result) {
+            resultDiv.textContent = 'QR-код успешно распознан!';
+            resultDiv.style.color = '#4ade80';
+            try {
+                fileScanner.clear();
+            } catch (e) {}
+            onScanSuccess(result);
+        } else {
+            resultDiv.innerHTML = '<span style="color:#f59e0b;">QR-код не найден на изображении</span>';
+        }
+        
+    } catch (error) {
+        console.error('Ошибка сканирования файла:', error);
+        if (error.message && error.message.includes('No QR code found')) {
+            resultDiv.innerHTML = '<span style="color:#f59e0b;">QR-код не найден на изображении. Попробуйте другое фото.</span>';
+        } else {
+            resultDiv.innerHTML = `<span style="color:#ff5f5f;">Ошибка: ${error.message || 'Неизвестная ошибка'}</span>`;
+        }
+    }
+}
+
+// ===== ОБРАБОТКА РЕЗУЛЬТАТА QR-СКАНИРОВАНИЯ =====
+
+function onScanSuccess(decodedText, decodedResult) {
+    if (isScannerRunning) {
+        stopQRScanner();
+    }
+    
+    const resultsDiv = document.getElementById('qr-reader-results');
+    if (resultsDiv) {
+        resultsDiv.textContent = 'QR-код успешно распознан!';
+        resultsDiv.style.color = '#4ade80';
+    }
+    
+    const fileResult = document.getElementById('qrFileResult');
+    if (fileResult) {
+        fileResult.textContent = 'QR-код успешно распознан!';
+        fileResult.style.color = '#4ade80';
+    }
+    
+    // Получаем ID катушки из QR-кода (теперь это просто число)
+    const filamentId = parseInt(decodedText);
+    if (!isNaN(filamentId) && filamentId > 0) {
+        // Используем новый эндпоинт /materials/qrcode/{qr_code}
+        findFilamentByQRCode(filamentId);
+    } else {
+        // Пробуем парсить как JSON (для обратной совместимости)
+        try {
+            const data = JSON.parse(decodedText);
+            if (data.id && data.name) {
+                findFilamentByQRCode(data.id);
                 return;
             }
+        } catch (e) {
+            console.error('Ошибка парсинга QR:', e);
         }
         showNotification('Не удалось распознать QR-код. Неверный формат данных.', 'error');
+        setTimeout(() => {
+            clearQRScanner();
+        }, 2000);
+    }
+}
+
+async function findFilamentByQRCode(qrCode) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        showNotification('Вы не авторизованы', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/materials/qrcode/${qrCode}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            redirectToLogin();
+            return;
+        }
+        
+        if (response.status === 404) {
+            showNotification('Катушка не найдена по QR-коду', 'error');
+            setTimeout(() => {
+                clearQRScanner();
+            }, 2000);
+            return;
+        }
+        
+        const data = await response.json();
+        if (data.status !== 200) {
+            throw new Error(data.message || 'Ошибка поиска катушки');
+        }
+        
+        const filament = data.data;
+        if (filament) {
+            showNotification(`Найдена катушка: ${filament.name}`, 'success');
+            setTimeout(() => {
+                closeQRScanner();
+                openDetailModal(filament.id);
+            }, 800);
+        } else {
+            showNotification('Катушка не найдена', 'error');
+            setTimeout(() => {
+                clearQRScanner();
+            }, 2000);
+        }
+    } catch (error) {
+        console.error('Ошибка поиска по QR-коду:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+        setTimeout(() => {
+            clearQRScanner();
+        }, 2000);
     }
 }
 
@@ -898,30 +1216,45 @@ function stopQRScanner() {
             html5QrCode.stop().then(() => {
                 html5QrCode.clear();
                 isScannerRunning = false;
-                document.getElementById('qr-reader-results').textContent = '⏹ Сканирование остановлено';
-                document.getElementById('qr-reader-results').style.color = '#9ca3af';
-                // Меняем кнопку обратно
-                toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
-                toggleBtn.style.background = '#8b5cf6';
+                const resultsDiv = document.getElementById('qr-reader-results');
+                if (resultsDiv) {
+                    resultsDiv.textContent = '⏹ Сканирование остановлено';
+                    resultsDiv.style.color = '#9ca3af';
+                }
+                if (toggleBtn) {
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
+                    toggleBtn.style.background = '#8b5cf6';
+                }
+                const readerElement = document.getElementById('qr-reader');
+                if (readerElement) {
+                    readerElement.innerHTML = '';
+                }
             }).catch(err => {
                 console.error('Ошибка остановки сканера:', err);
                 isScannerRunning = false;
-                toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
-                toggleBtn.style.background = '#8b5cf6';
+                if (toggleBtn) {
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
+                    toggleBtn.style.background = '#8b5cf6';
+                }
             });
         } catch (e) {
             console.error('Ошибка при остановке сканера:', e);
             isScannerRunning = false;
+            if (toggleBtn) {
+                toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
+                toggleBtn.style.background = '#8b5cf6';
+            }
+        }
+    } else {
+        const resultsDiv = document.getElementById('qr-reader-results');
+        if (resultsDiv) {
+            resultsDiv.textContent = 'Нажмите кнопку для запуска сканирования';
+            resultsDiv.style.color = '#9ca3af';
+        }
+        if (toggleBtn) {
             toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
             toggleBtn.style.background = '#8b5cf6';
         }
-    } else {
-        // Если сканер не запущен, просто сбрасываем UI
-        const resultsDiv = document.getElementById('qr-reader-results');
-        resultsDiv.textContent = 'Нажмите кнопку для запуска сканирования';
-        resultsDiv.style.color = '#9ca3af';
-        toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
-        toggleBtn.style.background = '#8b5cf6';
         isScannerRunning = false;
     }
 }
