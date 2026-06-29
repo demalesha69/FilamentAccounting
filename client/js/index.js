@@ -480,7 +480,6 @@ function renderFilaments(filaments) {
 async function openDetailModal(id) {
     currentFilamentId = id;
     
-    // Используем новый эндпоинт /materials/id/{material_id}
     const token = localStorage.getItem('token');
     if (!token) {
         showNotification('Вы не авторизованы', 'error');
@@ -538,10 +537,9 @@ async function openDetailModal(id) {
             ? `background: conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) calc(var(--progress) * 1%);`
             : `--ring-color:${ringColor}; background: conic-gradient(var(--ring-color) calc(var(--progress) * 1%), #2b2f3a 0);`;
         
-        // QR-код теперь использует новый эндпоинт /materials/qrcode/{qr_code}
-        // Для генерации QR-кода используем ID катушки
-        const qrCodeData = String(filament.id);
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeData)}`;
+        // QR-код получаем от сервера по эндпоинту /materials/qrcode/{id}
+        // Сначала проверяем, есть ли у катушки поле qr_code, если нет - генерируем запрос
+        const qrUrl = `${API_URL}/materials/qrcode/${filament.id}`;
         
         const historyHtml = await loadConsumptionHistory(id);
         
@@ -580,7 +578,8 @@ async function openDetailModal(id) {
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:160px; background:#232734; border-radius:16px; padding:16px;">
                     <div style="position:relative; display:inline-block;">
-                        <img id="qrCodeImage" src="${qrUrl}" alt="QR-код" style="width:140px; height:140px; border-radius:8px; background:white; padding:8px; ${isEmpty ? 'opacity:0.5;' : ''}" />
+                        <img id="qrCodeImage" src="${qrUrl}" alt="QR-код" style="width:140px; height:140px; border-radius:8px; background:white; padding:8px; ${isEmpty ? 'opacity:0.5;' : ''}" 
+                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22140%22%3E%3Crect width=%22140%22 height=%22140%22 fill=%22%23232734%22/%3E%3Ctext x=%2270%22 y=%2270%22 text-anchor=%22middle%22 dominant-baseline=%22central%22 fill=%22%239ca3af%22 font-size=%2214%22 font-family=%22Arial%22%3EQR-код%3C/text%3E%3Ctext x=%2270%22 y=%2290%22 text-anchor=%22middle%22 dominant-baseline=%22central%22 fill=%22%239ca3af%22 font-size=%2212%22 font-family=%22Arial%22%3Eнедоступен%3C/text%3E%3C/svg%3E'" />
                         <button onclick="downloadQRCode()" title="Скачать QR-код" style="position:absolute; bottom:4px; right:4px; width:32px; height:32px; border:none; border-radius:50%; background:#8b5cf6; color:white; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 2px 8px rgba(0,0,0,0.3);">
                             <i class="fa-solid fa-download"></i>
                         </button>
@@ -681,49 +680,39 @@ function downloadQRCode() {
         showNotification('QR-код не найден', 'error');
         return;
     }
-    const link = document.createElement('a');
-    link.download = `qr-code-${currentFilamentId || 'filament'}.png`;
-    link.href = img.src;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-async function deleteFilament(id) {
-    if (!confirm('Вы уверены, что хотите удалить эту катушку?')) return;
-    const token = localStorage.getItem('token');
-    if (!token) {
-        showNotification('Вы не авторизованы', 'error');
+    
+    // Получаем текущий URL изображения
+    const imgUrl = img.src;
+    if (!imgUrl || imgUrl.includes('data:image/svg+xml')) {
+        showNotification('QR-код недоступен для скачивания', 'error');
         return;
     }
-    try {
-        const response = await fetch(`${API_URL}/materials/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            redirectToLogin();
-            return;
+    
+    // Скачиваем изображение через fetch для обхода CORS
+    fetch(imgUrl, {
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
-        if (response.status === 204) {
-            showNotification('Катушка успешно удалена!', 'success');
-            closeDetailModal();
-            loadFilaments();
-            return;
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Ошибка загрузки QR-кода');
         }
-        const data = await response.json();
-        if (data.status !== 204 && data.status !== 200) {
-            throw new Error(data.message || data.error || 'Ошибка удаления');
-        }
-        showNotification('Катушка успешно удалена!', 'success');
-        closeDetailModal();
-        loadFilaments();
-    } catch (error) {
-        showNotification('Ошибка: ' + error.message, 'error');
-    }
+        return response.blob();
+    })
+    .then(blob => {
+        const link = document.createElement('a');
+        link.download = `qr-code-${currentFilamentId || 'filament'}.png`;
+        link.href = URL.createObjectURL(blob);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    })
+    .catch(error => {
+        console.error('Ошибка скачивания QR-кода:', error);
+        showNotification('Ошибка скачивания QR-кода', 'error');
+    });
 }
 
 // ===== ДОБАВЛЕНИЕ КАТУШКИ =====
