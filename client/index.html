@@ -5,6 +5,7 @@
     <title>FilamentAccounting</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 
@@ -97,25 +98,63 @@
             </div>
             <div class="form-group">
                 <label for="filamentType">Тип материала</label>
-                <input type="text" id="filamentType" placeholder="PLA, PETG, ABS" />
+                <select id="filamentType">
+                    <option value="">Выберите тип</option>
+                    <option value="PLA">PLA</option>
+                    <option value="PETG">PETG</option>
+                    <option value="ABS">ABS</option>
+                    <option value="HIPS">HIPS</option>
+                    <option value="SBS">SBS</option>
+                    <option value="TPU">TPU</option>
+                    <option value="NYLON">NYLON</option>
+                    <option value="ASA">ASA</option>
+                    <option value="PP">PP</option>
+                    <option value="PC">PC</option>
+                    <option value="POM">POM</option>
+                    <option value="PMMA">PMMA</option>
+                    <option value="PEEK">PEEK</option>
+                    <option value="Ceramo">Ceramo</option>
+                    <option value="PVA">PVA</option>
+                    <option value="WAX">WAX</option>
+                    <option value="Clearing">Clearing</option>
+                </select>
             </div>
             <div class="form-group">
                 <label for="filamentColor">Цвет</label>
                 <div class="color-select">
                     <input type="text" id="filamentColor" placeholder="Black" />
-                    <div class="color-picker">
-                        <button class="color-option green" onclick="setColor('green')"></button>
-                        <button class="color-option yellow" onclick="setColor('yellow')"></button>
-                        <button class="color-option red" onclick="setColor('red')"></button>
-                        <button class="color-option blue" onclick="setColor('blue')"></button>
-                        <button class="color-option orange" onclick="setColor('orange')"></button>
-                        <button class="color-option purple" onclick="setColor('purple')"></button>
+                    <div class="color-picker expanded">
+                        <button class="color-option black" onclick="setColor('black')" title="Черный"></button>
+                        <button class="color-option white" onclick="setColor('white')" title="Белый"></button>
+                        <button class="color-option gray" onclick="setColor('gray')" title="Серый"></button>
+                        <button class="color-option silver" onclick="setColor('silver')" title="Серебристый"></button>
+                        <button class="color-option red" onclick="setColor('red')" title="Красный"></button>
+                        <button class="color-option crimson" onclick="setColor('crimson')" title="Малиновый"></button>
+                        <button class="color-option pink" onclick="setColor('pink')" title="Розовый"></button>
+                        <button class="color-option orange" onclick="setColor('orange')" title="Оранжевый"></button>
+                        <button class="color-option gold" onclick="setColor('gold')" title="Золотой"></button>
+                        <button class="color-option yellow" onclick="setColor('yellow')" title="Желтый"></button>
+                        <button class="color-option lime" onclick="setColor('lime')" title="Лайм"></button>
+                        <button class="color-option green" onclick="setColor('green')" title="Зеленый"></button>
+                        <button class="color-option teal" onclick="setColor('teal')" title="Бирюзовый"></button>
+                        <button class="color-option cyan" onclick="setColor('cyan')" title="Циан"></button>
+                        <button class="color-option blue" onclick="setColor('blue')" title="Синий"></button>
+                        <button class="color-option navy" onclick="setColor('navy')" title="Темно-синий"></button>
+                        <button class="color-option purple" onclick="setColor('purple')" title="Фиолетовый"></button>
+                        <button class="color-option violet" onclick="setColor('violet')" title="Лиловый"></button>
+                        <button class="color-option magenta" onclick="setColor('magenta')" title="Пурпурный"></button>
+                        <button class="color-option brown" onclick="setColor('brown')" title="Коричневый"></button>
+                        <button class="color-option beige" onclick="setColor('beige')" title="Бежевый"></button>
+                        <button class="color-option transparent" onclick="setColor('transparent')" title="Прозрачный"></button>
+                        <button class="color-option glow" onclick="setColor('glow')" title="Светящийся"></button>
+                        <button class="color-option multicolor" onclick="setColor('multicolor')" title="Мультицвет"></button>
                     </div>
                 </div>
             </div>
             <div class="form-group">
-                <label for="filamentWeight">Вес (граммы)</label>
-                <input type="number" id="filamentWeight" placeholder="1000" value="1000" />
+                <label for="filamentWeight">Вес</label>
+                <input type="number" id="filamentWeight" placeholder="1000" value="1000" min="1" max="1000000" step="1" maxlength="8" oninput="if(this.value.length > 8) this.value = this.value.slice(0,8); checkFilamentFields()" />
+                <small style="color:#9ca3af; font-size:12px; margin-top:4px;">Максимальный вес: 1 тонна (1 000 000 г)</small>
             </div>
             <button class="auth-button" id="addFilamentBtn" onclick="addFilamentManual()" disabled>
                 <i class="fa-solid fa-plus"></i> Добавить катушку
@@ -181,8 +220,47 @@
                 <button class="filter-option" onclick="filterByType('abs')" id="filterTypeABS">
                     <i class="fa-solid fa-cube"></i> <span>ABS</span>
                 </button>
+                <button class="filter-option" onclick="filterByType('hips')" id="filterTypeHIPS">
+                    <i class="fa-solid fa-cube"></i> <span>HIPS</span>
+                </button>
+                <button class="filter-option" onclick="filterByType('sbs')" id="filterTypeSBS">
+                    <i class="fa-solid fa-cube"></i> <span>SBS</span>
+                </button>
                 <button class="filter-option" onclick="filterByType('tpu')" id="filterTypeTPU">
                     <i class="fa-solid fa-cube"></i> <span>TPU</span>
+                </button>
+                <button class="filter-option" onclick="filterByType('nylon')" id="filterTypeNYLON">
+                    <i class="fa-solid fa-cube"></i> <span>NYLON</span>
+                </button>
+                <button class="filter-option" onclick="filterByType('asa')" id="filterTypeASA">
+                    <i class="fa-solid fa-cube"></i> <span>ASA</span>
+                </button>
+                <button class="filter-option" onclick="filterByType('pp')" id="filterTypePP">
+                    <i class="fa-solid fa-cube"></i> <span>PP</span>
+                </button>
+                <button class="filter-option" onclick="filterByType('pc')" id="filterTypePC">
+                    <i class="fa-solid fa-cube"></i> <span>PC</span>
+                </button>
+                <button class="filter-option" onclick="filterByType('pom')" id="filterTypePOM">
+                    <i class="fa-solid fa-cube"></i> <span>POM</span>
+                </button>
+                <button class="filter-option" onclick="filterByType('pmma')" id="filterTypePMMA">
+                    <i class="fa-solid fa-cube"></i> <span>PMMA</span>
+                </button>
+                <button class="filter-option" onclick="filterByType('peek')" id="filterTypePEEK">
+                    <i class="fa-solid fa-cube"></i> <span>PEEK</span>
+                </button>
+                <button class="filter-option" onclick="filterByType('ceramo')" id="filterTypeCeramo">
+                    <i class="fa-solid fa-cube"></i> <span>Ceramo</span>
+                </button>
+                <button class="filter-option" onclick="filterByType('pva')" id="filterTypePVA">
+                    <i class="fa-solid fa-cube"></i> <span>PVA</span>
+                </button>
+                <button class="filter-option" onclick="filterByType('wax')" id="filterTypeWAX">
+                    <i class="fa-solid fa-cube"></i> <span>WAX</span>
+                </button>
+                <button class="filter-option" onclick="filterByType('clearing')" id="filterTypeClearing">
+                    <i class="fa-solid fa-cube"></i> <span>Clearing</span>
                 </button>
                 <button class="filter-option" onclick="filterByType('other')" id="filterTypeOther">
                     <i class="fa-solid fa-cube"></i> <span>Другое</span>

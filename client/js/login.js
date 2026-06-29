@@ -42,7 +42,6 @@ async function handleLogin(event) {
         
         const data = await response.json();
         
-        // Обработка ошибок по документации
         if (data.status === 401) {
             showError(data.message || 'Неверный логин или пароль');
             return;
@@ -56,7 +55,6 @@ async function handleLogin(event) {
             return;
         }
         
-        // Извлекаем токен из data.data.token согласно документации
         if (data.data?.token) {
             localStorage.setItem('token', data.data.token);
             localStorage.setItem('user', JSON.stringify({
@@ -64,12 +62,8 @@ async function handleLogin(event) {
                 username: data.data.username
             }));
             
-            console.log('ТОКЕН СОХРАНЁН:', data.data.token);
-            console.log('ПОЛЬЗОВАТЕЛЬ СОХРАНЁН:', data.data.username);
-            
             window.location.href = 'index.html';
         } else {
-            console.error('ТОКЕН НЕ НАЙДЕН! Ответ сервера:', data);
             showError('Токен не получен от сервера');
         }
         
