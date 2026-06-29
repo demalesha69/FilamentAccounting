@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, UTC
 
 from server.exceptions.authExceptions import TokenExpired, InvalidToken
 
+from server.repositories.userRepo import UserRepository
+
 class HashService:
 
     """
@@ -20,6 +22,8 @@ class HashService:
     ALGORITHM = "HS256"
     SECRET_KEY = "supersecretcat"
     EXPIRE_DAYS = 7
+
+    user_repo = UserRepository()
 
     def hash_password(self, password: str) -> str:
         return self.pwd_context.hash(password)
@@ -38,11 +42,19 @@ class HashService:
 
     def decode_token(self, token: str) -> dict:
         try:
-            return jwt.decode(
+            payload = jwt.decode(
                 token,
                 self.SECRET_KEY,
                 algorithms=[self.ALGORITHM]
             )
+
+            user = self.user_repo.get_by_id(payload["user_id"])
+
+            if not user:
+                raise InvalidToken()
+            
+            return payload
+
         except jwt.ExpiredSignatureError:
             raise TokenExpired()
         except jwt.InvalidTokenError:
