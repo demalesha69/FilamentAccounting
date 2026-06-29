@@ -1,4 +1,4 @@
-const API_URL = '/api';
+const API_URL = 'http://186.246.28.163:8000';
 let currentPeriod = 'all';
 let currentStartTimestamp = null;
 let currentEndTimestamp = null;
@@ -81,7 +81,7 @@ function getDateRange(period) {
     return { start, end: now };
 }
 
-// ===== АВТОРИЗАЦИЯ (как на других страницах) =====
+// ===== АВТОРИЗАЦИЯ =====
 
 async function checkAuth() {
     const token = localStorage.getItem('token');
@@ -183,6 +183,11 @@ async function loadStats(startTimestamp = null, endTimestamp = null) {
     const token = localStorage.getItem('token');
     if (!token) {
         showNotification('Вы не авторизованы', 'error');
+        // Показываем заглушку
+        document.getElementById('totalUsed').textContent = '—';
+        document.getElementById('totalMaterials').textContent = '—';
+        document.getElementById('totalOperations').textContent = '—';
+        document.getElementById('avgPerDay').textContent = '—';
         return;
     }
     
@@ -200,6 +205,8 @@ async function loadStats(startTimestamp = null, endTimestamp = null) {
             url += '?' + params.join('&');
         }
         
+        console.log('Запрос статистики:', url);
+        
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -214,7 +221,21 @@ async function loadStats(startTimestamp = null, endTimestamp = null) {
             return;
         }
         
+        // Проверяем, что ответ — JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Ответ не JSON:', text.substring(0, 200));
+            showNotification('Сервер вернул ошибку. Проверьте подключение к интернету.', 'error');
+            document.getElementById('totalUsed').textContent = '—';
+            document.getElementById('totalMaterials').textContent = '—';
+            document.getElementById('totalOperations').textContent = '—';
+            document.getElementById('avgPerDay').textContent = '—';
+            return;
+        }
+        
         const data = await response.json();
+        console.log('Данные статистики:', data);
         
         if (data.status !== 200) {
             throw new Error(data.message || 'Ошибка загрузки статистики');
@@ -226,6 +247,10 @@ async function loadStats(startTimestamp = null, endTimestamp = null) {
     } catch (error) {
         console.error('Ошибка загрузки статистики:', error);
         showNotification('Ошибка загрузки статистики: ' + error.message, 'error');
+        document.getElementById('totalUsed').textContent = '—';
+        document.getElementById('totalMaterials').textContent = '—';
+        document.getElementById('totalOperations').textContent = '—';
+        document.getElementById('avgPerDay').textContent = '—';
     }
 }
 
@@ -287,11 +312,18 @@ function setCustomPeriod() {
     loadStats(currentStartTimestamp, currentEndTimestamp);
 }
 
-// ===== ИНИЦИАЛИЗАЦИЯ (как на других страницах) =====
+// ===== ИНИЦИАЛИЗАЦИЯ =====
 
 window.onload = async function() {
+    console.log('=== СТАТИСТИКА: ЗАГРУЗКА ===');
     const isAuth = await checkAuth();
+    console.log('Авторизация:', isAuth);
     if (isAuth) {
         setPeriod('all');
+    } else {
+        document.getElementById('totalUsed').textContent = '—';
+        document.getElementById('totalMaterials').textContent = '—';
+        document.getElementById('totalOperations').textContent = '—';
+        document.getElementById('avgPerDay').textContent = '—';
     }
 };
