@@ -5,6 +5,8 @@
     <title>FilamentAccounting</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <!-- Библиотека для сканирования QR-кодов -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
@@ -37,9 +39,15 @@
         <section class="filament-grid" id="filamentGrid"></section>
     </main>
 
-    <button class="fab-button" onclick="openAddFilament()">
-        <i class="fa-solid fa-plus"></i>
-    </button>
+    <!-- Две кнопки: QR-сканер и добавление -->
+    <div class="fab-group">
+        <button class="fab-button fab-scan" onclick="openQRScanner()" title="Сканировать QR-код">
+            <i class="fa-solid fa-qrcode"></i>
+        </button>
+        <button class="fab-button" onclick="openAddFilament()" title="Добавить катушку">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+    </div>
 
     <footer class="bottom-nav">
         <a href="index.html" class="nav-item active">
@@ -61,6 +69,28 @@
     </footer>
 </div>
 
+<!-- Модальное окно для QR-сканера -->
+<div class="modal-overlay" id="qrScannerModal">
+    <div class="modal modal-wide">
+        <div class="modal-header">
+            <h2>Сканировать QR-код</h2>
+            <button class="modal-close" onclick="closeQRScanner()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="qr-reader" style="width:100%;"></div>
+            <div id="qr-reader-results" style="margin-top:12px; text-align:center; color:#9ca3af; font-size:14px;">
+                Наведите камеру на QR-код катушки
+            </div>
+            <button class="auth-button" id="qrScannerToggleBtn" onclick="toggleQRScanner()" style="width:100%;">
+                <i class="fa-solid fa-play"></i> Запустить камеру
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Остальные модальные окна (settings, addFilament, detail, filter) -->
 <div class="modal-overlay" id="settingsModal">
     <div class="modal">
         <div class="modal-header">

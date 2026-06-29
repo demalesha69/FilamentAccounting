@@ -238,10 +238,6 @@ body {
 
 /* ========== FAB BUTTON ========== */
 .fab-button {
-    position: fixed;
-    right: 20px;
-    bottom: 95px;
-    z-index: 200;
     width: 64px;
     height: 64px;
     border: none;
@@ -250,7 +246,50 @@ body {
     color: white;
     font-size: 22px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
     box-shadow: 0 10px 25px rgba(139,92,246,0.4);
+}
+
+.fab-button:hover {
+    transform: scale(1.05);
+}
+
+.fab-button:active {
+    transform: scale(0.95);
+}
+
+/* ========== FAB BUTTON GROUP (для index.html) ========== */
+.fab-group {
+    position: fixed;
+    right: 20px;
+    bottom: 95px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.fab-group .fab-button {
+    width: 64px;
+    height: 64px;
+    font-size: 22px;
+    box-shadow: 0 10px 25px rgba(139,92,246,0.4);
+}
+
+.fab-group .fab-scan {
+    background: #3b82f6;
+    box-shadow: 0 10px 25px rgba(59,130,246,0.4);
+}
+
+/* Для одиночной кнопки на usage.html и других страницах */
+.fab-button:not(.fab-group .fab-button) {
+    position: fixed;
+    right: 20px;
+    bottom: 95px;
+    z-index: 200;
 }
 
 /* ========== BOTTOM NAV ========== */
@@ -818,6 +857,7 @@ select:disabled {
     font-weight: 600;
     font-size: 15px;
 }
+
 /* ========== HELP TEXT ========== */
 .form-group small {
     color: #9ca3af;
@@ -997,6 +1037,220 @@ select:disabled {
     min-width: var(--size);
 }
 
+/* ========== NOTIFICATIONS ========== */
+.notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    padding: 12px 24px;
+    border-radius: 12px;
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid #22c55e;
+    color: #4ade80;
+    min-width: 280px;
+    max-width: 90%;
+    text-align: center;
+    animation: slideDown 0.3s ease;
+}
+
+.notification.error {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid #ef4444;
+    color: #f87171;
+}
+
+.notification.info {
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid #3b82f6;
+    color: #60a5fa;
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.notification-content i {
+    font-size: 20px;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* ========== STYLED SELECT ========== */
+select.styled-select {
+    background: #232734;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 12px 40px 12px 16px;
+    color: #ffffff;
+    font-size: 15px;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+select.styled-select:focus {
+    outline: none;
+    border-color: #8b5cf6;
+}
+
+select.styled-select option {
+    background: #1a1d26;
+    color: #ffffff;
+    padding: 8px;
+}
+
+select.styled-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Стиль для select в модальных окнах */
+.modal .form-group select {
+    background: #232734;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 12px 40px 12px 16px;
+    color: #ffffff;
+    font-size: 15px;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.modal .form-group select:focus {
+    outline: none;
+    border-color: #8b5cf6;
+}
+
+.modal .form-group select option {
+    background: #1a1d26;
+    color: #ffffff;
+    padding: 8px;
+}
+
+.modal .form-group select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ========== QR SCANNER ========== */
+#qr-reader {
+    background: #0f1117;
+    border-radius: 12px;
+    overflow: hidden;
+    min-height: 300px;
+}
+
+#qr-reader video {
+    width: 100% !important;
+    height: auto !important;
+    border-radius: 12px;
+}
+
+#qr-reader img {
+    display: none;
+}
+
+#qr-reader button {
+    background: #8b5cf6 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 8px 16px !important;
+    font-size: 14px !important;
+    cursor: pointer !important;
+    margin: 4px !important;
+}
+
+#qr-reader button:hover {
+    opacity: 0.9 !important;
+}
+
+#qr-reader button:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+}
+
+#qr-reader select {
+    background: #232734 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 8px !important;
+    padding: 6px 12px !important;
+    font-size: 14px !important;
+}
+
+#qr-reader-results {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 14px;
+    padding: 8px;
+    min-height: 40px;
+}
+
+/* ========== PROGRESS RING SPECIAL COLORS ========== */
+/* Стили для мультицветных кругов прогресса */
+.progress-ring.multicolor {
+    background: conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) !important;
+    animation: multicolorSpin 4s linear infinite;
+}
+
+@keyframes multicolorSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Стили для светящегося круга */
+.progress-ring.glow {
+    box-shadow: 0 0 20px rgba(34, 211, 238, 0.3), inset 0 0 20px rgba(34, 211, 238, 0.1);
+    animation: glowPulse 2s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(34, 211, 238, 0.3), inset 0 0 20px rgba(34, 211, 238, 0.1);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(34, 211, 238, 0.5), inset 0 0 30px rgba(34, 211, 238, 0.2);
+    }
+}
+
+/* Стили для прозрачного круга */
+.progress-ring.transparent {
+    opacity: 0.5;
+    border: 2px solid rgba(255,255,255,0.1);
+}
+
 /* ========== RESPONSIVE ========== */
 @media (max-width: 600px) {
     #detailBody > div {
@@ -1058,10 +1312,10 @@ select:disabled {
         padding: 170px 16px 155px !important;
     }
     
-	.filament-grid {
-		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
-		gap: 14px !important;
-	}
+    .filament-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+        gap: 14px !important;
+    }
     
     .filament-card {
         padding: 16px !important;
@@ -1094,12 +1348,32 @@ select:disabled {
         font-size: 14px !important;
     }
     
+    /* FAB Button Mobile */
     .fab-button {
         width: 60px !important;
         height: 60px !important;
-        font-size: 22px !important;
+        font-size: 20px !important;
+    }
+    
+    .fab-button:not(.fab-group .fab-button) {
         right: 16px !important;
         bottom: 85px !important;
+    }
+    
+    .fab-group {
+        right: 16px !important;
+        bottom: 85px !important;
+        gap: 10px !important;
+    }
+    
+    .fab-group .fab-button {
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 20px !important;
+    }
+    
+    .fab-group .fab-scan {
+        font-size: 18px !important;
     }
     
     .bottom-nav {
@@ -1351,6 +1625,16 @@ select:disabled {
     .auth-header h1 {
         font-size: 24px !important;
     }
+
+    /* QR Scanner mobile */
+    #qr-reader {
+        min-height: 200px !important;
+    }
+    
+    #qr-reader button {
+        font-size: 12px !important;
+        padding: 6px 12px !important;
+    }
 }
 
 @media (max-width: 360px) {
@@ -1369,172 +1653,21 @@ select:disabled {
     .content {
         padding: 160px 12px 150px !important;
     }
-}
 
-
-/* Стили для мультицветных кругов прогресса */
-.progress-ring.multicolor {
-    background: conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) !important;
-    animation: multicolorSpin 4s linear infinite;
-}
-
-@keyframes multicolorSpin {
-    from {
-        transform: rotate(0deg);
+    .fab-button:not(.fab-group .fab-button) {
+        right: 12px !important;
+        bottom: 80px !important;
     }
-    to {
-        transform: rotate(360deg);
+    
+    .fab-group {
+        right: 12px !important;
+        bottom: 80px !important;
+        gap: 8px !important;
     }
-}
-
-/* Стили для светящегося круга */
-.progress-ring.glow {
-    box-shadow: 0 0 20px rgba(34, 211, 238, 0.3), inset 0 0 20px rgba(34, 211, 238, 0.1);
-    animation: glowPulse 2s ease-in-out infinite;
-}
-
-@keyframes glowPulse {
-    0%, 100% {
-        box-shadow: 0 0 20px rgba(34, 211, 238, 0.3), inset 0 0 20px rgba(34, 211, 238, 0.1);
+    
+    .fab-group .fab-button {
+        width: 54px !important;
+        height: 54px !important;
+        font-size: 18px !important;
     }
-    50% {
-        box-shadow: 0 0 40px rgba(34, 211, 238, 0.5), inset 0 0 30px rgba(34, 211, 238, 0.2);
-    }
-}
-
-/* Стили для прозрачного круга */
-.progress-ring.transparent {
-    opacity: 0.5;
-    border: 2px solid rgba(255,255,255,0.1);
-}
-
-.notification.info {
-    background: rgba(59, 130, 246, 0.15);
-    border: 1px solid #3b82f6;
-    color: #60a5fa;
-}
-
-.notification.info .notification-content i {
-    color: #3b82f6;
-}
-
-/* ========== NOTIFICATIONS ========== */
-.notification {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 9999;
-    padding: 12px 24px;
-    border-radius: 12px;
-    background: rgba(34, 197, 94, 0.15);
-    border: 1px solid #22c55e;
-    color: #4ade80;
-    min-width: 280px;
-    max-width: 90%;
-    text-align: center;
-    animation: slideDown 0.3s ease;
-}
-
-.notification.error {
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid #ef4444;
-    color: #f87171;
-}
-
-.notification.info {
-    background: rgba(59, 130, 246, 0.15);
-    border: 1px solid #3b82f6;
-    color: #60a5fa;
-}
-
-.notification-content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-
-.notification-content i {
-    font-size: 20px;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-    }
-}
-/* ========== STYLED SELECT ========== */
-select.styled-select {
-    background: #232734;
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 12px;
-    padding: 12px 40px 12px 16px;
-    color: #ffffff;
-    font-size: 15px;
-    width: 100%;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    cursor: pointer;
-    transition: border-color 0.3s;
-}
-
-select.styled-select:focus {
-    outline: none;
-    border-color: #8b5cf6;
-}
-
-select.styled-select option {
-    background: #1a1d26;
-    color: #ffffff;
-    padding: 8px;
-}
-
-select.styled-select:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Стиль для select в модальных окнах */
-.modal .form-group select {
-    background: #232734;
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 12px;
-    padding: 12px 40px 12px 16px;
-    color: #ffffff;
-    font-size: 15px;
-    width: 100%;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    cursor: pointer;
-    transition: border-color 0.3s;
-}
-
-.modal .form-group select:focus {
-    outline: none;
-    border-color: #8b5cf6;
-}
-
-.modal .form-group select option {
-    background: #1a1d26;
-    color: #ffffff;
-    padding: 8px;
-}
-
-.modal .form-group select:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }
