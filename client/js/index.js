@@ -790,21 +790,8 @@ function openQRScanner() {
     const modal = document.getElementById('qrScannerModal');
     modal.style.display = 'flex';
     
-    // Сбрасываем состояние
-    const resultsDiv = document.getElementById('qr-reader-results');
-    resultsDiv.textContent = 'Нажмите кнопку для запуска сканирования';
-    resultsDiv.style.color = '#9ca3af';
-    const readerElement = document.getElementById('qr-reader');
-    readerElement.innerHTML = '';
-    const toggleBtn = document.getElementById('qrScannerToggleBtn');
-    toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
-    toggleBtn.style.background = '#8b5cf6';
-    isScannerRunning = false;
-    
-    // Сбрасываем файловую область
-    document.getElementById('qrFileResult').textContent = 'Выберите изображение с QR-кодом';
-    document.getElementById('qrFileResult').style.color = '#9ca3af';
-    document.getElementById('qrFileInput').value = '';
+    // Полная очистка
+    clearQRScanner();
     
     // По умолчанию показываем камеру
     switchScanMethod('camera');
@@ -813,10 +800,72 @@ function openQRScanner() {
 function closeQRScanner() {
     stopQRScanner();
     document.getElementById('qrScannerModal').style.display = 'none';
+    // Очищаем после закрытия
+    clearQRScanner();
+}
+
+function clearQRScanner() {
+    // Очищаем результаты
+    const resultsDiv = document.getElementById('qr-reader-results');
+    if (resultsDiv) {
+        resultsDiv.textContent = 'Нажмите кнопку для запуска сканирования';
+        resultsDiv.style.color = '#9ca3af';
+        resultsDiv.innerHTML = '';
+    }
+    
+    // Очищаем файловый результат
+    const fileResult = document.getElementById('qrFileResult');
+    if (fileResult) {
+        fileResult.textContent = 'Выберите изображение с QR-кодом';
+        fileResult.style.color = '#9ca3af';
+        fileResult.innerHTML = '';
+    }
+    
+    // Сбрасываем файловый инпут
+    const fileInput = document.getElementById('qrFileInput');
+    if (fileInput) {
+        fileInput.value = '';
+    }
+    
+    // Очищаем элемент qr-reader
+    const readerElement = document.getElementById('qr-reader');
+    if (readerElement) {
+        readerElement.innerHTML = '';
+    }
+    
+    // Сбрасываем кнопку
+    const toggleBtn = document.getElementById('qrScannerToggleBtn');
+    if (toggleBtn) {
+        toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
+        toggleBtn.style.background = '#8b5cf6';
+    }
+    
+    // Сбрасываем состояние сканера
+    isScannerRunning = false;
+    
+    // Удаляем объект сканера
+    if (html5QrCode) {
+        try {
+            html5QrCode.clear();
+        } catch (e) {}
+        html5QrCode = null;
+    }
 }
 
 document.getElementById('qrScannerModal').addEventListener('click', function(e) {
-    if (e.target === this) closeQRScanner();
+    if (e.target === this) {
+        closeQRScanner();
+    }
+});
+
+// Закрытие по Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('qrScannerModal');
+        if (modal && modal.style.display === 'flex') {
+            closeQRScanner();
+        }
+    }
 });
 
 function toggleQRScanner() {
@@ -840,6 +889,10 @@ async function startQRScanner() {
         resultsDiv.textContent = 'Сканер уже запущен';
         return;
     }
+    
+    // Очищаем перед запуском
+    const readerElement = document.getElementById('qr-reader');
+    readerElement.innerHTML = '';
     
     try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -918,6 +971,7 @@ async function scanQRFromFile(event) {
     const resultDiv = document.getElementById('qrFileResult');
     resultDiv.textContent = 'Обработка изображения...';
     resultDiv.style.color = '#9ca3af';
+    resultDiv.innerHTML = '';
     
     try {
         // Проверяем размер файла (макс 10 МБ)
@@ -932,6 +986,10 @@ async function scanQRFromFile(event) {
             return;
         }
         
+        // Очищаем область сканера перед сканированием файла
+        const readerElement = document.getElementById('qr-reader');
+        readerElement.innerHTML = '';
+        
         // Создаем временный сканер для файла
         const fileScanner = new Html5Qrcode("qr-reader");
         
@@ -940,6 +998,10 @@ async function scanQRFromFile(event) {
         if (result) {
             resultDiv.textContent = 'QR-код успешно распознан!';
             resultDiv.style.color = '#4ade80';
+            // Очищаем сканер после успешного сканирования
+            try {
+                fileScanner.clear();
+            } catch (e) {}
             onScanSuccess(result);
         } else {
             resultDiv.innerHTML = '<span style="color:#f59e0b;">QR-код не найден на изображении</span>';
@@ -947,10 +1009,10 @@ async function scanQRFromFile(event) {
         
     } catch (error) {
         console.error('Ошибка сканирования файла:', error);
-        if (error.message.includes('No QR code found')) {
+        if (error.message && error.message.includes('No QR code found')) {
             resultDiv.innerHTML = '<span style="color:#f59e0b;">QR-код не найден на изображении. Попробуйте другое фото.</span>';
         } else {
-            resultDiv.innerHTML = `<span style="color:#ff5f5f;">Ошибка: ${error.message}</span>`;
+            resultDiv.innerHTML = `<span style="color:#ff5f5f;">Ошибка: ${error.message || 'Неизвестная ошибка'}</span>`;
         }
     }
 }
@@ -964,8 +1026,10 @@ function onScanSuccess(decodedText, decodedResult) {
     }
     
     const resultsDiv = document.getElementById('qr-reader-results');
-    resultsDiv.textContent = 'QR-код успешно распознан!';
-    resultsDiv.style.color = '#4ade80';
+    if (resultsDiv) {
+        resultsDiv.textContent = 'QR-код успешно распознан!';
+        resultsDiv.style.color = '#4ade80';
+    }
     
     // Также обновляем результат в файловой области
     const fileResult = document.getElementById('qrFileResult');
@@ -982,10 +1046,11 @@ function onScanSuccess(decodedText, decodedResult) {
             const filament = allFilaments.find(f => f.id === data.id);
             if (filament) {
                 showNotification(`Найдена катушка: ${filament.name}`, 'success');
+                // Закрываем с задержкой, чтобы пользователь увидел результат
                 setTimeout(() => {
                     closeQRScanner();
                     openDetailModal(filament.id);
-                }, 500);
+                }, 800);
             } else {
                 showNotification('Катушка не найдена в базе. Заполните форму.', 'info');
                 setTimeout(() => {
@@ -996,10 +1061,14 @@ function onScanSuccess(decodedText, decodedResult) {
                     document.getElementById('filamentWeight').value = data.initial_mass || 1000;
                     checkFilamentFields();
                     openAddFilament();
-                }, 500);
+                }, 800);
             }
         } else {
             showNotification('Неверный формат QR-кода', 'error');
+            // Очищаем через 2 секунды
+            setTimeout(() => {
+                clearQRScanner();
+            }, 2000);
         }
     } catch (e) {
         console.error('Ошибка парсинга QR:', e);
@@ -1011,11 +1080,14 @@ function onScanSuccess(decodedText, decodedResult) {
                 setTimeout(() => {
                     closeQRScanner();
                     openDetailModal(filamentId);
-                }, 500);
+                }, 800);
                 return;
             }
         }
         showNotification('Не удалось распознать QR-код. Неверный формат данных.', 'error');
+        setTimeout(() => {
+            clearQRScanner();
+        }, 2000);
     }
 }
 
@@ -1031,28 +1103,46 @@ function stopQRScanner() {
             html5QrCode.stop().then(() => {
                 html5QrCode.clear();
                 isScannerRunning = false;
-                document.getElementById('qr-reader-results').textContent = '⏹ Сканирование остановлено';
-                document.getElementById('qr-reader-results').style.color = '#9ca3af';
-                toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
-                toggleBtn.style.background = '#8b5cf6';
+                const resultsDiv = document.getElementById('qr-reader-results');
+                if (resultsDiv) {
+                    resultsDiv.textContent = '⏹ Сканирование остановлено';
+                    resultsDiv.style.color = '#9ca3af';
+                }
+                if (toggleBtn) {
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
+                    toggleBtn.style.background = '#8b5cf6';
+                }
+                // Очищаем элемент
+                const readerElement = document.getElementById('qr-reader');
+                if (readerElement) {
+                    readerElement.innerHTML = '';
+                }
             }).catch(err => {
                 console.error('Ошибка остановки сканера:', err);
                 isScannerRunning = false;
-                toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
-                toggleBtn.style.background = '#8b5cf6';
+                if (toggleBtn) {
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
+                    toggleBtn.style.background = '#8b5cf6';
+                }
             });
         } catch (e) {
             console.error('Ошибка при остановке сканера:', e);
             isScannerRunning = false;
-            toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
-            toggleBtn.style.background = '#8b5cf6';
+            if (toggleBtn) {
+                toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
+                toggleBtn.style.background = '#8b5cf6';
+            }
         }
     } else {
         const resultsDiv = document.getElementById('qr-reader-results');
-        resultsDiv.textContent = 'Нажмите кнопку для запуска сканирования';
-        resultsDiv.style.color = '#9ca3af';
-        toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
-        toggleBtn.style.background = '#8b5cf6';
+        if (resultsDiv) {
+            resultsDiv.textContent = 'Нажмите кнопку для запуска сканирования';
+            resultsDiv.style.color = '#9ca3af';
+        }
+        if (toggleBtn) {
+            toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
+            toggleBtn.style.background = '#8b5cf6';
+        }
         isScannerRunning = false;
     }
 }
