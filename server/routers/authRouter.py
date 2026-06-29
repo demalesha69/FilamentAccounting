@@ -45,7 +45,7 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
     )
 
 @authRouter.get("/verify")
-def verify(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+def verify(current_user = Depends(get_current_user)):
 
     return ApiResponse.success(
         "Токен существует и валиден",
