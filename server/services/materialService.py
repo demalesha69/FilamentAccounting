@@ -52,6 +52,7 @@ class MaterialService:
                     initial_mass=data.initial_mass,
                     current_mass=data.initial_mass,
                     density=data.density,
+                    diameter=data.diameter,
                     owner_id=owner_id,
                     qr_code=str(uuid.uuid4())
                 )
