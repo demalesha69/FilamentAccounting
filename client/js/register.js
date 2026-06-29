@@ -53,9 +53,7 @@ async function handleRegister(event) {
         });
         
         const data = await response.json();
-        console.log('Ответ сервера (регистрация):', data);
         
-        // Обработка ошибок по документации
         if (data.status === 409) {
             showError(data.message || 'Пользователь уже зарегистрирован');
             return;
@@ -65,7 +63,6 @@ async function handleRegister(event) {
             return;
         }
         
-        // Извлекаем токен из data.data.token согласно документации
         if (data.data?.token) {
             localStorage.setItem('token', data.data.token);
             localStorage.setItem('user', JSON.stringify({
@@ -73,12 +70,9 @@ async function handleRegister(event) {
                 username: data.data.username
             }));
             
-            console.log('Токен сохранён:', data.data.token);
-            console.log('Пользователь сохранён:', data.data.username);
-            
             window.location.href = 'index.html';
         } else {
-            throw new Error('Токен не получен от сервера');
+            showError('Токен не получен от сервера');
         }
         
     } catch (error) {

@@ -3,6 +3,15 @@ let currentPeriod = 'all';
 let currentStartTimestamp = null;
 let currentEndTimestamp = null;
 
+function formatWeight(grams) {
+    if (grams >= 1000000) {
+        return (grams / 1000000).toFixed(3) + ' т';
+    } else if (grams >= 10000) {
+        return (grams / 1000).toFixed(2) + ' кг';
+    }
+    return grams + ' г';
+}
+
 function showNotification(message, type = 'success') {
     const notification = document.getElementById('notification');
     if (!notification) return;
@@ -72,15 +81,45 @@ function getDateRange(period) {
     return { start, end: now };
 }
 
+// ===== АВТОРИЗАЦИЯ (как на других страницах) =====
+
 async function checkAuth() {
     const token = localStorage.getItem('token');
     if (!token) {
-        updateAuthUI(false);
+        redirectToLogin();
         return false;
     }
-    updateAuthUI(true);
-    showUsername();
-    return true;
+    try {
+        const response = await fetch(`${API_URL}/materials/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            redirectToLogin();
+            return false;
+        }
+        if (response.ok) {
+            updateAuthUI(true);
+            showUsername();
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('Ошибка проверки авторизации:', error);
+        return false;
+    }
+}
+
+function redirectToLogin() {
+    const currentPath = window.location.pathname;
+    if (!currentPath.includes('login.html') && !currentPath.includes('register.html')) {
+        window.location.href = 'login.html';
+    }
 }
 
 function updateAuthUI(isLoggedIn) {
@@ -116,6 +155,8 @@ function showUsername() {
     } catch (e) {}
 }
 
+// ===== НАСТРОЙКИ =====
+
 function openSettings() {
     document.getElementById('settingsModal').style.display = 'flex';
 }
@@ -135,6 +176,8 @@ function saveSettings() {
     showNotification('Настройки сохранены!', 'success');
     closeSettings();
 }
+
+// ===== СТАТИСТИКА =====
 
 async function loadStats(startTimestamp = null, endTimestamp = null) {
     const token = localStorage.getItem('token');
@@ -157,8 +200,6 @@ async function loadStats(startTimestamp = null, endTimestamp = null) {
             url += '?' + params.join('&');
         }
         
-        console.log('Запрос статистики:', url);
-        
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -166,10 +207,15 @@ async function loadStats(startTimestamp = null, endTimestamp = null) {
             }
         });
         
-        const data = await response.json();
-        console.log('Полный ответ статистики:', data);
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            redirectToLogin();
+            return;
+        }
         
-        // Проверяем статус по документации
+        const data = await response.json();
+        
         if (data.status !== 200) {
             throw new Error(data.message || 'Ошибка загрузки статистики');
         }
@@ -184,8 +230,6 @@ async function loadStats(startTimestamp = null, endTimestamp = null) {
 }
 
 function updateStats(data) {
-    console.log('updateStats получил:', data);
-    
     const totalUsed = data.total_used_mass || 0;
     const materialsCount = data.materials_count || 0;
     const consumptionsCount = data.consumptions_count || 0;
@@ -202,10 +246,10 @@ function updateStats(data) {
         avgPerDay = totalUsed / days;
     }
     
-    document.getElementById('totalUsed').textContent = totalUsed.toFixed(1);
+    document.getElementById('totalUsed').textContent = formatWeight(totalUsed);
     document.getElementById('totalMaterials').textContent = materialsCount;
     document.getElementById('totalOperations').textContent = consumptionsCount;
-    document.getElementById('avgPerDay').textContent = avgPerDay > 0 ? avgPerDay.toFixed(1) : '—';
+    document.getElementById('avgPerDay').textContent = avgPerDay > 0 ? formatWeight(Math.round(avgPerDay)) : '—';
 }
 
 function setPeriod(period) {
@@ -218,7 +262,6 @@ function setPeriod(period) {
     currentStartTimestamp = range.start;
     currentEndTimestamp = range.end;
     
-    console.log('Период:', period, 'с:', currentStartTimestamp, 'по:', currentEndTimestamp);
     loadStats(currentStartTimestamp, currentEndTimestamp);
 }
 
@@ -244,7 +287,11 @@ function setCustomPeriod() {
     loadStats(currentStartTimestamp, currentEndTimestamp);
 }
 
+// ===== ИНИЦИАЛИЗАЦИЯ (как на других страницах) =====
+
 window.onload = async function() {
-    await checkAuth();
-    setPeriod('all');
+    const isAuth = await checkAuth();
+    if (isAuth) {
+        setPeriod('all');
+    }
 };

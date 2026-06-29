@@ -4,6 +4,100 @@ let currentSort = 'default';
 let currentFilterType = 'all';
 let currentFilamentId = null;
 
+const MAX_FILAMENT_WEIGHT = 1000000;
+
+const COLOR_MAP = {
+    'green': '#22c55e',
+    'yellow': '#eab308',
+    'red': '#ef4444',
+    'blue': '#3b82f6',
+    'orange': '#f97316',
+    'purple': '#a855f7',
+    'black': '#1a1a1a',
+    'white': '#f3f4f6',
+    'gray': '#6b7280',
+    'silver': '#c0c0c0',
+    'crimson': '#dc2626',
+    'pink': '#ec4899',
+    'gold': '#f59e0b',
+    'lime': '#84cc16',
+    'teal': '#14b8a6',
+    'cyan': '#06b6d4',
+    'navy': '#1e3a8a',
+    'violet': '#8b5cf6',
+    'magenta': '#d946ef',
+    'brown': '#92400e',
+    'beige': '#f5e6d3',
+    'transparent': 'rgba(255,255,255,0.1)',
+    'glow': '#22d3ee',
+    'multicolor': '#8b5cf6'
+};
+
+const COLOR_NAMES = {
+    'green': 'Зеленый',
+    'yellow': 'Желтый',
+    'red': 'Красный',
+    'blue': 'Синий',
+    'orange': 'Оранжевый',
+    'purple': 'Фиолетовый',
+    'black': 'Черный',
+    'white': 'Белый',
+    'gray': 'Серый',
+    'silver': 'Серебристый',
+    'crimson': 'Малиновый',
+    'pink': 'Розовый',
+    'gold': 'Золотой',
+    'lime': 'Лайм',
+    'teal': 'Бирюзовый',
+    'cyan': 'Циан',
+    'navy': 'Темно-синий',
+    'violet': 'Лиловый',
+    'magenta': 'Пурпурный',
+    'brown': 'Коричневый',
+    'beige': 'Бежевый',
+    'transparent': 'Прозрачный',
+    'glow': 'Светящийся',
+    'multicolor': 'Мультицвет'
+};
+
+const RING_COLOR_MAP = {
+    'green': '#22c55e',
+    'yellow': '#eab308',
+    'red': '#ef4444',
+    'blue': '#3b82f6',
+    'orange': '#f97316',
+    'purple': '#a855f7',
+    'black': '#4a4a4a',
+    'white': '#e5e7eb',
+    'gray': '#9ca3af',
+    'silver': '#d1d5db',
+    'crimson': '#dc2626',
+    'pink': '#ec4899',
+    'gold': '#f59e0b',
+    'lime': '#84cc16',
+    'teal': '#14b8a6',
+    'cyan': '#06b6d4',
+    'navy': '#3b82f6',
+    'violet': '#8b5cf6',
+    'magenta': '#d946ef',
+    'brown': '#b45309',
+    'beige': '#d4c5b0',
+    'transparent': '#9ca3af',
+    'glow': '#22d3ee',
+    'multicolor': '#8b5cf6'
+};
+
+const FILAMENT_TYPES = ['PLA', 'PETG', 'ABS', 'HIPS', 'SBS', 'TPU', 'NYLON', 'ASA', 'PP', 'PC', 'POM', 'PMMA', 'PEEK', 'Ceramo', 'PVA', 'WAX', 'Clearing'];
+
+function formatWeight(grams) {
+    if (grams >= 1000000) {
+        return (grams / 1000000).toFixed(3) + ' т';
+    } else if (grams >= 10000) {
+        return (grams / 1000).toFixed(2) + ' кг';
+    }
+    return grams + ' г';
+}
+
 function showNotification(message, type = 'success') {
     const notification = document.getElementById('notification');
     if (!notification) return;
@@ -50,20 +144,53 @@ function formatLocalDate(timestamp) {
     }
 }
 
+// ===== АВТОРИЗАЦИЯ =====
+
 async function checkAuth() {
     const token = localStorage.getItem('token');
+    console.log('checkAuth: токен', token ? 'есть' : 'нет');
     if (!token) {
-        updateAuthUI(false);
+        redirectToLogin();
         return false;
     }
-    updateAuthUI(true);
-    showUsername();
-    return true;
+    try {
+        const response = await fetch(`${API_URL}/materials/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        console.log('checkAuth: статус ответа', response.status);
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            redirectToLogin();
+            return false;
+        }
+        if (response.ok) {
+            updateAuthUI(true);
+            showUsername();
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('Ошибка проверки авторизации:', error);
+        return false;
+    }
+}
+
+function redirectToLogin() {
+    const currentPath = window.location.pathname;
+    if (!currentPath.includes('login.html') && !currentPath.includes('register.html')) {
+        window.location.href = 'login.html';
+    }
 }
 
 function updateAuthUI(isLoggedIn) {
     const container = document.getElementById('authContainer');
     if (!container) return;
+    console.log('updateAuthUI:', isLoggedIn);
     if (isLoggedIn) {
         container.innerHTML = `
             <span style="color:#9ca3af; font-size:14px;" id="usernameDisplay"></span>
@@ -94,6 +221,8 @@ function showUsername() {
     } catch (e) {}
 }
 
+// ===== НАСТРОЙКИ =====
+
 function openSettings() {
     document.getElementById('settingsModal').style.display = 'flex';
 }
@@ -113,6 +242,8 @@ function saveSettings() {
     showNotification('Настройки сохранены!', 'success');
     closeSettings();
 }
+
+// ===== ФИЛЬТРЫ =====
 
 function closeFilter() {
     document.getElementById('filterModal').style.display = 'none';
@@ -138,7 +269,27 @@ function sortFilaments(type) {
 function filterByType(type) {
     currentFilterType = type;
     document.querySelectorAll('.filter-option').forEach(btn => btn.classList.remove('active'));
-    const activeBtn = { 'all': 'filterTypeAll', 'pla': 'filterTypePLA', 'petg': 'filterTypePETG', 'abs': 'filterTypeABS', 'tpu': 'filterTypeTPU', 'other': 'filterTypeOther' }[type];
+    const activeBtn = { 
+        'all': 'filterTypeAll', 
+        'pla': 'filterTypePLA', 
+        'petg': 'filterTypePETG', 
+        'abs': 'filterTypeABS',
+        'hips': 'filterTypeHIPS',
+        'sbs': 'filterTypeSBS',
+        'tpu': 'filterTypeTPU',
+        'nylon': 'filterTypeNYLON',
+        'asa': 'filterTypeASA',
+        'pp': 'filterTypePP',
+        'pc': 'filterTypePC',
+        'pom': 'filterTypePOM',
+        'pmma': 'filterTypePMMA',
+        'peek': 'filterTypePEEK',
+        'ceramo': 'filterTypeCeramo',
+        'pva': 'filterTypePVA',
+        'wax': 'filterTypeWAX',
+        'clearing': 'filterTypeClearing',
+        'other': 'filterTypeOther' 
+    }[type];
     if (activeBtn) document.getElementById(activeBtn).classList.add('active');
     applyFiltersAndSort();
     closeFilter();
@@ -161,7 +312,9 @@ function applyFiltersAndSort() {
     if (currentFilterType !== 'all') {
         filtered = filtered.filter(f => {
             const type = (f.material_type || '').toLowerCase();
-            if (currentFilterType === 'other') return !['pla', 'petg', 'abs', 'tpu'].includes(type);
+            if (currentFilterType === 'other') {
+                return !FILAMENT_TYPES.map(t => t.toLowerCase()).includes(type);
+            }
             return type === currentFilterType;
         });
     }
@@ -189,6 +342,8 @@ function resetFilters() {
     closeFilter();
 }
 
+// ===== ЗАГРУЗКА И ОТОБРАЖЕНИЕ КАТУШЕК =====
+
 async function loadFilaments() {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -200,6 +355,12 @@ async function loadFilaments() {
                 'Authorization': `Bearer ${token}`
             }
         });
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            redirectToLogin();
+            return;
+        }
         const data = await response.json();
         if (data.status !== 200) {
             throw new Error(data.message || data.error || 'Ошибка загрузки');
@@ -223,26 +384,54 @@ function renderFilaments(filaments) {
         return;
     }
     grid.innerHTML = filaments.map(f => {
-        const colorMap = { 'green': '#56d364', 'yellow': '#f5c542', 'red': '#ff5f5f', 'blue': '#58a6ff', 'orange': '#ff8c00', 'purple': '#a855f7', 'black': '#222222', 'white': '#ffffff' };
-        const colorHex = colorMap[(f.color || '').toLowerCase()] || '#8b5cf6';
+        const colorKey = (f.color || '').toLowerCase();
+        const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
+        const ringColor = RING_COLOR_MAP[colorKey] || '#8b5cf6';
+        const colorName = COLOR_NAMES[colorKey] || f.color || 'Без цвета';
         const progress = Math.round(((f.current_mass || 0) / (f.initial_mass || 1)) * 100);
-        return `<article class="filament-card" onclick="openDetailModal(${f.id})" style="cursor:pointer;">
+        const isEmpty = (f.current_mass || 0) <= 0;
+        
+        const emptyStyles = isEmpty ? `
+            opacity: 0.5;
+            filter: grayscale(0.8);
+            border-color: rgba(255,255,255,0.02);
+        ` : '';
+        
+        const currentWeight = formatWeight(f.current_mass || 0);
+        const initialWeight = formatWeight(f.initial_mass || 0);
+        const weightText = isEmpty ? '0 г (пусто)' : `${currentWeight} / ${initialWeight}`;
+        const weightColor = isEmpty ? '#6b7280' : colorHex;
+        
+        const ringStyle = colorKey === 'multicolor' 
+            ? `background: conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) calc(var(--progress) * 1%);`
+            : `background: conic-gradient(${ringColor} calc(var(--progress) * 1%), #2b2f3a 0);`;
+        
+        const dotStyle = colorKey === 'multicolor' 
+            ? 'background: linear-gradient(45deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7);' 
+            : `background: ${colorHex};`;
+        
+        return `<article class="filament-card" onclick="openDetailModal(${f.id})" style="cursor:pointer; ${emptyStyles}">
             <div class="card-top">
-                <div class="progress-ring" style="--progress:${progress};--ring-color:${colorHex};">
-                    <span>${progress}%</span>
+                <div class="progress-ring" style="--progress:${progress}; ${ringStyle}">
+                    <span>${isEmpty ? '0%' : progress + '%'}</span>
                 </div>
                 <div class="filament-info">
-                    <h2>${f.name || 'Без названия'}</h2>
-                    <p class="filament-color" style="color:${colorHex};">${f.color || ''} ${f.material_type ? '• ' + f.material_type : ''}</p>
+                    <h2>${f.name || 'Без названия'} ${isEmpty ? '📦' : ''}</h2>
+                    <p class="filament-color" style="color:${isEmpty ? '#6b7280' : colorHex};">${colorName} ${f.material_type ? '• ' + f.material_type : ''}</p>
                 </div>
             </div>
-            <div class="weight-info" style="color:${colorHex};">
-                <div class="weight-dot"></div>
-                <span>${f.current_mass || 0}g / ${f.initial_mass || 0}g</span>
+            <div class="weight-info" style="color:${weightColor};">
+                <div class="weight-dot" style="${dotStyle}"></div>
+                <span>${weightText}</span>
             </div>
+            ${isEmpty ? `<div style="margin-top:6px; font-size:11px; color:#6b7280; text-align:center; border-top:1px solid rgba(255,255,255,0.05); padding-top:6px;">
+                <i class="fa-solid fa-triangle-exclamation"></i> Катушка пуста
+            </div>` : ''}
         </article>`;
     }).join('');
 }
+
+// ===== ДЕТАЛИ КАТУШКИ =====
 
 function openDetailModal(id) {
     currentFilamentId = id;
@@ -255,39 +444,51 @@ function openDetailModal(id) {
     const modal = document.getElementById('detailModal');
     const body = document.getElementById('detailBody');
     
-    const colorMap = { 'green': '#56d364', 'yellow': '#f5c542', 'red': '#ff5f5f', 'blue': '#58a6ff', 'orange': '#ff8c00', 'purple': '#a855f7', 'black': '#222222', 'white': '#ffffff' };
-    const colorHex = colorMap[(filament.color || '').toLowerCase()] || '#8b5cf6';
+    const colorKey = (filament.color || '').toLowerCase();
+    const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
+    const ringColor = RING_COLOR_MAP[colorKey] || '#8b5cf6';
+    const colorName = COLOR_NAMES[colorKey] || filament.color || 'Без цвета';
     const progress = Math.round(((filament.current_mass || 0) / (filament.initial_mass || 1)) * 100);
     const used = (filament.initial_mass || 0) - (filament.current_mass || 0);
+    const isEmpty = (filament.current_mass || 0) <= 0;
+    
+    const currentWeight = formatWeight(filament.current_mass || 0);
+    const initialWeight = formatWeight(filament.initial_mass || 0);
+    const usedWeight = formatWeight(used);
+    
+    const ringStyle = colorKey === 'multicolor' 
+        ? `background: conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) calc(var(--progress) * 1%);`
+        : `--ring-color:${ringColor}; background: conic-gradient(var(--ring-color) calc(var(--progress) * 1%), #2b2f3a 0);`;
     
     const qrData = JSON.stringify({ id: filament.id, name: filament.name, material_type: filament.material_type, color: filament.color, initial_mass: filament.initial_mass, current_mass: filament.current_mass });
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
     
     loadConsumptionHistory(id).then(historyHtml => {
         body.innerHTML = `
-            <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;">
+            <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; ${isEmpty ? 'opacity:0.6;' : ''}">
                 <div style="flex:1; min-width:200px;">
                     <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
-                        <div class="progress-ring" style="--size:80px; width:80px; height:80px; min-width:80px; --progress:${progress}; --ring-color:${colorHex};">
-                            <span style="font-size:16px;">${progress}%</span>
+                        <div class="progress-ring" style="--size:80px; width:80px; height:80px; min-width:80px; --progress:${progress}; ${ringStyle}">
+                            <span style="font-size:16px;">${isEmpty ? '0%' : progress + '%'}</span>
                         </div>
                         <div>
-                            <h2 style="color:#ffffff; font-size:22px; margin-bottom:4px;">${filament.name}</h2>
-                            <p style="color:${colorHex}; font-size:16px; font-weight:600;">${filament.color || 'Без цвета'} ${filament.material_type ? '• ' + filament.material_type : ''}</p>
+                            <h2 style="color:#ffffff; font-size:22px; margin-bottom:4px;">${filament.name} ${isEmpty ? '📦' : ''}</h2>
+                            <p style="color:${isEmpty ? '#6b7280' : colorHex}; font-size:16px; font-weight:600;">${colorName} ${filament.material_type ? '• ' + filament.material_type : ''}</p>
+                            ${isEmpty ? `<p style="color:#ff5f5f; font-size:14px; margin-top:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Катушка пуста</p>` : ''}
                         </div>
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;">
                         <div style="background:#232734; border-radius:10px; padding:12px; text-align:center;">
                             <div style="font-size:12px; color:#9ca3af;">Начальный вес</div>
-                            <div style="font-size:20px; font-weight:700; color:#ffffff;">${filament.initial_mass}g</div>
+                            <div style="font-size:20px; font-weight:700; color:#ffffff;">${initialWeight}</div>
                         </div>
                         <div style="background:#232734; border-radius:10px; padding:12px; text-align:center;">
                             <div style="font-size:12px; color:#9ca3af;">Текущий вес</div>
-                            <div style="font-size:20px; font-weight:700; color:#ffffff;">${filament.current_mass || 0}g</div>
+                            <div style="font-size:20px; font-weight:700; color:${isEmpty ? '#6b7280' : '#ffffff'};">${currentWeight}</div>
                         </div>
                         <div style="background:#232734; border-radius:10px; padding:12px; text-align:center;">
                             <div style="font-size:12px; color:#9ca3af;">Использовано</div>
-                            <div style="font-size:20px; font-weight:700; color:#ff5f5f;">${used}g</div>
+                            <div style="font-size:20px; font-weight:700; color:#ff5f5f;">${usedWeight}</div>
                         </div>
                         <div style="background:#232734; border-radius:10px; padding:12px; text-align:center;">
                             <div style="font-size:12px; color:#9ca3af;">ID</div>
@@ -297,7 +498,7 @@ function openDetailModal(id) {
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:160px; background:#232734; border-radius:16px; padding:16px;">
                     <div style="position:relative; display:inline-block;">
-                        <img id="qrCodeImage" src="${qrUrl}" alt="QR-код" style="width:140px; height:140px; border-radius:8px; background:white; padding:8px;" />
+                        <img id="qrCodeImage" src="${qrUrl}" alt="QR-код" style="width:140px; height:140px; border-radius:8px; background:white; padding:8px; ${isEmpty ? 'opacity:0.5;' : ''}" />
                         <button onclick="downloadQRCode()" title="Скачать QR-код" style="position:absolute; bottom:4px; right:4px; width:32px; height:32px; border:none; border-radius:50%; background:#8b5cf6; color:white; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 2px 8px rgba(0,0,0,0.3);">
                             <i class="fa-solid fa-download"></i>
                         </button>
@@ -332,7 +533,6 @@ document.getElementById('detailModal').addEventListener('click', function(e) {
 async function loadConsumptionHistory(materialId) {
     const token = localStorage.getItem('token');
     if (!token) return `<div style="text-align:center;padding:8px 0;color:#9ca3af;font-size:13px;">Авторизуйтесь для просмотра истории</div>`;
-    
     try {
         const response = await fetch(`${API_URL}/consumptions/${materialId}`, {
             method: 'GET',
@@ -341,21 +541,22 @@ async function loadConsumptionHistory(materialId) {
                 'Authorization': `Bearer ${token}`
             }
         });
-        
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            redirectToLogin();
+            return `<div style="text-align:center;padding:8px 0;color:#ff5f5f;font-size:13px;">Сессия истекла</div>`;
+        }
         const data = await response.json();
-        
-        // Проверяем статус по документации
         if (data.status === 404) {
             return `<div style="text-align:center;padding:8px 0;color:#9ca3af;font-size:13px;">
                 <i class="fa-solid fa-inbox" style="display:block;font-size:18px;margin-bottom:4px;opacity:0.5;"></i>
                 Пока что расходов по этой катушке не было
             </div>`;
         }
-        
         if (data.status !== 200) {
             throw new Error(data.message || data.error || 'Ошибка загрузки истории');
         }
-        
         const history = data.data || [];
         if (history.length === 0) {
             return `<div style="text-align:center;padding:8px 0;color:#9ca3af;font-size:13px;">
@@ -363,10 +564,11 @@ async function loadConsumptionHistory(materialId) {
                 Пока что расходов по этой катушке не было
             </div>`;
         }
-        
         return `<div style="display:flex;flex-direction:column;gap:6px;max-height:150px;overflow-y:auto;padding-right:4px;">
             ${history.map(item => {
                 const localTime = item.timestamp ? formatLocalDate(item.timestamp) : '';
+                const remainWeight = formatWeight(item.remain_mass || 0);
+                const usedWeight = formatWeight(item.used_mass || 0);
                 return `
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#1a1d26;border-radius:8px;border-left:3px solid #ff5f5f;">
                     <div style="display:flex;align-items:center;gap:12px;flex:1;">
@@ -376,8 +578,8 @@ async function loadConsumptionHistory(materialId) {
                         </span>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:13px;color:#9ca3af;">Остаток: ${item.remain_mass}g</span>
-                        <span style="font-size:15px;font-weight:700;color:#ff5f5f;white-space:nowrap;">-${item.used_mass}g</span>
+                        <span style="font-size:13px;color:#9ca3af;">Остаток: ${remainWeight}</span>
+                        <span style="font-size:15px;font-weight:700;color:#ff5f5f;white-space:nowrap;">-${usedWeight}</span>
                     </div>
                 </div>
             `}).join('')}
@@ -415,16 +617,18 @@ async function deleteFilament(id) {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        
-        // По документации DELETE возвращает 204 с пустым телом
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            redirectToLogin();
+            return;
+        }
         if (response.status === 204) {
             showNotification('Катушка успешно удалена!', 'success');
             closeDetailModal();
             loadFilaments();
             return;
         }
-        
-        // Если не 204, пробуем прочитать JSON
         const data = await response.json();
         if (data.status !== 204 && data.status !== 200) {
             throw new Error(data.message || data.error || 'Ошибка удаления');
@@ -437,14 +641,15 @@ async function deleteFilament(id) {
     }
 }
 
+// ===== ДОБАВЛЕНИЕ КАТУШКИ =====
+
 function checkFilamentFields() {
     const name = document.getElementById('filamentName').value.trim();
     const type = document.getElementById('filamentType').value.trim();
     const color = document.getElementById('filamentColor').value.trim();
-    const weight = document.getElementById('filamentWeight').value.trim();
+    const weight = parseFloat(document.getElementById('filamentWeight').value);
     const button = document.getElementById('addFilamentBtn');
-    
-    if (name && type && color && weight && parseFloat(weight) > 0) {
+    if (name && type && color && weight > 0 && weight <= MAX_FILAMENT_WEIGHT) {
         button.disabled = false;
         button.style.opacity = '1';
         button.style.cursor = 'pointer';
@@ -471,7 +676,6 @@ function openAddFilament() {
     document.getElementById('filamentType').value = '';
     document.getElementById('filamentColor').value = '';
     document.getElementById('filamentWeight').value = '1000';
-    
     ['filamentName', 'filamentType', 'filamentColor', 'filamentWeight'].forEach(id => {
         document.getElementById(id).style.borderColor = '';
     });
@@ -487,7 +691,14 @@ document.getElementById('addFilamentModal').addEventListener('click', function(e
 });
 
 function setColor(color) {
-    const map = { 'green': 'Green', 'yellow': 'Yellow', 'red': 'Red', 'blue': 'Blue', 'orange': 'Orange', 'purple': 'Purple' };
+    const map = {
+        'green': 'Green', 'yellow': 'Yellow', 'red': 'Red', 'blue': 'Blue',
+        'orange': 'Orange', 'purple': 'Purple', 'black': 'Black', 'white': 'White',
+        'gray': 'Gray', 'silver': 'Silver', 'crimson': 'Crimson', 'pink': 'Pink',
+        'gold': 'Gold', 'lime': 'Lime', 'teal': 'Teal', 'cyan': 'Cyan',
+        'navy': 'Navy', 'violet': 'Violet', 'magenta': 'Magenta', 'brown': 'Brown',
+        'beige': 'Beige', 'transparent': 'Transparent', 'glow': 'Glow', 'multicolor': 'Multicolor'
+    };
     document.getElementById('filamentColor').value = map[color] || color;
     checkFilamentFields();
 }
@@ -497,18 +708,19 @@ async function addFilamentManual() {
     const material_type = document.getElementById('filamentType').value.trim();
     const color = document.getElementById('filamentColor').value.trim();
     const initial_mass = parseFloat(document.getElementById('filamentWeight').value);
-    
     if (!name || !material_type || !color || !initial_mass || initial_mass < 1) {
         showNotification('Заполните все поля корректно', 'error');
         return;
     }
-    
+    if (initial_mass > MAX_FILAMENT_WEIGHT) {
+        showNotification(`Максимальный вес катушки: 1 тонна (${MAX_FILAMENT_WEIGHT} г)`, 'error');
+        return;
+    }
     const token = localStorage.getItem('token');
     if (!token) {
         showNotification('Вы не авторизованы', 'error');
         return;
     }
-    
     try {
         const response = await fetch(`${API_URL}/materials/`, {
             method: 'POST',
@@ -518,6 +730,12 @@ async function addFilamentManual() {
             },
             body: JSON.stringify({ name, material_type, color, initial_mass })
         });
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            redirectToLogin();
+            return;
+        }
         const data = await response.json();
         if (data.status !== 201) {
             throw new Error(data.message || data.error || 'Ошибка добавления');
@@ -530,7 +748,202 @@ async function addFilamentManual() {
     }
 }
 
+// ===== QR-СКАНЕР =====
+
+let html5QrCode = null;
+let isScannerRunning = false;
+
+function openQRScanner() {
+    const modal = document.getElementById('qrScannerModal');
+    modal.style.display = 'flex';
+    const resultsDiv = document.getElementById('qr-reader-results');
+    resultsDiv.textContent = 'Нажмите кнопку для запуска сканирования';
+    resultsDiv.style.color = '#9ca3af';
+    const readerElement = document.getElementById('qr-reader');
+    readerElement.innerHTML = '';
+    // Сбрасываем состояние кнопки
+    const toggleBtn = document.getElementById('qrScannerToggleBtn');
+    toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
+    toggleBtn.style.background = '#8b5cf6';
+    isScannerRunning = false;
+}
+
+function closeQRScanner() {
+    stopQRScanner();
+    document.getElementById('qrScannerModal').style.display = 'none';
+}
+
+document.getElementById('qrScannerModal').addEventListener('click', function(e) {
+    if (e.target === this) closeQRScanner();
+});
+
+function toggleQRScanner() {
+    if (isScannerRunning) {
+        stopQRScanner();
+    } else {
+        startQRScanner();
+    }
+}
+
+async function startQRScanner() {
+    const resultsDiv = document.getElementById('qr-reader-results');
+    const toggleBtn = document.getElementById('qrScannerToggleBtn');
+    
+    if (isScannerRunning) {
+        resultsDiv.textContent = 'Сканер уже запущен';
+        return;
+    }
+    
+    try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            resultsDiv.textContent = 'Ваш браузер не поддерживает доступ к камере';
+            resultsDiv.style.color = '#ff5f5f';
+            return;
+        }
+        
+        resultsDiv.textContent = 'Запрос доступа к камере...';
+        resultsDiv.style.color = '#9ca3af';
+        
+        html5QrCode = new Html5Qrcode("qr-reader");
+        
+        const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0
+        };
+        
+        isScannerRunning = true;
+        
+        // Меняем кнопку
+        toggleBtn.innerHTML = '<i class="fa-solid fa-stop"></i> Остановить сканирование';
+        toggleBtn.style.background = '#ef4444';
+        
+        resultsDiv.textContent = '📷 Сканирование... Наведите на QR-код';
+        resultsDiv.style.color = '#4ade80';
+        
+        await html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            onScanSuccess,
+            onScanError
+        );
+        
+    } catch (error) {
+        console.error('Ошибка запуска сканера:', error);
+        resultsDiv.textContent = 'Ошибка доступа к камере: ' + error.message;
+        resultsDiv.style.color = '#ff5f5f';
+        isScannerRunning = false;
+        // Возвращаем кнопку в исходное состояние
+        toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
+        toggleBtn.style.background = '#8b5cf6';
+        showNotification('Ошибка доступа к камере: ' + error.message, 'error');
+    }
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+    stopQRScanner();
+    
+    const resultsDiv = document.getElementById('qr-reader-results');
+    resultsDiv.textContent = 'QR-код успешно распознан!';
+    resultsDiv.style.color = '#4ade80';
+    
+    try {
+        const data = JSON.parse(decodedText);
+        console.log('QR-код данные:', data);
+        
+        if (data.id && data.name) {
+            const filament = allFilaments.find(f => f.id === data.id);
+            if (filament) {
+                showNotification(`Найдена катушка: ${filament.name}`, 'success');
+                closeQRScanner();
+                openDetailModal(filament.id);
+            } else {
+                showNotification('Катушка не найдена в базе. Заполните форму.', 'info');
+                closeQRScanner();
+                document.getElementById('filamentName').value = data.name || '';
+                document.getElementById('filamentType').value = data.material_type || '';
+                document.getElementById('filamentColor').value = data.color || '';
+                document.getElementById('filamentWeight').value = data.initial_mass || 1000;
+                checkFilamentFields();
+                openAddFilament();
+            }
+        } else {
+            showNotification('Неверный формат QR-кода', 'error');
+        }
+    } catch (e) {
+        console.error('Ошибка парсинга QR:', e);
+        const filamentId = parseInt(decodedText);
+        if (!isNaN(filamentId)) {
+            const filament = allFilaments.find(f => f.id === filamentId);
+            if (filament) {
+                showNotification(`Найдена катушка: ${filament.name}`, 'success');
+                closeQRScanner();
+                openDetailModal(filamentId);
+                return;
+            }
+        }
+        showNotification('Не удалось распознать QR-код. Неверный формат данных.', 'error');
+    }
+}
+
+function onScanError(error) {
+    // Игнорируем ошибки сканирования
+}
+
+function stopQRScanner() {
+    const toggleBtn = document.getElementById('qrScannerToggleBtn');
+    
+    if (html5QrCode && isScannerRunning) {
+        try {
+            html5QrCode.stop().then(() => {
+                html5QrCode.clear();
+                isScannerRunning = false;
+                document.getElementById('qr-reader-results').textContent = '⏹ Сканирование остановлено';
+                document.getElementById('qr-reader-results').style.color = '#9ca3af';
+                // Меняем кнопку обратно
+                toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
+                toggleBtn.style.background = '#8b5cf6';
+            }).catch(err => {
+                console.error('Ошибка остановки сканера:', err);
+                isScannerRunning = false;
+                toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
+                toggleBtn.style.background = '#8b5cf6';
+            });
+        } catch (e) {
+            console.error('Ошибка при остановке сканера:', e);
+            isScannerRunning = false;
+            toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
+            toggleBtn.style.background = '#8b5cf6';
+        }
+    } else {
+        // Если сканер не запущен, просто сбрасываем UI
+        const resultsDiv = document.getElementById('qr-reader-results');
+        resultsDiv.textContent = 'Нажмите кнопку для запуска сканирования';
+        resultsDiv.style.color = '#9ca3af';
+        toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
+        toggleBtn.style.background = '#8b5cf6';
+        isScannerRunning = false;
+    }
+}
+
+window.addEventListener('beforeunload', function() {
+    if (html5QrCode && isScannerRunning) {
+        try {
+            html5QrCode.stop();
+        } catch (e) {}
+    }
+});
+
+// ===== ИНИЦИАЛИЗАЦИЯ =====
+
 window.onload = async function() {
-    await checkAuth();
-    await loadFilaments();
+    console.log('=== ИНИЦИАЛИЗАЦИЯ INDEX ===');
+    const isAuth = await checkAuth();
+    console.log('Авторизация:', isAuth);
+    if (isAuth) {
+        await loadFilaments();
+        console.log('Катушки загружены');
+    } else {
+        console.log('Пользователь не авторизован');
+    }
 };
