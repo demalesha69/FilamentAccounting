@@ -1,4 +1,4 @@
-const API_URL = 'http://186.246.28.163:8000';
+const API_URL = '/api';
 let allConsumptions = [];
 let currentConsumptionSort = 'default';
 
