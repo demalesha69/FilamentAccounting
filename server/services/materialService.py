@@ -24,7 +24,7 @@ class MaterialService:
     def __init__(self):
         self.repo = MaterialRepository()
 
-    def _format_answer(material: Material) -> dict:
+    def _format_answer(self, material: Material) -> dict:
         return {
             "id": material.id,
             "name": material.name,
