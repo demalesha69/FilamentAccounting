@@ -192,7 +192,7 @@ async function loadStats(startTimestamp = null, endTimestamp = null) {
     }
     
     try {
-        let url = `${API_URL}/statistics`;
+        let url = `${API_URL}/statistics/`;
         const params = [];
         
         if (startTimestamp !== null) {
