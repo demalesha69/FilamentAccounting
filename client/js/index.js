@@ -752,20 +752,62 @@ async function addFilamentManual() {
 
 let html5QrCode = null;
 let isScannerRunning = false;
+let currentScanMethod = 'camera'; // 'camera' или 'file'
+
+function switchScanMethod(method) {
+    currentScanMethod = method;
+    const cameraBtn = document.getElementById('scanCameraBtn');
+    const fileBtn = document.getElementById('scanFileBtn');
+    const cameraArea = document.getElementById('qrCameraArea');
+    const fileArea = document.getElementById('qrFileArea');
+    
+    if (method === 'camera') {
+        cameraBtn.style.background = '#3b82f6';
+        fileBtn.style.background = '#8b5cf6';
+        cameraArea.style.display = 'block';
+        fileArea.style.display = 'none';
+        // Если сканер был остановлен, ничего не делаем
+        if (!isScannerRunning) {
+            const resultsDiv = document.getElementById('qr-reader-results');
+            resultsDiv.textContent = 'Нажмите "Запустить камеру" для начала сканирования';
+            resultsDiv.style.color = '#9ca3af';
+        }
+    } else {
+        fileBtn.style.background = '#3b82f6';
+        cameraBtn.style.background = '#8b5cf6';
+        cameraArea.style.display = 'none';
+        fileArea.style.display = 'flex';
+        // Останавливаем камеру, если она запущена
+        if (isScannerRunning) {
+            stopQRScanner();
+        }
+        document.getElementById('qrFileResult').textContent = 'Выберите изображение с QR-кодом';
+        document.getElementById('qrFileResult').style.color = '#9ca3af';
+    }
+}
 
 function openQRScanner() {
     const modal = document.getElementById('qrScannerModal');
     modal.style.display = 'flex';
+    
+    // Сбрасываем состояние
     const resultsDiv = document.getElementById('qr-reader-results');
     resultsDiv.textContent = 'Нажмите кнопку для запуска сканирования';
     resultsDiv.style.color = '#9ca3af';
     const readerElement = document.getElementById('qr-reader');
     readerElement.innerHTML = '';
-    // Сбрасываем состояние кнопки
     const toggleBtn = document.getElementById('qrScannerToggleBtn');
     toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
     toggleBtn.style.background = '#8b5cf6';
     isScannerRunning = false;
+    
+    // Сбрасываем файловую область
+    document.getElementById('qrFileResult').textContent = 'Выберите изображение с QR-кодом';
+    document.getElementById('qrFileResult').style.color = '#9ca3af';
+    document.getElementById('qrFileInput').value = '';
+    
+    // По умолчанию показываем камеру
+    switchScanMethod('camera');
 }
 
 function closeQRScanner() {
@@ -778,10 +820,15 @@ document.getElementById('qrScannerModal').addEventListener('click', function(e) 
 });
 
 function toggleQRScanner() {
-    if (isScannerRunning) {
-        stopQRScanner();
+    if (currentScanMethod === 'camera') {
+        if (isScannerRunning) {
+            stopQRScanner();
+        } else {
+            startQRScanner();
+        }
     } else {
-        startQRScanner();
+        // Если в режиме файла, открываем диалог выбора
+        document.getElementById('qrFileInput').click();
     }
 }
 
@@ -796,13 +843,34 @@ async function startQRScanner() {
     
     try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            resultsDiv.textContent = 'Ваш браузер не поддерживает доступ к камере';
-            resultsDiv.style.color = '#ff5f5f';
+            resultsDiv.innerHTML = `
+                <div style="color:#f59e0b; padding:8px;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Камера недоступна. Используйте загрузку файла.
+                </div>
+            `;
             return;
         }
         
         resultsDiv.textContent = 'Запрос доступа к камере...';
         resultsDiv.style.color = '#9ca3af';
+        
+        // Проверяем доступ к камере
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            stream.getTracks().forEach(track => track.stop());
+        } catch (permError) {
+            if (permError.name === 'NotAllowedError' || permError.name === 'PermissionDeniedError') {
+                resultsDiv.innerHTML = `
+                    <div style="color:#f59e0b; padding:8px;">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        Доступ к камере запрещен. Используйте загрузку файла.
+                    </div>
+                `;
+                return;
+            }
+            throw permError;
+        }
         
         html5QrCode = new Html5Qrcode("qr-reader");
         
@@ -814,11 +882,10 @@ async function startQRScanner() {
         
         isScannerRunning = true;
         
-        // Меняем кнопку
         toggleBtn.innerHTML = '<i class="fa-solid fa-stop"></i> Остановить сканирование';
         toggleBtn.style.background = '#ef4444';
         
-        resultsDiv.textContent = '📷 Сканирование... Наведите на QR-код';
+        resultsDiv.textContent = 'Сканирование... Наведите на QR-код';
         resultsDiv.style.color = '#4ade80';
         
         await html5QrCode.start(
@@ -830,22 +897,82 @@ async function startQRScanner() {
         
     } catch (error) {
         console.error('Ошибка запуска сканера:', error);
-        resultsDiv.textContent = 'Ошибка доступа к камере: ' + error.message;
-        resultsDiv.style.color = '#ff5f5f';
+        resultsDiv.innerHTML = `
+            <div style="color:#ff5f5f; padding:8px;">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                Ошибка: ${error.message || 'Неизвестная ошибка'}
+            </div>
+        `;
         isScannerRunning = false;
-        // Возвращаем кнопку в исходное состояние
         toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
         toggleBtn.style.background = '#8b5cf6';
-        showNotification('Ошибка доступа к камере: ' + error.message, 'error');
     }
 }
 
+// ===== СКАНИРОВАНИЕ ИЗ ФАЙЛА =====
+
+async function scanQRFromFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const resultDiv = document.getElementById('qrFileResult');
+    resultDiv.textContent = 'Обработка изображения...';
+    resultDiv.style.color = '#9ca3af';
+    
+    try {
+        // Проверяем размер файла (макс 10 МБ)
+        if (file.size > 10 * 1024 * 1024) {
+            resultDiv.innerHTML = '<span style="color:#ff5f5f;">Файл слишком большой (макс 10 МБ)</span>';
+            return;
+        }
+        
+        // Проверяем тип файла
+        if (!file.type.startsWith('image/')) {
+            resultDiv.innerHTML = '<span style="color:#ff5f5f;">Пожалуйста, выберите изображение</span>';
+            return;
+        }
+        
+        // Создаем временный сканер для файла
+        const fileScanner = new Html5Qrcode("qr-reader");
+        
+        const result = await fileScanner.scanFile(file, true);
+        
+        if (result) {
+            resultDiv.textContent = 'QR-код успешно распознан!';
+            resultDiv.style.color = '#4ade80';
+            onScanSuccess(result);
+        } else {
+            resultDiv.innerHTML = '<span style="color:#f59e0b;">QR-код не найден на изображении</span>';
+        }
+        
+    } catch (error) {
+        console.error('Ошибка сканирования файла:', error);
+        if (error.message.includes('No QR code found')) {
+            resultDiv.innerHTML = '<span style="color:#f59e0b;">QR-код не найден на изображении. Попробуйте другое фото.</span>';
+        } else {
+            resultDiv.innerHTML = `<span style="color:#ff5f5f;">Ошибка: ${error.message}</span>`;
+        }
+    }
+}
+
+// ===== ОБЩАЯ ОБРАБОТКА РЕЗУЛЬТАТА =====
+
 function onScanSuccess(decodedText, decodedResult) {
-    stopQRScanner();
+    // Если сканер камеры запущен — останавливаем
+    if (isScannerRunning) {
+        stopQRScanner();
+    }
     
     const resultsDiv = document.getElementById('qr-reader-results');
     resultsDiv.textContent = 'QR-код успешно распознан!';
     resultsDiv.style.color = '#4ade80';
+    
+    // Также обновляем результат в файловой области
+    const fileResult = document.getElementById('qrFileResult');
+    if (fileResult) {
+        fileResult.textContent = 'QR-код успешно распознан!';
+        fileResult.style.color = '#4ade80';
+    }
     
     try {
         const data = JSON.parse(decodedText);
@@ -855,17 +982,21 @@ function onScanSuccess(decodedText, decodedResult) {
             const filament = allFilaments.find(f => f.id === data.id);
             if (filament) {
                 showNotification(`Найдена катушка: ${filament.name}`, 'success');
-                closeQRScanner();
-                openDetailModal(filament.id);
+                setTimeout(() => {
+                    closeQRScanner();
+                    openDetailModal(filament.id);
+                }, 500);
             } else {
                 showNotification('Катушка не найдена в базе. Заполните форму.', 'info');
-                closeQRScanner();
-                document.getElementById('filamentName').value = data.name || '';
-                document.getElementById('filamentType').value = data.material_type || '';
-                document.getElementById('filamentColor').value = data.color || '';
-                document.getElementById('filamentWeight').value = data.initial_mass || 1000;
-                checkFilamentFields();
-                openAddFilament();
+                setTimeout(() => {
+                    closeQRScanner();
+                    document.getElementById('filamentName').value = data.name || '';
+                    document.getElementById('filamentType').value = data.material_type || '';
+                    document.getElementById('filamentColor').value = data.color || '';
+                    document.getElementById('filamentWeight').value = data.initial_mass || 1000;
+                    checkFilamentFields();
+                    openAddFilament();
+                }, 500);
             }
         } else {
             showNotification('Неверный формат QR-кода', 'error');
@@ -877,8 +1008,10 @@ function onScanSuccess(decodedText, decodedResult) {
             const filament = allFilaments.find(f => f.id === filamentId);
             if (filament) {
                 showNotification(`Найдена катушка: ${filament.name}`, 'success');
-                closeQRScanner();
-                openDetailModal(filamentId);
+                setTimeout(() => {
+                    closeQRScanner();
+                    openDetailModal(filamentId);
+                }, 500);
                 return;
             }
         }
@@ -900,7 +1033,6 @@ function stopQRScanner() {
                 isScannerRunning = false;
                 document.getElementById('qr-reader-results').textContent = '⏹ Сканирование остановлено';
                 document.getElementById('qr-reader-results').style.color = '#9ca3af';
-                // Меняем кнопку обратно
                 toggleBtn.innerHTML = '<i class="fa-solid fa-play"></i> Запустить камеру';
                 toggleBtn.style.background = '#8b5cf6';
             }).catch(err => {
@@ -916,7 +1048,6 @@ function stopQRScanner() {
             toggleBtn.style.background = '#8b5cf6';
         }
     } else {
-        // Если сканер не запущен, просто сбрасываем UI
         const resultsDiv = document.getElementById('qr-reader-results');
         resultsDiv.textContent = 'Нажмите кнопку для запуска сканирования';
         resultsDiv.style.color = '#9ca3af';
