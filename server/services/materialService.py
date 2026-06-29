@@ -30,6 +30,7 @@ class MaterialService:
             "name": material.name,
             "type": material.type,
             "color": material.color,
+            "uuid": material.qr_code,
             "initial_mass": material.initial_mass,
             "current_mass": material.current_mass,
             "density": material.density

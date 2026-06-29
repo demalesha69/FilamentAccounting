@@ -11,6 +11,7 @@ from server.services.materialService import MaterialService
 
 from server.utils.response import ApiResponse
 from server.utils.jwt_middleware import get_current_user
+import server.utils.generate_qr_code as qr_generator
 
 materialRouter = APIRouter(
     prefix="/materials",
@@ -44,7 +45,23 @@ def get_all_materials(db: Session = Depends(get_db), current_user=Depends(get_cu
         data=result
     )
 
-@materialRouter.get("/qrcode/{qr_code}")
+@materialRouter.get("/qr/{material_id}")
+def get_qrcode(material_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+
+    material = material_service.get_material_by_id(
+        db,
+        current_user["user_id"],
+        material_id
+    )
+
+    qr_code = qr_generator.generate(material["uuid"])
+
+    return ApiResponse.streaming(
+        data=qr_code,
+        media_type="image/svg+xml"
+    )
+
+@materialRouter.get("/by_qrcode/{qr_code}")
 def get_material_by_qrcode(qr_code: str, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
 
     result = material_service.get_material_by_qrcode(
@@ -57,7 +74,7 @@ def get_material_by_qrcode(qr_code: str, db: Session = Depends(get_db), current_
         data=result
     )
 
-@materialRouter.get("/id/{material_id}")
+@materialRouter.get("/by_id/{material_id}")
 def get_material_by_id(material_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
         
     result = material_service.get_material_by_id(
