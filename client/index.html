@@ -79,13 +79,40 @@
             </button>
         </div>
         <div class="modal-body">
-            <div id="qr-reader" style="width:100%;"></div>
-            <div id="qr-reader-results" style="margin-top:12px; text-align:center; color:#9ca3af; font-size:14px;">
-                Наведите камеру на QR-код катушки
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <!-- Выбор способа сканирования -->
+                <div style="display:flex; gap:10px;">
+                    <button class="auth-button" id="scanCameraBtn" onclick="switchScanMethod('camera')" style="flex:1; background:#3b82f6;">
+                        <i class="fa-solid fa-camera"></i> Камера
+                    </button>
+                    <button class="auth-button" id="scanFileBtn" onclick="switchScanMethod('file')" style="flex:1; background:#8b5cf6;">
+                        <i class="fa-solid fa-image"></i> Файл
+                    </button>
+                </div>
+                
+                <!-- Область для камеры -->
+                <div id="qrCameraArea">
+                    <div id="qr-reader" style="width:100%; min-height:250px;"></div>
+                    <div id="qr-reader-results" style="margin-top:12px; text-align:center; color:#9ca3af; font-size:14px; min-height:40px;">
+                        Наведите камеру на QR-код или загрузите изображение
+                    </div>
+                    <button class="auth-button" id="qrScannerToggleBtn" onclick="toggleQRScanner()" style="width:100%;">
+                        <i class="fa-solid fa-play"></i> Запустить камеру
+                    </button>
+                </div>
+                
+                <!-- Область для загрузки файла -->
+                <div id="qrFileArea" style="display:none; flex-direction:column; gap:12px;">
+                    <div style="border:2px dashed rgba(255,255,255,0.1); border-radius:16px; padding:30px; text-align:center; background:#1a1d26; cursor:pointer;" 
+                         onclick="document.getElementById('qrFileInput').click()">
+                        <i class="fa-solid fa-cloud-arrow-up" style="font-size:48px; color:#6b7280; display:block; margin-bottom:12px;"></i>
+                        <p style="color:#9ca3af; font-size:14px;">Нажмите или перетащите изображение</p>
+                        <p style="color:#6b7280; font-size:12px; margin-top:4px;">Поддерживаются: PNG, JPG, WebP</p>
+                    </div>
+                    <input type="file" id="qrFileInput" accept="image/*" style="display:none;" onchange="scanQRFromFile(event)" />
+                    <div id="qrFileResult" style="text-align:center; color:#9ca3af; font-size:14px; min-height:30px;"></div>
+                </div>
             </div>
-            <button class="auth-button" id="qrScannerToggleBtn" onclick="toggleQRScanner()" style="width:100%;">
-                <i class="fa-solid fa-play"></i> Запустить камеру
-            </button>
         </div>
     </div>
 </div>
