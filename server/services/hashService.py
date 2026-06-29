@@ -40,7 +40,7 @@ class HashService:
 
         return jwt.encode(payload, self.SECRET_KEY, algorithm=self.ALGORITHM)
 
-    def decode_token(self, token: str) -> dict:
+    def decode_token(self, db, token: str) -> dict:
         try:
             payload = jwt.decode(
                 token,
@@ -48,7 +48,7 @@ class HashService:
                 algorithms=[self.ALGORITHM]
             )
 
-            user = self.user_repo.get_by_id(payload["user_id"])
+            user = self.user_repo.get_by_id(db, payload["user_id"])
 
             if not user:
                 raise InvalidToken()
