@@ -44,8 +44,20 @@ def get_all_materials(db: Session = Depends(get_db), current_user=Depends(get_cu
         data=result
     )
 
+@materialRouter.get("/qrcode/{qr_code}")
+def get_material_by_qrcode(qr_code: str, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
 
-@materialRouter.get("/{material_id}")
+    result = material_service.get_material_by_qrcode(
+        db,
+        current_user["user_id"],
+        qr_code
+    )
+
+    return ApiResponse.success(
+        data=result
+    )
+
+@materialRouter.get("/id/{material_id}")
 def get_material_by_id(material_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
         
     result = material_service.get_material_by_id(
@@ -68,7 +80,7 @@ def delete_material(material_id: int, db: Session = Depends(get_db), current_use
     )
 
     return ApiResponse.success(
-        message="Катушка удалена",
+        message=None,
         status_code=204
     )
 

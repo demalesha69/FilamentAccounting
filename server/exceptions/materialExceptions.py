@@ -18,3 +18,7 @@ class MaterialZeroMass(MaterialException):
 class MaterialInvalidData(MaterialException):
     def __init__(self, message: str):
         super().__init__(message)
+
+class MaterialQRCodeRuntimeError(MaterialException):
+    def __init__(self):
+        super().__init__("Не удалось создать уникальный QR-код", 500)

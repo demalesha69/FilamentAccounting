@@ -27,6 +27,11 @@ class Material(Base):
         String(50)
     )
 
+    density: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True
+    )
+
     color: Mapped[str] = mapped_column(
         String(50)
     )
