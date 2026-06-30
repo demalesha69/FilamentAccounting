@@ -1229,23 +1229,12 @@ function onScanSuccess(decodedText, decodedResult) {
         fileResult.style.color = '#4ade80';
     }
     
-    // Получаем ID катушки из QR-кода
-    const filamentId = parseInt(decodedText);
-    if (!isNaN(filamentId) && filamentId > 0) {
-        // Используем эндпоинт /materials/by_qrcode/{qr_code}
+    // Отправляем распознанную строку как есть (UUID или другой формат)
+    // Не пытаемся парсить как число!
+    if (decodedText && decodedText.trim().length > 0) {
         findFilamentByQRCode(decodedText.trim());
     } else {
-        // Пробуем парсить как JSON (для обратной совместимости)
-        try {
-            const data = JSON.parse(decodedText);
-            if (data.id && data.name) {
-                findFilamentByQRCode(String(data.id));
-                return;
-            }
-        } catch (e) {
-            console.error('Ошибка парсинга QR:', e);
-        }
-        showNotification('Не удалось распознать QR-код. Неверный формат данных.', 'error');
+        showNotification('Не удалось распознать QR-код', 'error');
         setTimeout(() => {
             clearQRScanner();
         }, 2000);
@@ -1261,7 +1250,7 @@ async function findFilamentByQRCode(qrCode) {
     
     try {
         // Используем эндпоинт /materials/by_qrcode/{qr_code}
-        // Отправляем строку, распознанную путем сканирования
+        // Отправляем строку, распознанную путем сканирования (UUID)
         const response = await fetch(`${API_URL}/materials/by_qrcode/${encodeURIComponent(qrCode)}`, {
             method: 'GET',
             headers: {
