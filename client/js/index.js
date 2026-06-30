@@ -427,14 +427,11 @@ function renderFilaments(filaments) {
         
         let ringStyle;
         if (colorKey === 'multicolor') {
-            // Мультицветные цвета
             const multiColors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
             const totalColors = multiColors.length;
             const segmentSize = 100 / totalColors;
             let gradientStops = [];
             
-            // Вычисляем сколько процентов каждого цвета отобразить
-            let remainingProgress = progress;
             for (let i = 0; i < totalColors; i++) {
                 const start = i * segmentSize;
                 const end = (i + 1) * segmentSize;
@@ -442,18 +439,13 @@ function renderFilaments(filaments) {
                     const actualEnd = Math.min(end, progress);
                     gradientStops.push(`${multiColors[i]} ${start}% ${actualEnd}%`);
                 } else {
-                    // Если прогресс еще не дошел до этого сегмента - добавляем темный фон только если это первый незаполненный сегмент
                     if (i === 0 && progress === 0) {
-                        // Если прогресс 0, показываем только темный фон
                         gradientStops = [`#2b2f3a 0% 100%`];
                         break;
                     }
-                    // Добавляем темный фон для оставшейся части, начиная с текущей позиции
                     if (i === 0 && progress > 0) {
-                        // Первый сегмент уже заполнен частично или полностью, продолжаем
                         continue;
                     }
-                    // Добавляем темный фон только один раз для оставшейся части
                     const darkStart = Math.max(progress, start);
                     if (darkStart < 100) {
                         gradientStops.push(`#2b2f3a ${darkStart}% 100%`);
@@ -462,10 +454,8 @@ function renderFilaments(filaments) {
                 }
             }
             
-            // Если прогресс 100%, убираем темный фон
             if (progress >= 100) {
                 gradientStops = gradientStops.filter(stop => !stop.includes('#2b2f3a'));
-                // Убедимся, что последний цвет доходит до 100%
                 if (gradientStops.length > 0) {
                     const last = gradientStops[gradientStops.length - 1];
                     const parts = last.split(' ');
@@ -476,7 +466,6 @@ function renderFilaments(filaments) {
                 }
             }
             
-            // Если gradientStops пустой, добавляем темный фон
             if (gradientStops.length === 0) {
                 gradientStops = [`#2b2f3a 0% 100%`];
             }
@@ -490,13 +479,16 @@ function renderFilaments(filaments) {
             ? 'background: linear-gradient(45deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7);' 
             : `background: ${colorHex};`;
         
+        // Добавляем 📦 если катушка пуста
+        const emptyEmoji = isEmpty ? ' 📦' : '';
+        
         return `<article class="filament-card" onclick="openDetailModal(${f.id})" style="cursor:pointer; ${emptyStyles}">
             <div class="card-top">
                 <div class="progress-ring" style="--progress:${progress}; ${ringStyle}">
                     <span>${isEmpty ? '0%' : progress + '%'}</span>
                 </div>
                 <div class="filament-info">
-                    <h2>${f.name || 'Без названия'} ${isEmpty ? '📦' : ''}</h2>
+                    <h2>${f.name || 'Без названия'}${emptyEmoji}</h2>
                     <p class="filament-color" style="color:${isEmpty ? '#6b7280' : colorHex};">
                         <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${isEmpty ? '#6b7280' : colorHex}; margin-right:6px; vertical-align:middle;"></span>
                         ${colorName}
@@ -603,6 +595,9 @@ async function openDetailModal(id) {
         
         const historyHtml = await loadConsumptionHistory(id);
         
+        // Добавляем 📦 если катушка пуста
+        const emptyEmoji = isEmpty ? ' 📦' : '';
+        
         body.innerHTML = `
             <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; ${isEmpty ? 'opacity:0.6;' : ''}">
                 <div style="flex:1; min-width:200px;">
@@ -611,7 +606,7 @@ async function openDetailModal(id) {
                             <span style="font-size:16px;">${isEmpty ? '0%' : progress + '%'}</span>
                         </div>
                         <div>
-                            <h2 style="color:#ffffff; font-size:22px; margin-bottom:4px;">${filament.name} ${isEmpty ? = : ''}</h2>
+                            <h2 style="color:#ffffff; font-size:22px; margin-bottom:4px;">${filament.name}${emptyEmoji}</h2>
                             <p style="color:${isEmpty ? '#6b7280' : colorHex}; font-size:16px; font-weight:600;">${colorName} ${filament.material_type ? '• ' + filament.material_type : ''}</p>
                             ${filament.density ? `<p style="color:#9ca3af; font-size:13px;">Плотность: ${filament.density} г/см³ • Диаметр: ${filament.diameter || 1.75} мм</p>` : ''}
                             ${isEmpty ? `<p style="color:#ff5f5f; font-size:14px; margin-top:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Катушка пуста</p>` : ''}
