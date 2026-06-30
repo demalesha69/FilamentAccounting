@@ -265,28 +265,6 @@ function showUsername() {
     } catch (e) {}
 }
 
-// ===== НАСТРОЙКИ =====
-
-function openSettings() {
-    document.getElementById('settingsModal').style.display = 'flex';
-}
-
-function closeSettings() {
-    document.getElementById('settingsModal').style.display = 'none';
-}
-
-document.getElementById('settingsModal').addEventListener('click', function(e) {
-    if (e.target === this) closeSettings();
-});
-
-function saveSettings() {
-    const theme = document.getElementById('darkTheme').checked;
-    const notifications = document.getElementById('notifications').checked;
-    console.log('Сохранено:', { theme, notifications });
-    showNotification('Настройки сохранены!', 'success');
-    closeSettings();
-}
-
 // ===== ФИЛЬТРЫ =====
 
 function closeFilter() {
@@ -447,7 +425,6 @@ function renderFilaments(filaments) {
         const weightText = isEmpty ? '0 г (пусто)' : `${currentWeight} / ${initialWeight}`;
         const weightColor = isEmpty ? '#6b7280' : colorHex;
         
-        // Для мультицвета создаем градиент с обрезкой по прогрессу
         let ringStyle;
         if (colorKey === 'multicolor') {
             const colors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
@@ -563,7 +540,6 @@ async function openDetailModal(id) {
         const initialWeight = formatWeight(filament.initial_mass || 0);
         const usedWeight = formatWeight(used);
         
-        // Для мультицвета создаем градиент с обрезкой по прогрессу
         let ringStyle;
         if (colorKey === 'multicolor') {
             const colors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
@@ -657,7 +633,6 @@ async function openDetailModal(id) {
         `;
         modal.style.display = 'flex';
         
-        // Загружаем QR-код после отображения модалки
         loadQRCode(filament.id);
         
     } catch (error) {
@@ -666,7 +641,7 @@ async function openDetailModal(id) {
     }
 }
 
-// ===== ПЕЧАТЬ QR-КОДА (ТОЛЬКО QR, БЕЗ ТЕКСТА) =====
+// ===== ПЕЧАТЬ QR-КОДА =====
 
 function printQRCode() {
     const container = document.getElementById('qrCodeContainer');
@@ -1102,7 +1077,7 @@ async function addFilamentManual() {
     }
 }
 
-// ===== QR-СКАНЕР (остается без изменений) =====
+// ===== QR-СКАНЕР =====
 
 let html5QrCode = null;
 let isScannerRunning = false;

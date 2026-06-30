@@ -149,7 +149,6 @@ body {
     align-items: center;
     justify-content: center;
     position: relative;
-    background: conic-gradient(var(--ring-color) calc(var(--progress) * 1%), #2b2f3a 0);
 }
 
 .progress-ring::before {
@@ -202,7 +201,6 @@ body {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: currentColor;
 }
 
 /* ========== COLORS ========== */
@@ -284,7 +282,7 @@ body {
     box-shadow: 0 10px 25px rgba(59,130,246,0.4);
 }
 
-/* Для одиночной кнопки на usage.html и других страницах */
+/* Для одиночной кнопки на usage.html */
 .fab-button:not(.fab-group .fab-button) {
     position: fixed;
     right: 20px;
@@ -390,52 +388,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 16px;
-}
-
-/* ========== SETTINGS ========== */
-.setting-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-.setting-item label {
-    color: #ffffff;
-    font-size: 15px;
-}
-
-.setting-item input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    accent-color: #8b5cf6;
-    cursor: pointer;
-}
-
-.setting-item select {
-    background: #232734;
-    color: #ffffff;
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 8px;
-    padding: 6px 12px;
-    cursor: pointer;
-}
-
-.save-button {
-    margin-top: 8px;
-    padding: 12px;
-    background: #8b5cf6;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.save-button:hover {
-    opacity: 0.9;
 }
 
 /* ========== FILTERS ========== */
@@ -558,15 +510,12 @@ body {
     transform: scale(0.95);
 }
 
-/* Основные цвета */
 .color-option.green { background: #22c55e; }
 .color-option.yellow { background: #eab308; }
 .color-option.red { background: #ef4444; }
 .color-option.blue { background: #3b82f6; }
 .color-option.orange { background: #f97316; }
 .color-option.purple { background: #a855f7; }
-
-/* Дополнительные цвета */
 .color-option.black { background: #1a1a1a; border-color: #4a4a4a; }
 .color-option.white { background: #f3f4f6; border-color: #d1d5db; }
 .color-option.gray { background: #6b7280; }
@@ -623,7 +572,6 @@ body {
     width: 16px;
 }
 
-/* Общие стили для всех input, select, textarea */
 .form-group input[type="text"],
 .form-group input[type="email"],
 .form-group input[type="password"],
@@ -693,16 +641,6 @@ body {
     cursor: not-allowed;
 }
 
-/* select в модалке настроек */
-.setting-item select {
-    background: #232734;
-    color: #ffffff;
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 8px;
-    padding: 6px 12px;
-    cursor: pointer;
-}
-
 .password-wrapper {
     position: relative;
 }
@@ -751,10 +689,6 @@ body {
 .auth-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-}
-
-.auth-button:disabled:hover {
-    opacity: 0.5;
 }
 
 /* ========== AUTH PAGES ========== */
@@ -997,72 +931,6 @@ body {
     color: #8b5cf6;
 }
 
-.stats-history {
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.stats-day {
-    background: #1a1d26;
-    border-radius: 14px;
-    padding: 14px 16px;
-    border: 1px solid rgba(255,255,255,0.06);
-}
-
-.stats-day-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-}
-
-.stats-day-date {
-    color: #ffffff;
-    font-size: 15px;
-    font-weight: 600;
-}
-
-.stats-day-total {
-    color: #ff5f5f;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.stats-day-items {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.stats-day-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 4px 0;
-    font-size: 14px;
-}
-
-.stats-day-item-title {
-    color: #ffffff;
-    flex: 1;
-}
-
-.stats-day-item-time {
-    color: #9ca3af;
-    font-size: 12px;
-    margin-right: 12px;
-}
-
-.stats-day-item-amount {
-    color: #ff5f5f;
-    font-weight: 600;
-    font-size: 14px;
-}
-
 /* ========== DETAIL MODAL ========== */
 #detailBody .progress-ring {
     --size: 80px;
@@ -1179,22 +1047,16 @@ body {
 }
 
 /* ========== PROGRESS RING SPECIAL COLORS ========== */
-/* Стили для мультицветных кругов прогресса */
 .progress-ring.multicolor {
     background: conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) !important;
     animation: multicolorSpin 4s linear infinite;
 }
 
 @keyframes multicolorSpin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
-/* Стили для светящегося круга */
 .progress-ring.glow {
     box-shadow: 0 0 20px rgba(34, 211, 238, 0.3), inset 0 0 20px rgba(34, 211, 238, 0.1);
     animation: glowPulse 2s ease-in-out infinite;
@@ -1209,7 +1071,6 @@ body {
     }
 }
 
-/* Стили для прозрачного круга */
 .progress-ring.transparent {
     opacity: 0.5;
     border: 2px solid rgba(255,255,255,0.1);
@@ -1312,7 +1173,6 @@ body {
         font-size: 14px !important;
     }
     
-    /* FAB Button Mobile */
     .fab-button {
         width: 60px !important;
         height: 60px !important;
@@ -1436,12 +1296,6 @@ body {
         min-height: 54px !important;
     }
     
-    .save-button {
-        padding: 16px !important;
-        font-size: 17px !important;
-        border-radius: 14px !important;
-    }
-    
     .color-option {
         width: 36px !important;
         height: 36px !important;
@@ -1545,24 +1399,6 @@ body {
         max-width: 130px;
     }
     
-    .stats-day-item {
-        flex-wrap: wrap;
-        gap: 4px;
-    }
-    
-    .stats-day-item-title {
-        width: 100%;
-        font-size: 13px;
-    }
-    
-    .stats-day-item-time {
-        font-size: 11px;
-    }
-    
-    .stats-day-item-amount {
-        font-size: 13px;
-    }
-    
     #addFilamentModal .modal-body {
         gap: 16px !important;
     }
@@ -1607,7 +1443,6 @@ body {
         font-size: 24px !important;
     }
 
-    /* QR Scanner mobile */
     #qr-reader {
         min-height: 200px !important;
     }
