@@ -487,8 +487,8 @@ async function openDetailModal(id) {
     }
     
     try {
-        // Используем эндпоинт /materials/id/{material_id}
-        const response = await fetch(`${API_URL}/materials/id/${id}`, {
+        // Используем эндпоинт /materials/by_id/{material_id}
+        const response = await fetch(`${API_URL}/materials/by_id/${id}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -538,10 +538,8 @@ async function openDetailModal(id) {
             ? `background: conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) calc(var(--progress) * 1%);`
             : `--ring-color:${ringColor}; background: conic-gradient(var(--ring-color) calc(var(--progress) * 1%), #2b2f3a 0);`;
         
-        // Для генерации QR-кода используем ID катушки через внешний API
-        // Так как бэкенд не отдает QR-код как изображение
-        const qrCodeData = String(filament.id);
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeData)}`;
+        // Используем эндпоинт /materials/qr/{material_id} для получения QR-кода как SVG
+        const qrUrl = `${API_URL}/materials/qr/${filament.id}`;
         
         const historyHtml = await loadConsumptionHistory(id);
         
@@ -682,13 +680,34 @@ function downloadQRCode() {
         return;
     }
     
-    const link = document.createElement('a');
-    link.download = `qr-code-${currentFilamentId || 'filament'}.png`;
-    link.href = img.src;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Получаем URL изображения
+    const imgUrl = img.src;
+    
+    // Скачиваем SVG как изображение
+    fetch(imgUrl, {
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Ошибка загрузки QR-кода');
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        const link = document.createElement('a');
+        link.download = `qr-code-${currentFilamentId || 'filament'}.svg`;
+        link.href = URL.createObjectURL(blob);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    })
+    .catch(error => {
+        console.error('Ошибка скачивания QR-кода:', error);
+        showNotification('Ошибка скачивания QR-кода', 'error');
+    });
 }
 
 async function deleteFilament(id) {
@@ -1124,17 +1143,17 @@ function onScanSuccess(decodedText, decodedResult) {
         fileResult.style.color = '#4ade80';
     }
     
-    // Получаем ID катушки из QR-кода (теперь это просто число)
+    // Получаем ID катушки из QR-кода
     const filamentId = parseInt(decodedText);
     if (!isNaN(filamentId) && filamentId > 0) {
-        // Используем эндпоинт /materials/qrcode/{qr_code}
-        findFilamentByQRCode(filamentId);
+        // Используем эндпоинт /materials/by_qrcode/{qr_code}
+        findFilamentByQRCode(decodedText.trim());
     } else {
         // Пробуем парсить как JSON (для обратной совместимости)
         try {
             const data = JSON.parse(decodedText);
             if (data.id && data.name) {
-                findFilamentByQRCode(data.id);
+                findFilamentByQRCode(String(data.id));
                 return;
             }
         } catch (e) {
@@ -1155,8 +1174,9 @@ async function findFilamentByQRCode(qrCode) {
     }
     
     try {
-        // Используем эндпоинт /materials/qrcode/{qr_code}
-        const response = await fetch(`${API_URL}/materials/qrcode/${qrCode}`, {
+        // Используем эндпоинт /materials/by_qrcode/{qr_code}
+        // Отправляем строку, распознанную путем сканирования
+        const response = await fetch(`${API_URL}/materials/by_qrcode/${encodeURIComponent(qrCode)}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
