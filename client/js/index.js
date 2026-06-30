@@ -943,7 +943,7 @@ async function addFilamentManual() {
                 name: name, 
                 type: type,
                 color: color, 
-                initial_mass,
+                initial_mass: initial_mass,
                 density: density,
                 diameter: diameter
             })
