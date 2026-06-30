@@ -622,7 +622,7 @@ async function openDetailModal(id) {
     }
 }
 
-// ===== ПЕЧАТЬ QR-КОДА =====
+// ===== ПЕЧАТЬ QR-КОДА (НА ВЕСЬ ЛИСТ) =====
 
 function printQRCode() {
     const container = document.getElementById('qrCodeContainer');
@@ -637,20 +637,6 @@ function printQRCode() {
         return;
     }
     
-    // Создаем контейнер для печати только с QR-кодом
-    const printContainer = document.createElement('div');
-    printContainer.id = 'printQRContainer';
-    printContainer.style.cssText = `
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 40px;
-        background: #ffffff;
-        min-height: 100vh;
-        font-family: Arial, sans-serif;
-    `;
-    
     // Получаем ID катушки
     const idElement = container.closest('div').querySelector('div[style*="font-size:11px"]');
     let filamentId = '';
@@ -658,41 +644,93 @@ function printQRCode() {
         filamentId = idElement.textContent.trim();
     }
     
-    // Создаем содержимое для печати
+    // Создаем контейнер для печати только с QR-кодом на весь лист
+    const printContainer = document.createElement('div');
+    printContainer.id = 'printQRContainer';
+    printContainer.style.cssText = `
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: #ffffff;
+        font-family: Arial, sans-serif;
+        z-index: 9999;
+    `;
+    
+    // Создаем содержимое для печати - QR на весь лист
     printContainer.innerHTML = `
-        <div style="text-align: center; max-width: 400px; margin: 0 auto;">
-            <div style="margin-bottom: 20px;">
-                <h2 style="color: #000000; margin: 0; font-size: 20px;">QR-код катушки</h2>
-                <p style="color: #666666; margin: 4px 0 0 0; font-size: 14px;">${filamentId || 'ID не указан'}</p>
-            </div>
-            <div style="background: white; padding: 20px; border: 2px solid #e0e0e0; border-radius: 12px; display: inline-block;">
-                <img src="${img.src}" alt="QR-код" style="width: 250px; height: 250px; display: block;" />
-            </div>
-            <div style="margin-top: 20px; color: #999999; font-size: 12px; border-top: 1px solid #eee; padding-top: 16px;">
-                <p style="margin: 2px 0;">Дата печати: ${new Date().toLocaleString()}</p>
-                <p style="margin: 2px 0; color: #cccccc; font-size: 10px;">FilamentAccounting</p>
+        <div style="text-align: center; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
+                <div style="margin-bottom: 20px;">
+                    <h2 style="color: #000000; margin: 0; font-size: 24px; font-weight: 600;">QR-код катушки</h2>
+                    <p style="color: #666666; margin: 6px 0 0 0; font-size: 16px;">${filamentId || 'ID не указан'}</p>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: center; width: 100%; max-width: 800px; flex: 1; min-height: 0;">
+                    <img src="${img.src}" alt="QR-код" style="width: 100%; max-width: 600px; height: auto; max-height: 80vh; display: block; object-fit: contain; border: 3px solid #e0e0e0; border-radius: 16px; background: white; padding: 20px;" />
+                </div>
+                <div style="margin-top: 20px; color: #999999; font-size: 12px; border-top: 1px solid #eee; padding-top: 12px; width: 80%; max-width: 600px;">
+                    <p style="margin: 2px 0;">Дата печати: ${new Date().toLocaleString()}</p>
+                    <p style="margin: 2px 0; color: #cccccc; font-size: 10px;">FilamentAccounting</p>
+                </div>
             </div>
         </div>
     `;
     
-    // Добавляем стили для печати
+    // Добавляем стили для печати - на весь лист
     const style = document.createElement('style');
     style.textContent = `
+        @page {
+            margin: 0;
+            size: A4 portrait;
+        }
         @media print {
-            body * { visibility: hidden; }
-            #printQRContainer, #printQRContainer * { visibility: visible; }
-            #printQRContainer { 
-                position: fixed;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
                 background: white !important;
-                z-index: 9999;
+            }
+            body * {
+                visibility: hidden !important;
+            }
+            #printQRContainer, #printQRContainer * {
+                visibility: visible !important;
+            }
+            #printQRContainer {
+                position: fixed !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                padding: 20px !important;
+                background: white !important;
+                z-index: 9999 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
             }
             #printQRContainer img {
+                width: 100% !important;
+                max-width: 600px !important;
+                height: auto !important;
+                max-height: 80vh !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+            }
+            #printQRContainer h2 {
+                font-size: 24px !important;
+            }
+            #printQRContainer p {
+                font-size: 14px !important;
             }
         }
     `;
