@@ -546,9 +546,6 @@ async function openDetailModal(id) {
             ? `background: conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) calc(var(--progress) * 1%);`
             : `--ring-color:${ringColor}; background: conic-gradient(var(--ring-color) calc(var(--progress) * 1%), #2b2f3a 0);`;
         
-        // Используем эндпоинт /materials/qr/{material_id} для получения QR-кода как SVG
-        const qrUrl = `${API_URL}/materials/qr/${filament.id}`;
-        
         const historyHtml = await loadConsumptionHistory(id);
         
         body.innerHTML = `
@@ -586,7 +583,12 @@ async function openDetailModal(id) {
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:160px; background:#232734; border-radius:16px; padding:16px;">
                     <div style="position:relative; display:inline-block;">
-                        <img id="qrCodeImage" src="${qrUrl}" alt="QR-код" style="width:140px; height:140px; border-radius:8px; background:white; padding:8px; ${isEmpty ? 'opacity:0.5;' : ''}" />
+                        <div id="qrCodeContainer" style="width:140px; height:140px; border-radius:8px; background:#1a1d26; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.06);">
+                            <div style="color:#6b7280; font-size:12px; text-align:center;">
+                                <i class="fa-solid fa-spinner fa-spin" style="font-size:24px; display:block; margin-bottom:8px;"></i>
+                                Загрузка QR-кода...
+                            </div>
+                        </div>
                         <button onclick="downloadQRCode()" title="Скачать QR-код" style="position:absolute; bottom:4px; right:4px; width:32px; height:32px; border:none; border-radius:50%; background:#8b5cf6; color:white; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 2px 8px rgba(0,0,0,0.3);">
                             <i class="fa-solid fa-download"></i>
                         </button>
@@ -606,10 +608,124 @@ async function openDetailModal(id) {
             </div>
         `;
         modal.style.display = 'flex';
+        
+        // Загружаем QR-код после отображения модалки
+        loadQRCode(filament.id);
+        
     } catch (error) {
         console.error('Ошибка загрузки катушки:', error);
         showNotification('Ошибка загрузки катушки: ' + error.message, 'error');
     }
+}
+
+// ===== ЗАГРУЗКА QR-КОДА =====
+
+async function loadQRCode(materialId) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        showNotification('Вы не авторизованы', 'error');
+        return;
+    }
+    
+    const container = document.getElementById('qrCodeContainer');
+    if (!container) return;
+    
+    try {
+        // Используем эндпоинт /materials/qr/{material_id}
+        const response = await fetch(`${API_URL}/materials/qr/${materialId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            redirectToLogin();
+            return;
+        }
+        
+        if (response.status === 404) {
+            container.innerHTML = `
+                <div style="color:#6b7280; font-size:12px; text-align:center;">
+                    <i class="fa-solid fa-circle-xmark" style="font-size:24px; display:block; margin-bottom:8px;"></i>
+                    QR-код не найден
+                </div>
+            `;
+            return;
+        }
+        
+        if (!response.ok) {
+            throw new Error('Ошибка загрузки QR-кода');
+        }
+        
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        
+        container.innerHTML = `
+            <img src="${url}" alt="QR-код" style="width:140px; height:140px; border-radius:8px; background:white; padding:8px;" />
+        `;
+        
+        // Сохраняем URL для скачивания
+        container.dataset.qrUrl = url;
+        
+    } catch (error) {
+        console.error('Ошибка загрузки QR-кода:', error);
+        container.innerHTML = `
+            <div style="color:#ff5f5f; font-size:12px; text-align:center;">
+                <i class="fa-solid fa-circle-exclamation" style="font-size:24px; display:block; margin-bottom:8px;"></i>
+                Ошибка загрузки
+            </div>
+        `;
+    }
+}
+
+// ===== СКАЧИВАНИЕ QR-КОДА =====
+
+function downloadQRCode() {
+    const container = document.getElementById('qrCodeContainer');
+    if (!container) {
+        showNotification('QR-код не найден', 'error');
+        return;
+    }
+    
+    const img = container.querySelector('img');
+    if (!img) {
+        showNotification('QR-код еще не загружен', 'error');
+        return;
+    }
+    
+    // Скачиваем через fetch, чтобы получить blob с правильным типом
+    const imgUrl = img.src;
+    const token = localStorage.getItem('token');
+    
+    fetch(imgUrl, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Ошибка загрузки QR-кода');
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        const link = document.createElement('a');
+        link.download = `qr-code-${currentFilamentId || 'filament'}.svg`;
+        link.href = URL.createObjectURL(blob);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => {
+            URL.revokeObjectURL(link.href);
+        }, 1000);
+    })
+    .catch(error => {
+        console.error('Ошибка скачивания QR-кода:', error);
+        showNotification('Ошибка скачивания QR-кода', 'error');
+    });
 }
 
 function closeDetailModal() {
@@ -679,43 +795,6 @@ async function loadConsumptionHistory(materialId) {
         console.error('Ошибка загрузки истории:', error);
         return `<div style="text-align:center;padding:8px 0;color:#ff5f5f;font-size:13px;">Ошибка загрузки истории</div>`;
     }
-}
-
-function downloadQRCode() {
-    const img = document.getElementById('qrCodeImage');
-    if (!img) {
-        showNotification('QR-код не найден', 'error');
-        return;
-    }
-    
-    // Получаем URL изображения
-    const imgUrl = img.src;
-    
-    // Скачиваем SVG как изображение
-    fetch(imgUrl, {
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Ошибка загрузки QR-кода');
-        }
-        return response.blob();
-    })
-    .then(blob => {
-        const link = document.createElement('a');
-        link.download = `qr-code-${currentFilamentId || 'filament'}.svg`;
-        link.href = URL.createObjectURL(blob);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-    })
-    .catch(error => {
-        console.error('Ошибка скачивания QR-кода:', error);
-        showNotification('Ошибка скачивания QR-кода', 'error');
-    });
 }
 
 async function deleteFilament(id) {
