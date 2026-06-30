@@ -28,7 +28,7 @@ class MaterialService:
         return {
             "id": material.id,
             "name": material.name,
-            "type": material.type,
+            "material_type": material.type,
             "color": material.color,
             "uuid": material.qr_code,
             "initial_mass": material.initial_mass,
