@@ -447,9 +447,12 @@ function renderFilaments(filaments) {
         const weightText = isEmpty ? '0 г (пусто)' : `${currentWeight} / ${initialWeight}`;
         const weightColor = isEmpty ? '#6b7280' : colorHex;
         
-        const ringStyle = colorKey === 'multicolor' 
-            ? `background: conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) calc(var(--progress) * 1%);`
-            : `background: conic-gradient(${ringColor} calc(var(--progress) * 1%), #2b2f3a 0);`;
+        let ringStyle;
+        if (colorKey === 'multicolor') {
+            ringStyle = `background: conic-gradient(from 0deg, #ef4444 0%, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) calc(var(--progress) * 1%);`;
+        } else {
+            ringStyle = `background: conic-gradient(${ringColor} calc(var(--progress) * 1%), #2b2f3a 0);`;
+        }
         
         const dotStyle = colorKey === 'multicolor' 
             ? 'background: linear-gradient(45deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7);' 
@@ -541,9 +544,12 @@ async function openDetailModal(id) {
         const initialWeight = formatWeight(filament.initial_mass || 0);
         const usedWeight = formatWeight(used);
         
-        const ringStyle = colorKey === 'multicolor' 
-            ? `background: conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) calc(var(--progress) * 1%);`
-            : `--ring-color:${ringColor}; background: conic-gradient(var(--ring-color) calc(var(--progress) * 1%), #2b2f3a 0);`;
+        let ringStyle;
+        if (colorKey === 'multicolor') {
+            ringStyle = `background: conic-gradient(from 0deg, #ef4444 0%, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) calc(var(--progress) * 1%);`;
+        } else {
+            ringStyle = `--ring-color:${ringColor}; background: conic-gradient(var(--ring-color) calc(var(--progress) * 1%), #2b2f3a 0);`;
+        }
         
         const historyHtml = await loadConsumptionHistory(id);
         
@@ -622,7 +628,7 @@ async function openDetailModal(id) {
     }
 }
 
-// ===== ПЕЧАТЬ QR-КОДА (НА ВЕСЬ ЛИСТ) =====
+// ===== ПЕЧАТЬ QR-КОДА (ТОЛЬКО QR, БЕЗ ТЕКСТА) =====
 
 function printQRCode() {
     const container = document.getElementById('qrCodeContainer');
@@ -637,14 +643,6 @@ function printQRCode() {
         return;
     }
     
-    // Получаем ID катушки
-    const idElement = container.closest('div').querySelector('div[style*="font-size:11px"]');
-    let filamentId = '';
-    if (idElement) {
-        filamentId = idElement.textContent.trim();
-    }
-    
-    // Создаем контейнер для печати только с QR-кодом на весь лист
     const printContainer = document.createElement('div');
     printContainer.id = 'printQRContainer';
     printContainer.style.cssText = `
@@ -654,35 +652,19 @@ function printQRCode() {
         width: 100%;
         height: 100%;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 20px;
-        background: #ffffff;
-        font-family: Arial, sans-serif;
+        background: white;
         z-index: 9999;
+        padding: 20px;
     `;
     
-    // Создаем содержимое для печати - QR на весь лист
     printContainer.innerHTML = `
-        <div style="text-align: center; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
-                <div style="margin-bottom: 20px;">
-                    <h2 style="color: #000000; margin: 0; font-size: 24px; font-weight: 600;">QR-код катушки</h2>
-                    <p style="color: #666666; margin: 6px 0 0 0; font-size: 16px;">${filamentId || 'ID не указан'}</p>
-                </div>
-                <div style="display: flex; align-items: center; justify-content: center; width: 100%; max-width: 800px; flex: 1; min-height: 0;">
-                    <img src="${img.src}" alt="QR-код" style="width: 100%; max-width: 600px; height: auto; max-height: 80vh; display: block; object-fit: contain; border: 3px solid #e0e0e0; border-radius: 16px; background: white; padding: 20px;" />
-                </div>
-                <div style="margin-top: 20px; color: #999999; font-size: 12px; border-top: 1px solid #eee; padding-top: 12px; width: 80%; max-width: 600px;">
-                    <p style="margin: 2px 0;">Дата печати: ${new Date().toLocaleString()}</p>
-                    <p style="margin: 2px 0; color: #cccccc; font-size: 10px;">FilamentAccounting</p>
-                </div>
-            </div>
+        <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+            <img src="${img.src}" alt="QR-код" style="width: 100%; max-width: 800px; height: auto; max-height: 90vh; display: block; object-fit: contain; background: white;" />
         </div>
     `;
     
-    // Добавляем стили для печати - на весь лист
     const style = document.createElement('style');
     style.textContent = `
         @page {
@@ -714,23 +696,16 @@ function printQRCode() {
                 background: white !important;
                 z-index: 9999 !important;
                 display: flex !important;
-                flex-direction: column !important;
                 align-items: center !important;
                 justify-content: center !important;
             }
             #printQRContainer img {
                 width: 100% !important;
-                max-width: 600px !important;
+                max-width: 800px !important;
                 height: auto !important;
-                max-height: 80vh !important;
+                max-height: 90vh !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
-            }
-            #printQRContainer h2 {
-                font-size: 24px !important;
-            }
-            #printQRContainer p {
-                font-size: 14px !important;
             }
         }
     `;
@@ -738,10 +713,8 @@ function printQRCode() {
     
     document.body.appendChild(printContainer);
     
-    // Печатаем
     setTimeout(() => {
         window.print();
-        // Удаляем контейнер после печати
         setTimeout(() => {
             const el = document.getElementById('printQRContainer');
             if (el) el.remove();
@@ -995,7 +968,6 @@ function openAddFilament() {
     document.getElementById('filamentType').value = '';
     document.getElementById('filamentColor').value = '';
     document.getElementById('filamentWeight').value = '1000';
-    // Сбрасываем расширенные настройки
     document.getElementById('filamentDensity').value = '1.24';
     document.getElementById('filamentDiameter').value = '1.75';
     document.getElementById('advancedSettings').style.display = 'none';
@@ -1033,7 +1005,6 @@ async function addFilamentManual() {
     const color = document.getElementById('filamentColor').value.trim();
     const initial_mass = parseFloat(document.getElementById('filamentWeight').value);
     
-    // Получаем расширенные настройки
     let density = parseFloat(document.getElementById('filamentDensity').value) || 1.24;
     let diameter = parseFloat(document.getElementById('filamentDiameter').value) || 1.75;
     
@@ -1097,7 +1068,7 @@ async function addFilamentManual() {
 
 let html5QrCode = null;
 let isScannerRunning = false;
-let currentScanMethod = 'camera'; // 'camera' или 'file'
+let currentScanMethod = 'camera';
 
 function switchScanMethod(method) {
     currentScanMethod = method;
@@ -1289,8 +1260,6 @@ async function startQRScanner() {
     }
 }
 
-// ===== СКАНИРОВАНИЕ ИЗ ФАЙЛА =====
-
 async function scanQRFromFile(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1337,8 +1306,6 @@ async function scanQRFromFile(event) {
         }
     }
 }
-
-// ===== ОБРАБОТКА РЕЗУЛЬТАТА QR-СКАНИРОВАНИЯ =====
 
 function onScanSuccess(decodedText, decodedResult) {
     if (isScannerRunning) {
