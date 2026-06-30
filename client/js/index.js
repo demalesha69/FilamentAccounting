@@ -350,12 +350,12 @@ function applyFiltersAndSort() {
         filtered = filtered.filter(f => 
             (f.name || '').toLowerCase().includes(searchQuery) ||
             (f.color || '').toLowerCase().includes(searchQuery) ||
-            (f.type || '').toLowerCase().includes(searchQuery)
+            (f.material_type || '').toLowerCase().includes(searchQuery)
         );
     }
     if (currentFilterType !== 'all') {
         filtered = filtered.filter(f => {
-            const type = (f.type || '').toLowerCase();
+            const type = (f.material_type || '').toLowerCase();
             if (currentFilterType === 'other') {
                 return !FILAMENT_TYPES.map(t => t.toLowerCase()).includes(type);
             }
@@ -434,8 +434,7 @@ function renderFilaments(filaments) {
         const colorName = COLOR_NAMES[colorKey] || f.color || 'Без цвета';
         const progress = Math.round(((f.current_mass || 0) / (f.initial_mass || 1)) * 100);
         const isEmpty = (f.current_mass || 0) <= 0;
-        // Используем поле type вместо material_type
-        const materialType = f.type || 'Неизвестный тип';
+        const materialType = f.material_type || 'Неизвестный тип';
         
         const emptyStyles = isEmpty ? `
             opacity: 0.5;
@@ -496,7 +495,6 @@ async function openDetailModal(id) {
     }
     
     try {
-        // Используем эндпоинт /materials/by_id/{material_id}
         const response = await fetch(`${API_URL}/materials/by_id/${id}`, {
             method: 'GET',
             headers: {
@@ -558,7 +556,7 @@ async function openDetailModal(id) {
                         </div>
                         <div>
                             <h2 style="color:#ffffff; font-size:22px; margin-bottom:4px;">${filament.name} ${isEmpty ? '📦' : ''}</h2>
-                            <p style="color:${isEmpty ? '#6b7280' : colorHex}; font-size:16px; font-weight:600;">${colorName} ${filament.type ? '• ' + filament.type : ''}</p>
+                            <p style="color:${isEmpty ? '#6b7280' : colorHex}; font-size:16px; font-weight:600;">${colorName} ${filament.material_type ? '• ' + filament.material_type : ''}</p>
                             ${filament.density ? `<p style="color:#9ca3af; font-size:13px;">Плотность: ${filament.density} г/см³ • Диаметр: ${filament.diameter || 1.75} мм</p>` : ''}
                             ${isEmpty ? `<p style="color:#ff5f5f; font-size:14px; margin-top:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Катушка пуста</p>` : ''}
                         </div>
@@ -632,7 +630,6 @@ async function loadQRCode(materialId) {
     if (!container) return;
     
     try {
-        // Используем эндпоинт /materials/qr/{material_id}
         const response = await fetch(`${API_URL}/materials/qr/${materialId}`, {
             method: 'GET',
             headers: {
@@ -697,7 +694,6 @@ function downloadQRCode() {
         return;
     }
     
-    // Скачиваем через fetch, чтобы получить blob с правильным типом
     const imgUrl = img.src;
     const token = localStorage.getItem('token');
     
@@ -837,11 +833,11 @@ async function deleteFilament(id) {
 
 function checkFilamentFields() {
     const name = document.getElementById('filamentName').value.trim();
-    const type = document.getElementById('filamentType').value.trim();
+    const material_type = document.getElementById('filamentType').value.trim();
     const color = document.getElementById('filamentColor').value.trim();
     const weight = parseFloat(document.getElementById('filamentWeight').value);
     const button = document.getElementById('addFilamentBtn');
-    if (name && type && color && weight > 0 && weight <= MAX_FILAMENT_WEIGHT) {
+    if (name && material_type && color && weight > 0 && weight <= MAX_FILAMENT_WEIGHT) {
         button.disabled = false;
         button.style.opacity = '1';
         button.style.cursor = 'pointer';
@@ -902,7 +898,7 @@ function setColor(color) {
 
 async function addFilamentManual() {
     const name = document.getElementById('filamentName').value.trim();
-    const type = document.getElementById('filamentType').value.trim();
+    const material_type = document.getElementById('filamentType').value.trim();
     const color = document.getElementById('filamentColor').value.trim();
     const initial_mass = parseFloat(document.getElementById('filamentWeight').value);
     
@@ -910,7 +906,7 @@ async function addFilamentManual() {
     let density = parseFloat(document.getElementById('filamentDensity').value) || 1.24;
     let diameter = parseFloat(document.getElementById('filamentDiameter').value) || 1.75;
     
-    if (!name || !type || !color || !initial_mass || initial_mass < 1) {
+    if (!name || !material_type || !color || !initial_mass || initial_mass < 1) {
         showNotification('Заполните все поля корректно', 'error');
         return;
     }
@@ -941,7 +937,7 @@ async function addFilamentManual() {
             },
             body: JSON.stringify({ 
                 name: name, 
-                type: type,
+                material_type: material_type,
                 color: color, 
                 initial_mass: initial_mass,
                 density: density,
@@ -1230,8 +1226,6 @@ function onScanSuccess(decodedText, decodedResult) {
         fileResult.style.color = '#4ade80';
     }
     
-    // Отправляем распознанную строку как есть (UUID или другой формат)
-    // Не пытаемся парсить как число!
     if (decodedText && decodedText.trim().length > 0) {
         findFilamentByQRCode(decodedText.trim());
     } else {
@@ -1250,8 +1244,6 @@ async function findFilamentByQRCode(qrCode) {
     }
     
     try {
-        // Используем эндпоинт /materials/by_qrcode/{qr_code}
-        // Отправляем строку, распознанную путем сканирования (UUID)
         const response = await fetch(`${API_URL}/materials/by_qrcode/${encodeURIComponent(qrCode)}`, {
             method: 'GET',
             headers: {
