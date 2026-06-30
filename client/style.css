@@ -789,6 +789,7 @@ body {
     border-radius: 14px;
     padding: 14px 18px;
     border: 1px solid rgba(255,255,255,0.06);
+    min-width: 0; /* Важно для flex-элементов */
 }
 
 .history-icon {
@@ -805,30 +806,42 @@ body {
 
 .history-details {
     flex: 1;
+    min-width: 0; /* Важно для обрезки текста */
 }
 
 .history-title {
     color: #ffffff;
     font-size: 15px;
     font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .history-meta {
     color: #9ca3af;
     font-size: 13px;
     margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .history-amount-remove {
     color: #ff5f5f;
     font-weight: 600;
     font-size: 15px;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .history-amount-add {
     color: #56d364;
     font-weight: 600;
     font-size: 15px;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 /* ========== HELP TEXT ========== */

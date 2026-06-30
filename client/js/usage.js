@@ -576,10 +576,13 @@ function openAddConsumption() {
     select.dataset.selectedValue = select.value;
     loadFilamentsForSelect();
     
-    // Восстанавливаем кнопку добавления
-    document.getElementById('addConsumptionBtn').textContent = 'Сохранить расход';
-    document.getElementById('addConsumptionBtn').onclick = createConsumption;
-    document.getElementById('addConsumptionBtn').style.background = '#8b5cf6';
+    // Настраиваем кнопку добавления (ручной режим)
+    const addBtn = document.getElementById('addConsumptionBtn');
+    addBtn.textContent = '💾 Сохранить расход';
+    addBtn.onclick = createConsumption;
+    addBtn.style.background = '#8b5cf6';
+    addBtn.disabled = true;
+    addBtn.style.opacity = '0.5';
     
     ['consumptionMaterialSelect', 'consumptionTitle', 'consumptionMass'].forEach(id => {
         document.getElementById(id).style.borderColor = '';
@@ -615,9 +618,13 @@ function toggleFileUpload() {
         fileBtn.style.color = '#ffffff';
         massInput.disabled = true;
         massInput.style.opacity = '0.5';
+        
+        // Меняем кнопку на файловый режим
         addBtn.textContent = '📤 Отправить расходы из файла';
         addBtn.onclick = submitFileConsumptions;
         addBtn.style.background = '#3b82f6';
+        addBtn.disabled = true;
+        addBtn.style.opacity = '0.5';
         
         // Сбрасываем выбранный файл
         document.getElementById('fileInput').value = '';
@@ -625,11 +632,6 @@ function toggleFileUpload() {
         document.getElementById('fileParsedInfo').style.display = 'none';
         document.getElementById('toolSelector').style.display = 'none';
         parsedFileData = null;
-        
-        // Отключаем кнопку добавления пока нет файла
-        addBtn.disabled = true;
-        addBtn.style.opacity = '0.5';
-        addBtn.style.cursor = 'not-allowed';
     } else {
         // Возвращаем к ручному вводу
         fileArea.style.display = 'none';
@@ -639,7 +641,9 @@ function toggleFileUpload() {
         fileBtn.style.color = '#9ca3af';
         massInput.disabled = false;
         massInput.style.opacity = '1';
-        addBtn.textContent = 'Сохранить расход';
+        
+        // Восстанавливаем кнопку для ручного режима
+        addBtn.textContent = '💾 Сохранить расход';
         addBtn.onclick = createConsumption;
         addBtn.style.background = '#8b5cf6';
         checkConsumptionFields();

@@ -611,7 +611,7 @@ async function openDetailModal(id) {
                             <span style="font-size:16px;">${isEmpty ? '0%' : progress + '%'}</span>
                         </div>
                         <div>
-                            <h2 style="color:#ffffff; font-size:22px; margin-bottom:4px;">${filament.name} ${isEmpty ? '📦' : ''}</h2>
+                            <h2 style="color:#ffffff; font-size:22px; margin-bottom:4px;">${filament.name} ${isEmpty ? = : ''}</h2>
                             <p style="color:${isEmpty ? '#6b7280' : colorHex}; font-size:16px; font-weight:600;">${colorName} ${filament.material_type ? '• ' + filament.material_type : ''}</p>
                             ${filament.density ? `<p style="color:#9ca3af; font-size:13px;">Плотность: ${filament.density} г/см³ • Диаметр: ${filament.diameter || 1.75} мм</p>` : ''}
                             ${isEmpty ? `<p style="color:#ff5f5f; font-size:14px; margin-top:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Катушка пуста</p>` : ''}
@@ -1463,7 +1463,7 @@ function stopQRScanner() {
                 isScannerRunning = false;
                 const resultsDiv = document.getElementById('qr-reader-results');
                 if (resultsDiv) {
-                    resultsDiv.textContent = '⏹ Сканирование остановлено';
+                    resultsDiv.textContent = 'Сканирование остановлено';
                     resultsDiv.style.color = '#9ca3af';
                 }
                 if (toggleBtn) {
