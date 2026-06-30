@@ -427,22 +427,58 @@ function renderFilaments(filaments) {
         
         let ringStyle;
         if (colorKey === 'multicolor') {
-            const colors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
-            const totalColors = colors.length;
+            // Мультицветные цвета
+            const multiColors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
+            const totalColors = multiColors.length;
             const segmentSize = 100 / totalColors;
             let gradientStops = [];
             
+            // Вычисляем сколько процентов каждого цвета отобразить
+            let remainingProgress = progress;
             for (let i = 0; i < totalColors; i++) {
                 const start = i * segmentSize;
                 const end = (i + 1) * segmentSize;
                 if (start < progress) {
                     const actualEnd = Math.min(end, progress);
-                    gradientStops.push(`${colors[i]} ${start}% ${actualEnd}%`);
+                    gradientStops.push(`${multiColors[i]} ${start}% ${actualEnd}%`);
+                } else {
+                    // Если прогресс еще не дошел до этого сегмента - добавляем темный фон только если это первый незаполненный сегмент
+                    if (i === 0 && progress === 0) {
+                        // Если прогресс 0, показываем только темный фон
+                        gradientStops = [`#2b2f3a 0% 100%`];
+                        break;
+                    }
+                    // Добавляем темный фон для оставшейся части, начиная с текущей позиции
+                    if (i === 0 && progress > 0) {
+                        // Первый сегмент уже заполнен частично или полностью, продолжаем
+                        continue;
+                    }
+                    // Добавляем темный фон только один раз для оставшейся части
+                    const darkStart = Math.max(progress, start);
+                    if (darkStart < 100) {
+                        gradientStops.push(`#2b2f3a ${darkStart}% 100%`);
+                    }
+                    break;
                 }
             }
             
-            if (progress < 100) {
-                gradientStops.push(`#2b2f3a ${progress}% 100%`);
+            // Если прогресс 100%, убираем темный фон
+            if (progress >= 100) {
+                gradientStops = gradientStops.filter(stop => !stop.includes('#2b2f3a'));
+                // Убедимся, что последний цвет доходит до 100%
+                if (gradientStops.length > 0) {
+                    const last = gradientStops[gradientStops.length - 1];
+                    const parts = last.split(' ');
+                    if (parts.length >= 3) {
+                        parts[parts.length - 1] = '100%';
+                        gradientStops[gradientStops.length - 1] = parts.join(' ');
+                    }
+                }
+            }
+            
+            // Если gradientStops пустой, добавляем темный фон
+            if (gradientStops.length === 0) {
+                gradientStops = [`#2b2f3a 0% 100%`];
             }
             
             ringStyle = `background: conic-gradient(${gradientStops.join(', ')});`;
