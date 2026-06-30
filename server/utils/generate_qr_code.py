@@ -1,14 +1,15 @@
+import io
 import qrcode
 import qrcode.image.svg
-import io
+
 
 def generate(uuid: str) -> io.BytesIO:
-    img = qrcode.make(uuid, image_factory=qrcode.image.svg.SvgImage)
+
+    factory = qrcode.image.svg.SvgImage
+    img = qrcode.make(uuid, image_factory=factory)
 
     buf = io.BytesIO()
-
-    img.save(buf, format="PNG")
-
+    img.save(buf)
     buf.seek(0)
 
     return buf
