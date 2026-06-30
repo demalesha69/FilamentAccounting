@@ -940,9 +940,9 @@ async function addFilamentManual() {
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ 
-                name, 
+                name: name, 
                 type: type,
-                color, 
+                color: color, 
                 initial_mass,
                 density: density,
                 diameter: diameter

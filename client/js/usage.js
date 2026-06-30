@@ -306,7 +306,7 @@ async function loadFilamentsForSelect() {
             option.value = f.id;
             const currentWeight = formatWeight(f.current_mass || 0);
             const initialWeight = formatWeight(f.initial_mass || 0);
-            const materialType = f.material_type || 'без типа';
+            const materialType = f.type || 'без типа';
             option.textContent = `${f.name} (${materialType}) — ${currentWeight} / ${initialWeight}`;
             select.appendChild(option);
         });
