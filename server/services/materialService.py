@@ -100,31 +100,6 @@ class MaterialService:
         
         return self._format_answer(material)
 
-    # def update_remaining_mass(
-    #     self,
-    #     db,
-    #     owner_id: int,
-    #     material_id: int,
-    #     remaining_mass: float
-    # ) -> dict:
-
-    #     material = self.repo.get_by_id(db, material_id)
-
-    #     if not material:
-    #         raise MaterialNotFound()
-
-    #     if material.owner_id != owner_id:
-    #         raise AccessDenied()
-
-    #     material.current_mass = remaining_mass
-
-    #     self.repo.update(db)
-
-    #     return {
-    #         "id": material.id,
-    #         "current_mass": material.current_mass
-    #     }
-
     def delete_material(self, db, owner_id: int, material_id: int) -> None:
 
         material = self.repo.get_by_id(db, material_id)
