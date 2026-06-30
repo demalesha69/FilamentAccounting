@@ -592,9 +592,10 @@ async function openDetailModal(id) {
                             <i class="fa-solid fa-download"></i>
                         </button>
                     </div>
+                    <div style="font-size:11px; color:#9ca3af; margin-top:8px; text-align:center; word-break:break-all; max-width:140px;">ID: #${filament.id}</div>
                     <div style="display:flex; gap:8px; margin-top:12px; width:100%;">
-                        <button onclick="printFilamentCard()" style="flex:1; background:#f59e0b; color:white; border:none; border-radius:12px; padding:10px; font-size:14px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
-                            <i class="fa-solid fa-print"></i> Печать
+                        <button onclick="printQRCode()" style="flex:1; background:#f59e0b; color:white; border:none; border-radius:12px; padding:10px; font-size:14px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+                            <i class="fa-solid fa-print"></i> QR
                         </button>
                         <button onclick="deleteFilament(${filament.id})" style="flex:1; background:#ff5f5f; color:white; border:none; border-radius:12px; padding:10px; font-size:14px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
                             <i class="fa-solid fa-trash"></i> Удалить
@@ -621,160 +622,81 @@ async function openDetailModal(id) {
     }
 }
 
-// ===== ПЕЧАТЬ КАРТОЧКИ =====
+// ===== ПЕЧАТЬ QR-КОДА =====
 
-function printFilamentCard() {
-    const modal = document.getElementById('detailModal');
-    if (!modal || modal.style.display !== 'flex') {
-        showNotification('Сначала откройте детали катушки', 'error');
+function printQRCode() {
+    const container = document.getElementById('qrCodeContainer');
+    if (!container) {
+        showNotification('QR-код не найден', 'error');
         return;
     }
     
-    // Создаем временный контейнер для печати
-    const printContainer = document.createElement('div');
-    printContainer.id = 'printContainer';
-    printContainer.style.cssText = `
-        padding: 30px;
-        background: #ffffff;
-        color: #000000;
-        font-family: Arial, sans-serif;
-        max-width: 800px;
-        margin: 0 auto;
-    `;
-    
-    // Копируем содержимое деталей
-    const detailBody = document.getElementById('detailBody');
-    const content = detailBody.cloneNode(true);
-    
-    // Убираем кнопки из печатной версии
-    const buttons = content.querySelectorAll('button');
-    buttons.forEach(btn => btn.remove());
-    
-    // Убираем спиннер и заменяем на QR-код, если он загружен
-    const qrContainer = content.querySelector('#qrCodeContainer');
-    if (qrContainer) {
-        const img = qrContainer.querySelector('img');
-        if (img) {
-            qrContainer.innerHTML = `
-                <img src="${img.src}" alt="QR-код" style="width:140px; height:140px; border-radius:8px; background:white; padding:8px; border:1px solid #ddd;" />
-            `;
-        } else {
-            qrContainer.innerHTML = `
-                <div style="width:140px; height:140px; border:1px dashed #ccc; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#999; font-size:12px;">
-                    QR-код не загружен
-                </div>
-            `;
-        }
+    const img = container.querySelector('img');
+    if (!img) {
+        showNotification('QR-код еще не загружен', 'error');
+        return;
     }
     
-    // Стилизуем для печати
+    // Создаем контейнер для печати только с QR-кодом
+    const printContainer = document.createElement('div');
+    printContainer.id = 'printQRContainer';
+    printContainer.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        background: #ffffff;
+        min-height: 100vh;
+        font-family: Arial, sans-serif;
+    `;
+    
+    // Получаем ID катушки
+    const idElement = container.closest('div').querySelector('div[style*="font-size:11px"]');
+    let filamentId = '';
+    if (idElement) {
+        filamentId = idElement.textContent.trim();
+    }
+    
+    // Создаем содержимое для печати
+    printContainer.innerHTML = `
+        <div style="text-align: center; max-width: 400px; margin: 0 auto;">
+            <div style="margin-bottom: 20px;">
+                <h2 style="color: #000000; margin: 0; font-size: 20px;">QR-код катушки</h2>
+                <p style="color: #666666; margin: 4px 0 0 0; font-size: 14px;">${filamentId || 'ID не указан'}</p>
+            </div>
+            <div style="background: white; padding: 20px; border: 2px solid #e0e0e0; border-radius: 12px; display: inline-block;">
+                <img src="${img.src}" alt="QR-код" style="width: 250px; height: 250px; display: block;" />
+            </div>
+            <div style="margin-top: 20px; color: #999999; font-size: 12px; border-top: 1px solid #eee; padding-top: 16px;">
+                <p style="margin: 2px 0;">Дата печати: ${new Date().toLocaleString()}</p>
+                <p style="margin: 2px 0; color: #cccccc; font-size: 10px;">FilamentAccounting</p>
+            </div>
+        </div>
+    `;
+    
+    // Добавляем стили для печати
     const style = document.createElement('style');
     style.textContent = `
-        body { background: white !important; }
-        .progress-ring { 
-            width: 80px !important; 
-            height: 80px !important; 
-            min-width: 80px !important;
-            border-radius: 50% !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            position: relative !important;
-        }
-        .progress-ring span { 
-            position: relative !important;
-            z-index: 2 !important;
-            font-size: 16px !important;
-            font-weight: 700 !important;
-        }
-        .progress-ring::before {
-            content: "" !important;
-            position: absolute !important;
-            width: 60px !important;
-            height: 60px !important;
-            border-radius: 50% !important;
-            background: white !important;
-        }
-        .weight-info { font-size: 14px !important; }
-        #printContainer * { color: #000000 !important; }
-        #printContainer .progress-ring span { color: #000000 !important; }
-        #printContainer [style*="color:#ffffff"] { color: #000000 !important; }
-        #printContainer [style*="color:#9ca3af"] { color: #666666 !important; }
-        #printContainer [style*="color:#6b7280"] { color: #888888 !important; }
-        #printContainer .filament-color { color: #000000 !important; }
-        .filament-color span { display: inline-block !important; width: 10px !important; height: 10px !important; border-radius: 50% !important; margin-right: 6px !important; vertical-align: middle !important; }
-        .weight-dot { width: 8px !important; height: 8px !important; border-radius: 50% !important; display: inline-block !important; }
-        .grid-2col { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
-        .bg-card { background: #f5f5f5 !important; border-radius: 10px !important; padding: 12px !important; text-align: center !important; }
-        .text-muted { color: #888888 !important; font-size: 12px !important; }
-        .text-large { font-size: 20px !important; font-weight: 700 !important; }
-        .text-red { color: #ff5f5f !important; }
-        .flex-row { display: flex !important; align-items: center !important; gap: 16px !important; margin-bottom: 16px !important; }
-        .flex-wrap { display: flex !important; gap: 20px !important; flex-wrap: wrap !important; align-items: flex-start !important; }
-        .flex-1 { flex: 1 !important; min-width: 200px !important; }
-        .flex-col-center { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; min-width: 160px !important; }
-        .mt-16 { margin-top: 16px !important; }
-        .mb-10 { margin-bottom: 10px !important; }
-        .history-item { display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 6px 10px !important; background: #f5f5f5 !important; border-radius: 8px !important; border-left: 3px solid #ff5f5f !important; margin-bottom: 4px !important; }
-        .history-item-title { font-weight: 500 !important; }
-        .history-item-time { color: #888888 !important; font-size: 11px !important; }
-        .history-item-remain { color: #888888 !important; font-size: 13px !important; }
-        .history-item-used { font-weight: 700 !important; color: #ff5f5f !important; font-size: 15px !important; white-space: nowrap !important; }
-        .no-print { display: none !important; }
-        .print-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .print-header h1 { font-size: 24px; color: #000; }
-        .print-header p { color: #666; font-size: 14px; }
         @media print {
             body * { visibility: hidden; }
-            #printContainer, #printContainer * { visibility: visible; }
-            #printContainer { position: absolute; left: 0; top: 0; width: 100%; }
+            #printQRContainer, #printQRContainer * { visibility: visible; }
+            #printQRContainer { 
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background: white !important;
+                z-index: 9999;
+            }
+            #printQRContainer img {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
         }
     `;
     printContainer.appendChild(style);
-    
-    // Добавляем заголовок для печати
-    const header = document.createElement('div');
-    header.className = 'print-header';
-    header.innerHTML = `
-        <h1>📦 Карточка катушки</h1>
-        <p>Дата печати: ${new Date().toLocaleString()}</p>
-    `;
-    printContainer.appendChild(header);
-    
-    // Адаптируем содержимое для печати
-    const contentClone = content.cloneNode(true);
-    
-    // Исправляем стили для печати
-    const allElements = contentClone.querySelectorAll('*');
-    allElements.forEach(el => {
-        // Убираем все фоновые цвета, кроме серых карточек
-        const bg = el.style.background;
-        if (bg && bg.includes('#232734')) {
-            el.style.background = '#f5f5f5';
-        }
-        if (bg && bg.includes('#1a1d26')) {
-            el.style.background = '#fafafa';
-        }
-        // Меняем цвета текста
-        if (el.style.color && el.style.color.includes('#ffffff')) {
-            el.style.color = '#000000';
-        }
-        if (el.style.color && el.style.color.includes('#6b7280')) {
-            el.style.color = '#888888';
-        }
-        if (el.style.color && el.style.color.includes('#ff5f5f')) {
-            el.style.color = '#ff5f5f';
-        }
-        if (el.style.color && el.style.color.includes('#9ca3af')) {
-            el.style.color = '#888888';
-        }
-    });
-    
-    // Убираем кнопки из клона
-    const cloneButtons = contentClone.querySelectorAll('button');
-    cloneButtons.forEach(btn => btn.remove());
-    
-    printContainer.appendChild(contentClone);
     
     document.body.appendChild(printContainer);
     
@@ -783,9 +705,8 @@ function printFilamentCard() {
         window.print();
         // Удаляем контейнер после печати
         setTimeout(() => {
-            if (document.getElementById('printContainer')) {
-                document.getElementById('printContainer').remove();
-            }
+            const el = document.getElementById('printQRContainer');
+            if (el) el.remove();
         }, 1000);
     }, 300);
 }
