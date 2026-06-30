@@ -39,9 +39,7 @@ class ParseService:
 
         return "\n".join(text_parts)
     
-    def _parse_filament(self, text: str):
-        text = text.lower()
-
+    def _parse_filament(self, text: str) -> dict:
         result = {
             "total": None,
             "unit": None,
@@ -49,53 +47,82 @@ class ParseService:
             "tool_count": 0
         }
 
-        tools = defaultdict(lambda: {"value": None, "unit": None})
+        text_lower = text.lower()
 
-        patterns_tools = [
-            r"t(\d+)[^\d]{0,20}([\d\.]+)\s*g",
-            r"t(\d+)[^\d]{0,20}([\d\.]+)\s*mm",
+        tools_g = {}
+        tools_mm = {}
+
+        tool_patterns = [
+            r"t(\d+)[^\d]{0,30}([\d\.]+)\s*g",
+            r"t(\d+)[^\d]{0,30}([\d\.]+)\s*mm",
         ]
 
-        for p in patterns_tools:
-            for m in re.finditer(p, text):
-                t = f"T{m.group(1)}"
-                val = float(m.group(2))
-                unit = "g" if "g" in m.group(0) else "mm"
+        for pattern in tool_patterns:
+            for m in re.finditer(pattern, text_lower):
 
-                if tools[t]["value"] is None:
-                    tools[t] = {"value": val, "unit": unit}
+                tool = f"T{m.group(1)}"
+                value = float(m.group(2))
 
-        if tools:
-            result["tools"] = dict(tools)
-            result["tool_count"] = len(tools)
+                if "g" in m.group(0):
+                    tools_g[tool] = value
+                else:
+                    tools_mm[tool] = value
 
-            total = 0
-            unit = None
+        if tools_g:
+            result["tools"] = {
+                k: {"value": v, "unit": "g"}
+                for k, v in tools_g.items()
+            }
 
-            for v in tools.values():
-                total += v["value"]
-                unit = v["unit"]
+            result["tool_count"] = len(tools_g)
+            result["total"] = sum(tools_g.values())
+            result["unit"] = "g"
 
-            result["total"] = total
-            result["unit"] = unit
             return result
 
-        patterns_total = [
-            r"filament used[:\s]*([\d\.]+)\s*g",
-            r"filament used[:\s]*([\d\.]+)\s*mm",
-            r"filament consumption[:\s]*([\d\.]+)\s*g",
-            r"filament consumption[:\s]*([\d\.]+)\s*mm",
+        if tools_mm:
+            result["tools"] = {
+                k: {"value": v, "unit": "mm"}
+                for k, v in tools_mm.items()
+            }
+
+            result["tool_count"] = len(tools_mm)
+            result["total"] = sum(tools_mm.values())
+            result["unit"] = "mm"
+
+            return result
+
+        grams_matches = []
+        mm_matches = []
+
+        patterns = [
+            r"filament used[:=\s]*([\d\.]+)\s*g",
+            r"filament used[:=\s]*([\d\.]+)\s*mm",
+            r"used filament[:=\s]*([\d\.]+)\s*g",
+            r"used filament[:=\s]*([\d\.]+)\s*mm",
+            r"filament consumption[:=\s]*([\d\.]+)\s*g",
+            r"filament consumption[:=\s]*([\d\.]+)\s*mm",
         ]
 
-        for p in patterns_total:
-            m = re.search(p, text)
-            if m:
-                return {
-                    "total": float(m.group(1)),
-                    "unit": "g" if "g" in p else "mm",
-                    "tools": {},
-                    "tool_count": 0
-                }
+        for p in patterns:
+            for m in re.finditer(p, text_lower):
+
+                value = float(m.group(1))
+
+                if "g" in p:
+                    grams_matches.append(value)
+                else:
+                    mm_matches.append(value)
+
+        if grams_matches:
+            result["total"] = max(grams_matches)
+            result["unit"] = "g"
+            return result
+
+        if mm_matches:
+            result["total"] = max(mm_matches)
+            result["unit"] = "mm"
+            return result
 
         return None
 
