@@ -623,6 +623,7 @@ body {
     width: 16px;
 }
 
+/* Общие стили для всех input, select, textarea */
 .form-group input[type="text"],
 .form-group input[type="email"],
 .form-group input[type="password"],
@@ -648,6 +649,60 @@ body {
     color: #6b7280;
 }
 
+/* Стили для select во всех модальных окнах */
+.modal .form-group select,
+#addFilamentModal .form-group select,
+#addConsumptionModal .form-group select {
+    background: #232734;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 12px 40px 12px 16px;
+    color: #ffffff;
+    font-size: 15px;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    cursor: pointer;
+    transition: border-color 0.3s;
+    height: auto;
+    min-height: 48px;
+}
+
+.modal .form-group select:focus,
+#addFilamentModal .form-group select:focus,
+#addConsumptionModal .form-group select:focus {
+    outline: none;
+    border-color: #8b5cf6;
+}
+
+.modal .form-group select option,
+#addFilamentModal .form-group select option,
+#addConsumptionModal .form-group select option {
+    background: #1a1d26;
+    color: #ffffff;
+    padding: 10px 14px;
+    font-size: 15px;
+}
+
+.modal .form-group select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* select в модалке настроек */
+.setting-item select {
+    background: #232734;
+    color: #ffffff;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
 .password-wrapper {
     position: relative;
 }
@@ -670,27 +725,6 @@ body {
 
 .toggle-password:hover {
     color: #ffffff;
-}
-
-select {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    padding-right: 40px;
-}
-
-select option {
-    background: #1a1d26;
-    color: #ffffff;
-    padding: 8px;
-}
-
-select:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }
 
 .auth-button {
@@ -1089,76 +1123,6 @@ select:disabled {
     }
 }
 
-/* ========== STYLED SELECT ========== */
-select.styled-select {
-    background: #232734;
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 12px;
-    padding: 12px 40px 12px 16px;
-    color: #ffffff;
-    font-size: 15px;
-    width: 100%;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    cursor: pointer;
-    transition: border-color 0.3s;
-}
-
-select.styled-select:focus {
-    outline: none;
-    border-color: #8b5cf6;
-}
-
-select.styled-select option {
-    background: #1a1d26;
-    color: #ffffff;
-    padding: 8px;
-}
-
-select.styled-select:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Стиль для select в модальных окнах */
-.modal .form-group select {
-    background: #232734;
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 12px;
-    padding: 12px 40px 12px 16px;
-    color: #ffffff;
-    font-size: 15px;
-    width: 100%;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    cursor: pointer;
-    transition: border-color 0.3s;
-}
-
-.modal .form-group select:focus {
-    outline: none;
-    border-color: #8b5cf6;
-}
-
-.modal .form-group select option {
-    background: #1a1d26;
-    color: #ffffff;
-    padding: 8px;
-}
-
-.modal .form-group select:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
 /* ========== QR SCANNER ========== */
 #qr-reader {
     background: #0f1117;
@@ -1437,6 +1401,23 @@ select.styled-select:disabled {
         font-size: 17px !important;
         border-radius: 14px !important;
         height: 54px !important;
+    }
+    
+    .modal .form-group select,
+    #addFilamentModal .form-group select,
+    #addConsumptionModal .form-group select {
+        padding: 14px 40px 14px 18px !important;
+        font-size: 17px !important;
+        border-radius: 14px !important;
+        min-height: 54px !important;
+        height: 54px !important;
+    }
+    
+    .modal .form-group select option,
+    #addFilamentModal .form-group select option,
+    #addConsumptionModal .form-group select option {
+        font-size: 17px !important;
+        padding: 12px 16px !important;
     }
     
     .password-wrapper input {

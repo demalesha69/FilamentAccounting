@@ -434,6 +434,7 @@ function renderFilaments(filaments) {
         const colorName = COLOR_NAMES[colorKey] || f.color || 'Без цвета';
         const progress = Math.round(((f.current_mass || 0) / (f.initial_mass || 1)) * 100);
         const isEmpty = (f.current_mass || 0) <= 0;
+        const materialType = f.material_type || 'Неизвестный тип';
         
         const emptyStyles = isEmpty ? `
             opacity: 0.5;
@@ -461,7 +462,14 @@ function renderFilaments(filaments) {
                 </div>
                 <div class="filament-info">
                     <h2>${f.name || 'Без названия'} ${isEmpty ? '📦' : ''}</h2>
-                    <p class="filament-color" style="color:${isEmpty ? '#6b7280' : colorHex};">${colorName} ${f.material_type ? '• ' + f.material_type : ''}</p>
+                    <p class="filament-color" style="color:${isEmpty ? '#6b7280' : colorHex};">
+                        <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${isEmpty ? '#6b7280' : colorHex}; margin-right:6px; vertical-align:middle;"></span>
+                        ${colorName}
+                    </p>
+                    <p style="font-size:12px; color:#6b7280; margin-top:2px;">
+                        <i class="fa-solid fa-cube" style="font-size:11px; margin-right:4px;"></i>
+                        ${materialType}
+                    </p>
                 </div>
             </div>
             <div class="weight-info" style="color:${weightColor};">
@@ -711,7 +719,6 @@ function downloadQRCode() {
 }
 
 async function deleteFilament(id) {
-    if (!confirm('Вы уверены, что хотите удалить эту катушку?')) return;
     const token = localStorage.getItem('token');
     if (!token) {
         showNotification('Вы не авторизованы', 'error');
@@ -729,7 +736,7 @@ async function deleteFilament(id) {
             return;
         }
         if (response.status === 204) {
-            showNotification('Катушка успешно удалена!', 'success');
+            showNotification('Катушка удалена', 'success');
             closeDetailModal();
             loadFilaments();
             return;
@@ -738,7 +745,7 @@ async function deleteFilament(id) {
         if (data.status !== 204 && data.status !== 200) {
             throw new Error(data.message || data.error || 'Ошибка удаления');
         }
-        showNotification('Катушка успешно удалена!', 'success');
+        showNotification('Катушка удалена', 'success');
         closeDetailModal();
         loadFilaments();
     } catch (error) {
