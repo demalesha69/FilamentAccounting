@@ -447,11 +447,30 @@ function renderFilaments(filaments) {
         const weightText = isEmpty ? '0 г (пусто)' : `${currentWeight} / ${initialWeight}`;
         const weightColor = isEmpty ? '#6b7280' : colorHex;
         
+        // Для мультицвета создаем градиент с обрезкой по прогрессу
         let ringStyle;
         if (colorKey === 'multicolor') {
-            ringStyle = `background: conic-gradient(from 0deg, #ef4444 0%, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) calc(var(--progress) * 1%);`;
+            const colors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
+            const totalColors = colors.length;
+            const segmentSize = 100 / totalColors;
+            let gradientStops = [];
+            
+            for (let i = 0; i < totalColors; i++) {
+                const start = i * segmentSize;
+                const end = (i + 1) * segmentSize;
+                if (start < progress) {
+                    const actualEnd = Math.min(end, progress);
+                    gradientStops.push(`${colors[i]} ${start}% ${actualEnd}%`);
+                }
+            }
+            
+            if (progress < 100) {
+                gradientStops.push(`#2b2f3a ${progress}% 100%`);
+            }
+            
+            ringStyle = `background: conic-gradient(${gradientStops.join(', ')});`;
         } else {
-            ringStyle = `background: conic-gradient(${ringColor} calc(var(--progress) * 1%), #2b2f3a 0);`;
+            ringStyle = `background: conic-gradient(${ringColor} ${progress}%, #2b2f3a 0);`;
         }
         
         const dotStyle = colorKey === 'multicolor' 
@@ -544,11 +563,30 @@ async function openDetailModal(id) {
         const initialWeight = formatWeight(filament.initial_mass || 0);
         const usedWeight = formatWeight(used);
         
+        // Для мультицвета создаем градиент с обрезкой по прогрессу
         let ringStyle;
         if (colorKey === 'multicolor') {
-            ringStyle = `background: conic-gradient(from 0deg, #ef4444 0%, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) calc(var(--progress) * 1%);`;
+            const colors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
+            const totalColors = colors.length;
+            const segmentSize = 100 / totalColors;
+            let gradientStops = [];
+            
+            for (let i = 0; i < totalColors; i++) {
+                const start = i * segmentSize;
+                const end = (i + 1) * segmentSize;
+                if (start < progress) {
+                    const actualEnd = Math.min(end, progress);
+                    gradientStops.push(`${colors[i]} ${start}% ${actualEnd}%`);
+                }
+            }
+            
+            if (progress < 100) {
+                gradientStops.push(`#2b2f3a ${progress}% 100%`);
+            }
+            
+            ringStyle = `background: conic-gradient(${gradientStops.join(', ')});`;
         } else {
-            ringStyle = `--ring-color:${ringColor}; background: conic-gradient(var(--ring-color) calc(var(--progress) * 1%), #2b2f3a 0);`;
+            ringStyle = `--ring-color:${ringColor}; background: conic-gradient(var(--ring-color) ${progress}%, #2b2f3a 0);`;
         }
         
         const historyHtml = await loadConsumptionHistory(id);
@@ -1064,7 +1102,7 @@ async function addFilamentManual() {
     }
 }
 
-// ===== QR-СКАНЕР =====
+// ===== QR-СКАНЕР (остается без изменений) =====
 
 let html5QrCode = null;
 let isScannerRunning = false;
