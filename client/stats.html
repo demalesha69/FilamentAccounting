@@ -58,7 +58,6 @@
                 <div class="stat-label">Среднее в день (г)</div>
             </div>
         </div>
-        <div class="stats-history" id="statsHistory"></div>
     </main>
 
     <footer class="bottom-nav">
@@ -74,33 +73,7 @@
             <i class="fa-solid fa-chart-column"></i>
             <span>Статистика</span>
         </a>
-        <button class="nav-item" onclick="openSettings()">
-            <i class="fa-solid fa-gear"></i>
-            <span>Настройки</span>
-        </button>
     </footer>
-</div>
-
-<div class="modal-overlay" id="settingsModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h2>Настройки</h2>
-            <button class="modal-close" onclick="closeSettings()">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-        <div class="modal-body">
-            <div class="setting-item">
-                <label>Темная тема</label>
-                <input type="checkbox" id="darkTheme" checked>
-            </div>
-            <div class="setting-item">
-                <label>Уведомления</label>
-                <input type="checkbox" id="notifications" checked>
-            </div>
-            <button class="save-button" onclick="saveSettings()">Сохранить</button>
-        </div>
-    </div>
 </div>
 
 <script src="js/stats.js"></script>

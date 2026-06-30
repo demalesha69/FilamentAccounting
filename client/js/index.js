@@ -265,28 +265,6 @@ function showUsername() {
     } catch (e) {}
 }
 
-// ===== НАСТРОЙКИ =====
-
-function openSettings() {
-    document.getElementById('settingsModal').style.display = 'flex';
-}
-
-function closeSettings() {
-    document.getElementById('settingsModal').style.display = 'none';
-}
-
-document.getElementById('settingsModal').addEventListener('click', function(e) {
-    if (e.target === this) closeSettings();
-});
-
-function saveSettings() {
-    const theme = document.getElementById('darkTheme').checked;
-    const notifications = document.getElementById('notifications').checked;
-    console.log('Сохранено:', { theme, notifications });
-    showNotification('Настройки сохранены!', 'success');
-    closeSettings();
-}
-
 // ===== ФИЛЬТРЫ =====
 
 function closeFilter() {
@@ -449,9 +427,27 @@ function renderFilaments(filaments) {
         
         let ringStyle;
         if (colorKey === 'multicolor') {
-            ringStyle = `background: conic-gradient(from 0deg, #ef4444 0%, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) calc(var(--progress) * 1%);`;
+            const colors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
+            const totalColors = colors.length;
+            const segmentSize = 100 / totalColors;
+            let gradientStops = [];
+            
+            for (let i = 0; i < totalColors; i++) {
+                const start = i * segmentSize;
+                const end = (i + 1) * segmentSize;
+                if (start < progress) {
+                    const actualEnd = Math.min(end, progress);
+                    gradientStops.push(`${colors[i]} ${start}% ${actualEnd}%`);
+                }
+            }
+            
+            if (progress < 100) {
+                gradientStops.push(`#2b2f3a ${progress}% 100%`);
+            }
+            
+            ringStyle = `background: conic-gradient(${gradientStops.join(', ')});`;
         } else {
-            ringStyle = `background: conic-gradient(${ringColor} calc(var(--progress) * 1%), #2b2f3a 0);`;
+            ringStyle = `background: conic-gradient(${ringColor} ${progress}%, #2b2f3a 0);`;
         }
         
         const dotStyle = colorKey === 'multicolor' 
@@ -546,9 +542,27 @@ async function openDetailModal(id) {
         
         let ringStyle;
         if (colorKey === 'multicolor') {
-            ringStyle = `background: conic-gradient(from 0deg, #ef4444 0%, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) calc(var(--progress) * 1%);`;
+            const colors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
+            const totalColors = colors.length;
+            const segmentSize = 100 / totalColors;
+            let gradientStops = [];
+            
+            for (let i = 0; i < totalColors; i++) {
+                const start = i * segmentSize;
+                const end = (i + 1) * segmentSize;
+                if (start < progress) {
+                    const actualEnd = Math.min(end, progress);
+                    gradientStops.push(`${colors[i]} ${start}% ${actualEnd}%`);
+                }
+            }
+            
+            if (progress < 100) {
+                gradientStops.push(`#2b2f3a ${progress}% 100%`);
+            }
+            
+            ringStyle = `background: conic-gradient(${gradientStops.join(', ')});`;
         } else {
-            ringStyle = `--ring-color:${ringColor}; background: conic-gradient(var(--ring-color) calc(var(--progress) * 1%), #2b2f3a 0);`;
+            ringStyle = `--ring-color:${ringColor}; background: conic-gradient(var(--ring-color) ${progress}%, #2b2f3a 0);`;
         }
         
         const historyHtml = await loadConsumptionHistory(id);
@@ -619,7 +633,6 @@ async function openDetailModal(id) {
         `;
         modal.style.display = 'flex';
         
-        // Загружаем QR-код после отображения модалки
         loadQRCode(filament.id);
         
     } catch (error) {
@@ -628,7 +641,7 @@ async function openDetailModal(id) {
     }
 }
 
-// ===== ПЕЧАТЬ QR-КОДА (ТОЛЬКО QR, БЕЗ ТЕКСТА) =====
+// ===== ПЕЧАТЬ QR-КОДА =====
 
 function printQRCode() {
     const container = document.getElementById('qrCodeContainer');

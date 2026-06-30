@@ -126,26 +126,6 @@ function showUsername() {
     } catch (e) {}
 }
 
-function openSettings() {
-    document.getElementById('settingsModal').style.display = 'flex';
-}
-
-function closeSettings() {
-    document.getElementById('settingsModal').style.display = 'none';
-}
-
-document.getElementById('settingsModal').addEventListener('click', function(e) {
-    if (e.target === this) closeSettings();
-});
-
-function saveSettings() {
-    const theme = document.getElementById('darkTheme').checked;
-    const notifications = document.getElementById('notifications').checked;
-    console.log('Сохранено:', { theme, notifications });
-    showNotification('Настройки сохранены!', 'success');
-    closeSettings();
-}
-
 async function loadAllConsumptions() {
     const token = localStorage.getItem('token');
     if (!token) return;

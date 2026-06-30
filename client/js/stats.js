@@ -155,35 +155,12 @@ function showUsername() {
     } catch (e) {}
 }
 
-// ===== НАСТРОЙКИ =====
-
-function openSettings() {
-    document.getElementById('settingsModal').style.display = 'flex';
-}
-
-function closeSettings() {
-    document.getElementById('settingsModal').style.display = 'none';
-}
-
-document.getElementById('settingsModal').addEventListener('click', function(e) {
-    if (e.target === this) closeSettings();
-});
-
-function saveSettings() {
-    const theme = document.getElementById('darkTheme').checked;
-    const notifications = document.getElementById('notifications').checked;
-    console.log('Сохранено:', { theme, notifications });
-    showNotification('Настройки сохранены!', 'success');
-    closeSettings();
-}
-
 // ===== СТАТИСТИКА =====
 
 async function loadStats(startTimestamp = null, endTimestamp = null) {
     const token = localStorage.getItem('token');
     if (!token) {
         showNotification('Вы не авторизованы', 'error');
-        // Показываем заглушку
         document.getElementById('totalUsed').textContent = '—';
         document.getElementById('totalMaterials').textContent = '—';
         document.getElementById('totalOperations').textContent = '—';
@@ -221,7 +198,6 @@ async function loadStats(startTimestamp = null, endTimestamp = null) {
             return;
         }
         
-        // Проверяем, что ответ — JSON
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
             const text = await response.text();
@@ -311,8 +287,6 @@ function setCustomPeriod() {
     
     loadStats(currentStartTimestamp, currentEndTimestamp);
 }
-
-// ===== ИНИЦИАЛИЗАЦИЯ =====
 
 window.onload = async function() {
     console.log('=== СТАТИСТИКА: ЗАГРУЗКА ===');
