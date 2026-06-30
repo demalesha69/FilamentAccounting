@@ -73,14 +73,54 @@
                     <option value="">Загрузка...</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label for="consumptionTitle"><i class="fa-solid fa-pen"></i> Название действия</label>
-                <input type="text" id="consumptionTitle" placeholder="Печать детали" />
+            
+            <!-- Кнопка переключения режима -->
+            <button class="auth-button" id="fileUploadBtn" onclick="toggleFileUpload()" type="button" style="background:#232734; color:#9ca3af; font-size:14px; padding:10px; margin-top:0;">
+                📁 Загрузить файл слайсера
+            </button>
+            
+            <!-- Область загрузки файла (изначально скрыта) -->
+            <div id="fileUploadArea" style="display:none; flex-direction:column; gap:12px; margin-top:8px;">
+                <div style="border:2px dashed rgba(255,255,255,0.1); border-radius:16px; padding:20px; text-align:center; background:#1a1d26; cursor:pointer;" 
+                     onclick="document.getElementById('fileInput').click()">
+                    <i class="fa-solid fa-cloud-arrow-up" style="font-size:32px; color:#6b7280; display:block; margin-bottom:8px;"></i>
+                    <p style="color:#9ca3af; font-size:14px;">Нажмите или перетащите файл слайсера</p>
+                    <p style="color:#6b7280; font-size:12px; margin-top:4px;">Поддерживаются: .gcode, .bgcode, .3mf</p>
+                </div>
+                <input type="file" id="fileInput" accept=".gcode,.bgcode,.3mf" style="display:none;" onchange="handleFileSelect(event)" />
+                
+                <!-- Информация о загруженном файле -->
+                <div id="fileInfo" style="display:none; background:#232734; border-radius:10px; padding:10px 14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="color:#ffffff; font-weight:500;" id="fileName">file.gcode</span>
+                            <span style="color:#6b7280; font-size:12px; margin-left:8px;" id="fileSize">0 КБ</span>
+                        </div>
+                        <button onclick="document.getElementById('fileInput').value=''; document.getElementById('fileInfo').style.display='none'; document.getElementById('fileParsedInfo').style.display='none'; document.getElementById('toolSelector').style.display='none'; parsedFileData=null; document.getElementById('addConsumptionBtn').disabled=true; document.getElementById('addConsumptionBtn').style.opacity='0.5';" style="background:transparent; border:none; color:#9ca3af; cursor:pointer; font-size:18px;">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Результат парсинга -->
+                <div id="fileParsedInfo" style="display:none;"></div>
+                
+                <!-- Селектор инструментов для многокатушечных файлов -->
+                <div id="toolSelector" style="display:none;"></div>
             </div>
-            <div class="form-group">
-                <label for="consumptionMass"><i class="fa-solid fa-weight-scale"></i> Использовано (граммы)</label>
-                <input type="number" id="consumptionMass" placeholder="50" value="10" />
+            
+            <!-- Область ручного ввода (видна по умолчанию) -->
+            <div id="manualInputArea" style="display:block;">
+                <div class="form-group" style="margin-top:8px;">
+                    <label for="consumptionTitle"><i class="fa-solid fa-pen"></i> Название действия</label>
+                    <input type="text" id="consumptionTitle" placeholder="Печать детали" />
+                </div>
+                <div class="form-group">
+                    <label for="consumptionMass"><i class="fa-solid fa-weight-scale"></i> Использовано (граммы)</label>
+                    <input type="number" id="consumptionMass" placeholder="50" value="10" />
+                </div>
             </div>
+            
             <button class="auth-button" id="addConsumptionBtn" onclick="createConsumption()" disabled>
                 <i class="fa-solid fa-floppy-disk"></i> Сохранить расход
             </button>
