@@ -1156,9 +1156,6 @@ body {
     }
     
     /* СТАТИСТИКА НА МОБИЛЬНЫХ — УВЕЛИЧЕННЫЙ ОТСТУП */
-    .stats-page .content {
-        padding-top: 280px !important;
-    }
     
     .filament-grid {
         grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
@@ -1527,15 +1524,18 @@ body {
 }
 
 /* ========== СТРАНИЦА СТАТИСТИКИ - УВЕЛИЧЕННЫЙ ОТСТУП ========== */
+.stats-page .content {
+    padding-top: 180px !important;
+}
 
 @media (max-width: 480px) {
     .stats-page .content {
-        padding-top: 280px !important;
+        padding-top: 210px !important;
     }
 }
 
 @media (max-width: 360px) {
     .stats-page .content {
-        padding-top: 320px !important;
+        padding-top: 220px !important;
     }
 }
