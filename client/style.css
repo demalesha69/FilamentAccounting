@@ -118,6 +118,24 @@ body {
     padding: 180px 20px 162px;
 }
 
+/* ========== СТАТИСТИКА: УВЕЛИЧЕННЫЙ ОТСТУП ========== */
+/* Если на странице есть .stats-controls, увеличиваем отступ сверху */
+body:has(.stats-controls) .content {
+    padding-top: 280px !important;
+}
+
+@media (max-width: 480px) {
+    body:has(.stats-controls) .content {
+        padding-top: 300px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    body:has(.stats-controls) .content {
+        padding-top: 320px !important;
+    }
+}
+
 /* ========== FILAMENT GRID ========== */
 .filament-grid {
     display: grid;
@@ -949,12 +967,6 @@ body {
     color: #8b5cf6;
 }
 
-/* ========== СТАТИСТИКА: УВЕЛИЧЕННЫЙ ОТСТУП ========== */
-/* Для страницы статистики увеличиваем отступ сверху, чтобы контент не заезжал под шапку */
-body:has(.stats-controls) .content {
-    padding-top: 260px !important;
-}
-
 /* ========== DETAIL MODAL ========== */
 #detailBody .progress-ring {
     --size: 80px;
@@ -1159,11 +1171,6 @@ body:has(.stats-controls) .content {
     
     .content {
         padding: 170px 16px 155px !important;
-    }
-    
-    /* Для статистики на мобильных */
-    body:has(.stats-controls) .content {
-        padding-top: 250px !important;
     }
     
     .filament-grid {
@@ -1497,10 +1504,6 @@ body:has(.stats-controls) .content {
     
     .content {
         padding: 160px 12px 150px !important;
-    }
-    
-    body:has(.stats-controls) .content {
-        padding-top: 240px !important;
     }
 
     .fab-button:not(.fab-group .fab-button) {
