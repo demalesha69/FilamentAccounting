@@ -264,7 +264,7 @@ body {
     transform: scale(0.95);
 }
 
-/* ========== FAB BUTTON GROUP (для index.html) ========== */
+/* ========== FAB BUTTON GROUP ========== */
 .fab-group {
     position: fixed;
     right: 20px;
@@ -1155,11 +1155,6 @@ body {
         padding: 170px 16px 155px !important;
     }
     
-    /* СТАТИСТИКА НА МОБИЛЬНЫХ — УВЕЛИЧЕННЫЙ ОТСТУП */
-    .stats-controls ~ .content {
-        padding-top: 300px !important;
-    }
-    
     .filament-grid {
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
         gap: 14px !important;
@@ -1492,11 +1487,6 @@ body {
     .content {
         padding: 160px 12px 150px !important;
     }
-    
-    /* СТАТИСТИКА НА САМЫХ МАЛЕНЬКИХ ЭКРАНАХ */
-    .stats-controls ~ .content {
-        padding-top: 320px !important;
-    }
 
     .fab-button:not(.fab-group .fab-button) {
         right: 12px !important;
@@ -1516,19 +1506,9 @@ body {
     }
 }
 
-/* ========== СТРАНИЦА СТАТИСТИКИ - УВЕЛИЧЕННЫЙ ОТСТУП ========== */
-.stats-page .content {
-    padding-top: 180px !important;
-}
-
+/* ========== СТАТИСТИКА НА ТЕЛЕФОНАХ ========== */
 @media (max-width: 480px) {
     .stats-page .content {
-        padding-top: 280px !important;
-    }
-}
-
-@media (max-width: 360px) {
-    .stats-page .content {
-        padding-top: 320px !important;
+        padding-top: 190px !important;
     }
 }
