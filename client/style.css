@@ -1509,6 +1509,6 @@ body {
 /* ========== СТАТИСТИКА НА ТЕЛЕФОНАХ ========== */
 @media (max-width: 480px) {
     .stats-page .content {
-        padding-top: 190px !important;
+        padding-top: 220px !important;
     }
 }
