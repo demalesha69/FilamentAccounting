@@ -118,24 +118,6 @@ body {
     padding: 180px 20px 162px;
 }
 
-/* ========== СТАТИСТИКА: УВЕЛИЧЕННЫЙ ОТСТУП ========== */
-/* Если на странице есть .stats-controls, увеличиваем отступ сверху */
-body:has(.stats-controls) .content {
-    padding-top: 280px !important;
-}
-
-@media (max-width: 480px) {
-    body:has(.stats-controls) .content {
-        padding-top: 300px !important;
-    }
-}
-
-@media (max-width: 360px) {
-    body:has(.stats-controls) .content {
-        padding-top: 320px !important;
-    }
-}
-
 /* ========== FILAMENT GRID ========== */
 .filament-grid {
     display: grid;
@@ -1173,6 +1155,11 @@ body:has(.stats-controls) .content {
         padding: 170px 16px 155px !important;
     }
     
+    /* СТАТИСТИКА НА МОБИЛЬНЫХ — УВЕЛИЧЕННЫЙ ОТСТУП */
+    .stats-controls ~ .content {
+        padding-top: 300px !important;
+    }
+    
     .filament-grid {
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
         gap: 14px !important;
@@ -1504,6 +1491,11 @@ body:has(.stats-controls) .content {
     
     .content {
         padding: 160px 12px 150px !important;
+    }
+    
+    /* СТАТИСТИКА НА САМЫХ МАЛЕНЬКИХ ЭКРАНАХ */
+    .stats-controls ~ .content {
+        padding-top: 320px !important;
     }
 
     .fab-button:not(.fab-group .fab-button) {
