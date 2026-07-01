@@ -789,7 +789,7 @@ body {
     border-radius: 14px;
     padding: 14px 18px;
     border: 1px solid rgba(255,255,255,0.06);
-    min-width: 0; /* Важно для flex-элементов */
+    min-width: 0;
 }
 
 .history-icon {
@@ -806,7 +806,7 @@ body {
 
 .history-details {
     flex: 1;
-    min-width: 0; /* Важно для обрезки текста */
+    min-width: 0;
 }
 
 .history-title {
@@ -947,6 +947,12 @@ body {
     background: rgba(139,92,246,0.15);
     border-color: #8b5cf6;
     color: #8b5cf6;
+}
+
+/* ========== СТАТИСТИКА: УВЕЛИЧЕННЫЙ ОТСТУП ========== */
+/* Для страницы статистики увеличиваем отступ сверху, чтобы контент не заезжал под шапку */
+body:has(.stats-controls) .content {
+    padding-top: 260px !important;
 }
 
 /* ========== DETAIL MODAL ========== */
@@ -1153,6 +1159,11 @@ body {
     
     .content {
         padding: 170px 16px 155px !important;
+    }
+    
+    /* Для статистики на мобильных */
+    body:has(.stats-controls) .content {
+        padding-top: 250px !important;
     }
     
     .filament-grid {
@@ -1486,6 +1497,10 @@ body {
     
     .content {
         padding: 160px 12px 150px !important;
+    }
+    
+    body:has(.stats-controls) .content {
+        padding-top: 240px !important;
     }
 
     .fab-button:not(.fab-group .fab-button) {
