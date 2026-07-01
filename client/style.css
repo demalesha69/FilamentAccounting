@@ -1156,54 +1156,44 @@ body {
     }
     
     /* СТАТИСТИКА НА МОБИЛЬНЫХ — УВЕЛИЧЕННЫЙ ОТСТУП */
-    .stats-page .content {
-        padding-top: 280px !important;
+    .stats-controls ~ .content {
+        padding-top: 300px !important;
     }
     
     .filament-grid {
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
-        gap: 10px !important;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+        gap: 14px !important;
     }
     
     .filament-card {
-        padding: 12px !important;
-        min-height: 120px !important;
-        border-radius: 14px !important;
-    }
-    
-    .card-top {
-        gap: 8px !important;
-        margin-bottom: 8px !important;
+        padding: 16px !important;
+        min-height: 160px !important;
+        border-radius: 18px !important;
     }
     
     .progress-ring {
-        --size: 48px !important;
+        --size: 64px !important;
     }
     
     .progress-ring::before {
-        width: 34px !important;
-        height: 34px !important;
+        width: 46px !important;
+        height: 46px !important;
     }
     
     .progress-ring span {
-        font-size: 11px !important;
-    }
-    
-    .filament-info h2 {
         font-size: 14px !important;
     }
     
+    .filament-info h2 {
+        font-size: 18px !important;
+    }
+    
     .filament-color {
-        font-size: 12px !important;
+        font-size: 14px !important;
     }
     
     .weight-info {
-        font-size: 11px !important;
-    }
-    
-    .weight-dot {
-        width: 6px !important;
-        height: 6px !important;
+        font-size: 14px !important;
     }
     
     .fab-button {
@@ -1527,6 +1517,9 @@ body {
 }
 
 /* ========== СТРАНИЦА СТАТИСТИКИ - УВЕЛИЧЕННЫЙ ОТСТУП ========== */
+.stats-page .content {
+    padding-top: 180px !important;
+}
 
 @media (max-width: 480px) {
     .stats-page .content {
