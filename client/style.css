@@ -1515,3 +1515,20 @@ body {
         font-size: 18px !important;
     }
 }
+
+/* ========== СТРАНИЦА СТАТИСТИКИ - УВЕЛИЧЕННЫЙ ОТСТУП ========== */
+.stats-page .content {
+    padding-top: 180px !important;
+}
+
+@media (max-width: 480px) {
+    .stats-page .content {
+        padding-top: 280px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .stats-page .content {
+        padding-top: 320px !important;
+    }
+}
