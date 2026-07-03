@@ -21,7 +21,6 @@ body {
     font-family: Arial, sans-serif;
     background: #0f1117;
     color: #ffffff;
-    padding: var(--safe-area-inset-top) var(--safe-area-inset-right) var(--safe-area-inset-bottom) var(--safe-area-inset-left);
 }
 
 .app {
@@ -320,7 +319,6 @@ body {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    padding-bottom: var(--safe-area-inset-bottom);
 }
 
 .nav-item {
@@ -1170,7 +1168,7 @@ body {
     }
     
     .content {
-        padding: calc(170px + var(--safe-area-inset-top)) 16px calc(155px + var(--safe-area-inset-bottom)) !important;
+        padding: 170px 16px 155px !important;
     }
     
     .filament-grid {
@@ -1525,37 +1523,9 @@ body {
     }
 }
 
-/* ========== СТАТИСТИКА - ОТДЕЛЬНЫЙ КОНТЕНТ ========== */
-.stats-content {
-    padding-top: calc(180px + var(--safe-area-inset-top)) !important;
-}
-
+/* ========== СТАТИСТИКА НА ТЕЛЕФОНАХ ========== */
 @media (max-width: 480px) {
-    .stats-content {
-        padding-top: calc(180px + var(--safe-area-inset-top)) !important;
-    }
-}
-
-@media (max-width: 430px) {
-    .stats-content {
-        padding-top: calc(150px + var(--safe-area-inset-top)) !important;
-    }
-}
-
-@media (max-width: 412px) {
-    .stats-content {
-        padding-top: calc(180px + var(--safe-area-inset-top)) !important;
-    }
-}
-
-@media (max-width: 390px) {
-    .stats-content {
-        padding-top: calc(180px + var(--safe-area-inset-top)) !important;
-    }
-}
-
-@media (max-width: 360px) {
-    .stats-content {
-        padding-top: calc(200px + var(--safe-area-inset-top)) !important;
+    .stats-page .content {
+        padding-top: 190px !important;
     }
 }

@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 
 class ApiResponse:
@@ -29,4 +29,12 @@ class ApiResponse:
                 "message": message,
                 "data": data
             }
+        )
+
+    @staticmethod
+    def streaming(data: Any, media_type: str) -> StreamingResponse:
+
+        return StreamingResponse(
+            content=data,
+            media_type=media_type
         )

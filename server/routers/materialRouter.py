@@ -11,6 +11,7 @@ from server.services.materialService import MaterialService
 
 from server.utils.response import ApiResponse
 from server.utils.jwt_middleware import get_current_user
+import server.utils.generate_qr_code as qr_generator
 
 materialRouter = APIRouter(
     prefix="/materials",
@@ -44,8 +45,36 @@ def get_all_materials(db: Session = Depends(get_db), current_user=Depends(get_cu
         data=result
     )
 
+@materialRouter.get("/qr/{material_id}")
+def get_qrcode(material_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
 
-@materialRouter.get("/{material_id}")
+    material = material_service.get_material_by_id(
+        db,
+        current_user["user_id"],
+        material_id
+    )
+
+    qr_code = qr_generator.generate(material["uuid"])
+
+    return ApiResponse.streaming(
+        data=qr_code,
+        media_type="image/svg+xml"
+    )
+
+@materialRouter.get("/by_qrcode/{qr_code}")
+def get_material_by_qrcode(qr_code: str, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+
+    result = material_service.get_material_by_qrcode(
+        db,
+        current_user["user_id"],
+        qr_code
+    )
+
+    return ApiResponse.success(
+        data=result
+    )
+
+@materialRouter.get("/by_id/{material_id}")
 def get_material_by_id(material_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
         
     result = material_service.get_material_by_id(
@@ -68,7 +97,7 @@ def delete_material(material_id: int, db: Session = Depends(get_db), current_use
     )
 
     return ApiResponse.success(
-        message="Катушка удалена",
+        message=None,
         status_code=204
     )
 

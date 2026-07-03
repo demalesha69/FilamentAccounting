@@ -19,6 +19,14 @@ class MaterialCreate(BaseModel):
         max_length=50
     )
 
+    density: float = Field(
+        gt=0
+    )
+
+    diameter: float = Field(
+        gt=0
+    )
+
     initial_mass: float = Field(
         gt=0
     )

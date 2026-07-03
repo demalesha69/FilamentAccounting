@@ -30,6 +30,13 @@ class MaterialRepository:
             .filter(Material.id == material_id)
             .first()
         )
+    
+    def get_by_qrcode(self, db: Session, qr_code: str) -> Material | None:
+        return (
+            db.query(Material)
+            .filter(Material.qr_code == qr_code)
+            .first()
+        )
 
     def update(self, db: Session):
         db.commit()
