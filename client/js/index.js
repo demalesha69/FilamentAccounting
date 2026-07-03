@@ -675,20 +675,41 @@ async function openDetailModal(id) {
 // ===== ПЕЧАТЬ QR-КОДА =====
 
 function printQRCode() {
+
+    const uuid = window.currentFilament?.uuid;
+
+    // ===== ELECTRON MODE =====
+    if (window.api?.printQR && uuid) {
+
+        console.log('Native QR print:', uuid);
+
+        window.api.printQR(uuid);
+
+        showNotification('QR отправлен на принтер', 'success');
+
+        return;
+    }
+
+    // ===== BROWSER FALLBACK =====
+
     const container = document.getElementById('qrCodeContainer');
+
     if (!container) {
         showNotification('QR-код не найден', 'error');
         return;
     }
-    
+
     const img = container.querySelector('img');
+
     if (!img) {
         showNotification('QR-код еще не загружен', 'error');
         return;
     }
-    
+
     const printContainer = document.createElement('div');
+
     printContainer.id = 'printQRContainer';
+
     printContainer.style.cssText = `
         position: fixed;
         left: 0;
@@ -702,67 +723,24 @@ function printQRCode() {
         z-index: 9999;
         padding: 20px;
     `;
-    
+
     printContainer.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-            <img src="${img.src}" alt="QR-код" style="width: 100%; max-width: 800px; height: auto; max-height: 90vh; display: block; object-fit: contain; background: white;" />
+        <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
+            <img src="${img.src}" 
+                 alt="QR-код"
+                 style="width:100%;max-width:800px;height:auto;max-height:90vh;display:block;object-fit:contain;background:white;" />
         </div>
     `;
-    
-    const style = document.createElement('style');
-    style.textContent = `
-        @page {
-            margin: 0;
-            size: A4 portrait;
-        }
-        @media print {
-            html, body {
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 100% !important;
-                height: 100% !important;
-                background: white !important;
-            }
-            body * {
-                visibility: hidden !important;
-            }
-            #printQRContainer, #printQRContainer * {
-                visibility: visible !important;
-            }
-            #printQRContainer {
-                position: fixed !important;
-                left: 0 !important;
-                top: 0 !important;
-                width: 100% !important;
-                height: 100% !important;
-                margin: 0 !important;
-                padding: 20px !important;
-                background: white !important;
-                z-index: 9999 !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-            }
-            #printQRContainer img {
-                width: 100% !important;
-                max-width: 800px !important;
-                height: auto !important;
-                max-height: 90vh !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-        }
-    `;
-    printContainer.appendChild(style);
-    
+
     document.body.appendChild(printContainer);
-    
+
     setTimeout(() => {
         window.print();
+
         setTimeout(() => {
-            const el = document.getElementById('printQRContainer');
-            if (el) el.remove();
+            printContainer.remove();
         }, 1000);
+
     }, 300);
 }
 
