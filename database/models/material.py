@@ -31,6 +31,10 @@ class Material(Base):
         Float
     )
 
+    manufacturer: Mapped[str] = mapped_column(
+        String(100)
+    ) 
+
     diameter: Mapped[float] = mapped_column(
         Float
     )

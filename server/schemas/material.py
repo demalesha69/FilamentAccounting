@@ -19,6 +19,11 @@ class MaterialCreate(BaseModel):
         max_length=50
     )
 
+    manufacturer: str = Field(
+        min_length=1,
+        max_length=100
+    )
+
     density: float = Field(
         gt=0
     )
@@ -31,7 +36,7 @@ class MaterialCreate(BaseModel):
         gt=0
     )
     
-    @field_validator("name", "material_type", "color")
+    @field_validator("name", "material_type", "color", "manufacturer")
     @classmethod
     def validate_str_fields(cls, field: str, info: ValidationInfo) -> str:
         field = field.strip()

@@ -33,6 +33,7 @@ class MaterialService:
             "uuid": material.qr_code,
             "initial_mass": material.initial_mass,
             "current_mass": material.current_mass,
+            "manufacturer": material.manufacturer,
             "density": material.density
         }
 
@@ -53,6 +54,7 @@ class MaterialService:
                     current_mass=data.initial_mass,
                     density=data.density,
                     diameter=data.diameter,
+                    manufacturer=data.manufacturer,
                     owner_id=owner_id,
                     qr_code=str(uuid.uuid4())
                 )
