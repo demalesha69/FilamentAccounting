@@ -21,7 +21,6 @@ body {
     font-family: Arial, sans-serif;
     background: #0f1117;
     color: #ffffff;
-    padding: var(--safe-area-inset-top) var(--safe-area-inset-right) var(--safe-area-inset-bottom) var(--safe-area-inset-left);
 }
 
 .app {
@@ -320,7 +319,6 @@ body {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    padding-bottom: var(--safe-area-inset-bottom);
 }
 
 .nav-item {
@@ -1238,7 +1236,7 @@ body {
     }
     
     .content {
-        padding: calc(170px + var(--safe-area-inset-top)) 16px calc(155px + var(--safe-area-inset-bottom)) !important;
+        padding: 170px 16px 155px !important;
     }
     
     .filament-grid {
@@ -1591,4 +1589,14 @@ body {
         height: 54px !important;
         font-size: 18px !important;
     }
+<<<<<<< HEAD
+=======
+}
+
+/* ========== СТАТИСТИКА НА ТЕЛЕФОНАХ ========== */
+@media (max-width: 480px) {
+    .stats-page .content {
+        padding-top: 190px !important;
+    }
+>>>>>>> e59b95e6adceaa8bc221634266504d0e37e9e06c
 }

@@ -6,8 +6,11 @@ from server.repositories.materialRepo import MaterialRepository
 from server.exceptions.authExceptions import AccessDenied
 from server.exceptions.materialExceptions import MaterialNotFound
 from server.exceptions.consumptionExceptions import ConsumptionInvalidData
+from server.exceptions.parseExceptions import ParseDataNotFound
 
 from server.schemas.consumption import ConsumptionCreate
+
+from server.services.parseService import ParseService
 
 class ConsumptionService:
 
@@ -105,3 +108,12 @@ class ConsumptionService:
 
             for consumption in consumptions
         ]
+
+    def get_from_file(self, path: str) -> list[dict]:
+
+        result = ParseService.parse_filament_usage(path)
+
+        if not result:
+            raise ParseDataNotFound()
+        
+        return result

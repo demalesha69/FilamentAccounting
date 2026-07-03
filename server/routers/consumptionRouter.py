@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+import os
+
+from fastapi import APIRouter, UploadFile, File
 from fastapi import Depends
 
 from sqlalchemy.orm import Session
@@ -64,3 +66,19 @@ def get_consumptions_by_user(db: Session = Depends(get_db), current_user=Depends
         message="",
         data=result
     )
+
+consumptionlRouter.post("/from_file")
+async def from_file(file: UploadFile = File(...) , current_user=Depends(get_current_user)):
+
+    path = f"temp/{file.filename}"
+
+    with open(path, "wb") as f:
+        f.write(await file.read())
+
+    try:
+        result = consumption_service.get_from_file(path)
+        return result
+
+    finally:
+        if os.path.exists(path):
+            os.remove(path)

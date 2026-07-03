@@ -1,5 +1,7 @@
 import uuid
 
+from sqlalchemy.exc import IntegrityError
+
 from database.models.material import Material
 
 from server.repositories.materialRepo import MaterialRepository
@@ -8,6 +10,7 @@ from server.schemas.material import MaterialCreate
 
 from server.exceptions.materialExceptions import (
     MaterialNotFound, 
+    MaterialQRCodeRuntimeError
 )
 
 from server.exceptions.authExceptions import AccessDenied
@@ -21,6 +24,18 @@ class MaterialService:
     def __init__(self):
         self.repo = MaterialRepository()
 
+    def _format_answer(self, material: Material) -> dict:
+        return {
+            "id": material.id,
+            "name": material.name,
+            "material_type": material.type,
+            "color": material.color,
+            "uuid": material.qr_code,
+            "initial_mass": material.initial_mass,
+            "current_mass": material.current_mass,
+            "density": material.density
+        }
+
     def create_material(
         self,
         db,
@@ -28,40 +43,35 @@ class MaterialService:
         data: MaterialCreate
     ) -> dict:
 
-        material = Material(
-            name=data.name,
-            type=data.material_type,
-            color=data.color,
-            initial_mass=data.initial_mass,
-            current_mass=data.initial_mass,
-            owner_id=owner_id,
-            qr_code=str(uuid.uuid4())
-        )
+        for _ in range(100):
+            try:
+                material = Material(
+                    name=data.name,
+                    type=data.material_type,
+                    color=data.color,
+                    initial_mass=data.initial_mass,
+                    current_mass=data.initial_mass,
+                    density=data.density,
+                    diameter=data.diameter,
+                    owner_id=owner_id,
+                    qr_code=str(uuid.uuid4())
+                )
+                created_material = self.repo.create(db, material)
+                break
+            except IntegrityError:
+                db.rollback()
+        else:
+            raise MaterialQRCodeRuntimeError()
+    
 
-        created_material = self.repo.create(db, material)
-
-        return {
-            "id": created_material.id,
-            "name": created_material.name,
-            "type": created_material.type,
-            "color": created_material.color,
-            "initial_mass": created_material.initial_mass,
-            "current_mass": created_material.initial_mass
-        }
+        return self._format_answer(created_material)
 
     def get_all_materials(self, db, owner_id: int) -> list[dict]:
 
         materials = self.repo.get_all_by_owner(db, owner_id)
 
         return [
-            {
-                "id": material.id,
-                "name": material.name,
-                "type": material.type,
-                "color": material.color,
-                "initial_mass": material.initial_mass,
-                "current_mass": material.current_mass
-            }
+            self._format_answer(material)
 
             for material in materials
         ]
@@ -76,41 +86,21 @@ class MaterialService:
         if material.owner_id != owner_id:
             raise AccessDenied()
 
-        return {
-            "id": material.id,
-            "name": material.name,
-            "type": material.type,
-            "color": material.color,
-            "initial_mass": material.initial_mass,
-            "current_mass": material.current_mass
-        }
+        return self._format_answer(material)
 
-    def update_remaining_mass(
-        self,
-        db,
-        owner_id: int,
-        material_id: int,
-        remaining_mass: float
-    ) -> dict:
+    def get_material_by_qrcode(self, db, owner_id: int, qr_code: str) -> dict:
 
-        material = self.repo.get_by_id(db, material_id)
+        material = self.repo.get_by_qrcode(db, qr_code)
 
         if not material:
             raise MaterialNotFound()
-
+        
         if material.owner_id != owner_id:
             raise AccessDenied()
+        
+        return self._format_answer(material)
 
-        material.current_mass = remaining_mass
-
-        self.repo.update(db)
-
-        return {
-            "id": material.id,
-            "current_mass": material.current_mass
-        }
-
-    def delete_material(self, db, owner_id: int, material_id: int) -> bool:
+    def delete_material(self, db, owner_id: int, material_id: int) -> None:
 
         material = self.repo.get_by_id(db, material_id)
 
@@ -121,5 +111,3 @@ class MaterialService:
             raise AccessDenied()
 
         self.repo.delete(db, material)
-
-        return True
