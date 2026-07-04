@@ -34,7 +34,7 @@ class ConsumptionService:
         
         material = self.material_repo.get_by_id(db, data.material_id)
 
-        if data.status not in ["waste", "succes", "interrupted"]:
+        if data.status not in ["waste", "success", "interrupted"]:
             raise ConsumptionInvalidData("Неизвестный статус")
 
         if not material:
