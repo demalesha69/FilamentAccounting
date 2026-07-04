@@ -1051,6 +1051,9 @@ async function openDetailModal(id) {
         
         const emptyEmoji = isEmpty ? ' 📦' : '';
         
+        // Проверяем наличие состава
+        const hasComposition = filament.composition && Array.isArray(filament.composition) && filament.composition.length > 0;
+        
         body.innerHTML = `
             <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; ${isEmpty ? 'opacity:0.6;' : ''}">
                 <div style="flex:1; min-width:200px;">
@@ -1108,7 +1111,36 @@ async function openDetailModal(id) {
                     </div>
                 </div>
             </div>
+            
+            <!-- Блок с составом (между QR и историей) -->
             <div style="margin-top:16px; background:#232734; border-radius:10px; padding:12px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                    <i class="fa-solid fa-flask" style="color:#9ca3af; font-size:14px;"></i>
+                    <span style="font-size:13px; font-weight:600; color:#9ca3af;">СОСТАВ</span>
+                </div>
+                ${hasComposition ? `
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        ${filament.composition.map(item => `
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; background:#1a1d26; border-radius:6px;">
+                                <span style="color:#ffffff; font-size:13px;">${item.material || 'Неизвестный материал'}</span>
+                                <span style="color:#8b5cf6; font-weight:600; font-size:13px;">${item.percent || 0}%</span>
+                            </div>
+                        `).join('')}
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px 2px 8px; border-top:2px solid rgba(139,92,246,0.3); margin-top:2px;">
+                            <span style="color:#9ca3af; font-size:12px; font-weight:500;">Итого</span>
+                            <span style="color:#4ade80; font-weight:700; font-size:13px;">${filament.composition.reduce((sum, item) => sum + (item.percent || 0), 0)}%</span>
+                        </div>
+                    </div>
+                ` : `
+                    <div style="text-align:center; padding:8px; color:#6b7280; font-size:13px;">
+                        <i class="fa-solid fa-circle-info" style="margin-right:6px;"></i>
+                        Состав не указан
+                    </div>
+                `}
+            </div>
+            
+            <!-- История расхода -->
+            <div style="margin-top:12px; background:#232734; border-radius:10px; padding:12px;">
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
                     <i class="fa-solid fa-clock-rotate-left" style="color:#9ca3af; font-size:14px;"></i>
                     <span style="font-size:13px; font-weight:600; color:#9ca3af;">ИСТОРИЯ РАСХОДА</span>
@@ -1125,7 +1157,65 @@ async function openDetailModal(id) {
         showNotification('Ошибка загрузки катушки: ' + error.message, 'error');
     }
 }
+// ===== СОСТАВ КАТУШКИ =====
 
+function openCompositionDetail(materialId) {
+    const filament = allFilaments.find(f => f.id === materialId);
+    if (!filament) {
+        showNotification('Катушка не найдена', 'error');
+        return;
+    }
+    
+    const composition = filament.composition || [];
+    const modal = document.getElementById('compositionDetailModal');
+    const body = document.getElementById('compositionDetailBody');
+    
+    if (!composition || composition.length === 0) {
+        body.innerHTML = `
+            <div style="text-align:center; padding:20px; color:#9ca3af;">
+                <i class="fa-solid fa-flask" style="font-size:32px; display:block; margin-bottom:12px; opacity:0.5;"></i>
+                <p>Состав не указан</p>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        return;
+    }
+    
+    // Группируем компоненты для красивого отображения
+    let html = `
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="background:#232734; border-radius:10px; padding:12px;">
+                <div style="color:#9ca3af; font-size:12px; margin-bottom:8px;">Материал</div>
+                <div style="color:#ffffff; font-size:16px; font-weight:600;">${filament.name}</div>
+                ${filament.material_type ? `<div style="color:#9ca3af; font-size:13px; margin-top:4px;">Тип: ${filament.material_type}</div>` : ''}
+            </div>
+            <div style="background:#232734; border-radius:10px; padding:12px;">
+                <div style="color:#9ca3af; font-size:12px; margin-bottom:8px;">Состав</div>
+                ${composition.map(item => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+                        <span style="color:#ffffff;">${item.material || 'Неизвестный материал'}</span>
+                        <span style="color:#8b5cf6; font-weight:600;">${item.percent || 0}%</span>
+                    </div>
+                `).join('')}
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0 4px 0; border-top:2px solid rgba(139,92,246,0.3); margin-top:4px;">
+                    <span style="color:#9ca3af; font-weight:500;">Итого</span>
+                    <span style="color:#4ade80; font-weight:700;">${composition.reduce((sum, item) => sum + (item.percent || 0), 0)}%</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    body.innerHTML = html;
+    modal.style.display = 'flex';
+}
+
+function closeCompositionDetail() {
+    document.getElementById('compositionDetailModal').style.display = 'none';
+}
+
+document.getElementById('compositionDetailModal').addEventListener('click', function(e) {
+    if (e.target === this) closeCompositionDetail();
+});
 function printQRCode() {
     if (window.api?.printQR) {
         const filament = window.currentFilament;
