@@ -1043,6 +1043,24 @@ body {
     min-width: var(--size);
 }
 
+/* Внутренний круг - чем больше размер, тем тоньше кольцо */
+#detailBody .progress-ring::before {
+    --size: 64px;
+    content: "";
+    position: absolute;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+    background: #1a1d26;
+}
+
+#detailBody .progress-ring span {
+    position: relative;
+    z-index: 2;
+    font-size: 16px;
+    font-weight: 700;
+}
+
 /* ========== NOTIFICATIONS ========== */
 .notification {
     position: fixed;
