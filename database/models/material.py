@@ -50,11 +50,11 @@ class Material(Base):
         String(50)
     )
 
-    initial_mass: Mapped[float] = mapped_column(
+    initial_length: Mapped[float] = mapped_column(
         Float
     )
 
-    current_mass: Mapped[float] = mapped_column(
+    current_length: Mapped[float] = mapped_column(
         Float
     )
 

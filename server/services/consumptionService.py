@@ -28,30 +28,30 @@ class ConsumptionService:
         if material.owner_id != owner_id:
             raise AccessDenied()
 
-        remain_mass = material.current_mass - data.used_mass 
+        remain_length = material.current_length - data.used_length 
 
-        if remain_mass < 0.0:
+        if remain_length < 0.0:
             raise ConsumptionInvalidData("Масса списания больше, чем материала катушки")
         
         consumption = Consumption(
             material_id=data.material_id,
             title=data.title,
-            used_mass=data.used_mass,
-            remain_mass=remain_mass,
+            used_length=data.used_length,
+            remain_length=remain_length,
             owner_id=owner_id
         )
 
         created_consumption = self.repo.create(db, consumption)
 
-        material.current_mass = remain_mass
+        material.current_length = remain_length
 
         self.material_repo.update(db)
 
         return {
             "id": created_consumption.id,
             "title": created_consumption.title,
-            "used_mass": created_consumption.used_mass,
-            "remain_mass": created_consumption.remain_mass,
+            "used_length": created_consumption.used_length,
+            "remain_length": created_consumption.remain_length,
             "owner_id": created_consumption.owner_id
         }
 
@@ -62,9 +62,9 @@ class ConsumptionService:
         return {
                 "id": result.id,
                 "title": result.title,
-                "used_mass": result.used_mass,
+                "used_length": result.used_length,
                 "timestamp": result.timestamp.timestamp(),
-                "remain_mass": result.remain_mass,
+                "remain_length": result.remain_length,
                 "material_id": result.material_id
             }
 
@@ -84,9 +84,9 @@ class ConsumptionService:
             {
                 "id": consumption.id,
                 "title": consumption.title,
-                "used_mass": consumption.used_mass,
+                "used_length": consumption.used_length,
                 "timestamp": consumption.timestamp.timestamp(),
-                "remain_mass": consumption.remain_mass
+                "remain_length": consumption.remain_length
             }
 
             for consumption in consumptions
@@ -100,9 +100,9 @@ class ConsumptionService:
             {
                 "id": consumption.id,
                 "title": consumption.title,
-                "used_mass": consumption.used_mass,
+                "used_length": consumption.used_length,
                 "timestamp": consumption.timestamp.timestamp(),
-                "remain_mass": consumption.remain_mass,
+                "remain_length": consumption.remain_length,
                 "material_id": consumption.material_id
             }
 

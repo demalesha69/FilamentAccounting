@@ -10,7 +10,7 @@ class ConsumptionCreate(BaseModel):
 
     material_id: int
 
-    used_mass: float = Field(
+    used_length: float = Field(
         gt=0
     )
 

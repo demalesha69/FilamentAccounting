@@ -22,9 +22,13 @@ class Consumption(Base):
         ForeignKey("users.id")
     )
 
-    used_mass: Mapped[float] = mapped_column(Float)
+    status: Mapped[str] = mapped_column(
+        String(50)
+    )
 
-    remain_mass: Mapped[float] = mapped_column(Float)
+    used_length: Mapped[float] = mapped_column(Float)
+
+    remain_length: Mapped[float] = mapped_column(Float)
 
     timestamp: Mapped[datetime] = mapped_column(
         DateTime,

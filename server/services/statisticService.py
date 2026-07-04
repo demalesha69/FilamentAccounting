@@ -19,7 +19,7 @@ class StatisticService:
         if end_timestamp is None:
             end_timestamp = datetime.now(UTC)
 
-        total_used_mass = self.repo.get_total_used_mass(
+        total_used_length = self.repo.get_total_used_length(
             db,
             owner_id,
             start_timestamp,
@@ -51,7 +51,7 @@ class StatisticService:
         )
 
         return {
-            "total_used_mass": total_used_mass or 0,
+            "total_used_length": total_used_length or 0,
             "materials_count": materials_count,
             "consumptions_count": consumptions_count,
             "first_consumption_timestamp": first_consumption_timestamp
@@ -76,7 +76,7 @@ class StatisticService:
             {
                 "material_id": item.id,
                 "material_name": item.name,
-                "used_mass": float(item.used_mass or 0)
+                "used_length": float(item.used_length or 0)
             }
             for item in statistics
         ]

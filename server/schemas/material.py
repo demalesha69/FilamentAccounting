@@ -45,7 +45,7 @@ class MaterialCreate(BaseModel):
         gt=0
     )
 
-    initial_mass: float = Field(
+    initial_length: float = Field(
         gt=0
     )
     

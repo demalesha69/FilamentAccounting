@@ -31,8 +31,8 @@ class MaterialService:
             "material_type": material.type,
             "color": material.color,
             "uuid": material.qr_code,
-            "initial_mass": material.initial_mass,
-            "current_mass": material.current_mass,
+            "initial_length": material.initial_length,
+            "current_length": material.current_length,
             "manufacturer": material.manufacturer,
             "composition": material.composition,
             "density": material.density
@@ -51,8 +51,8 @@ class MaterialService:
                     name=data.name,
                     type=data.material_type,
                     color=data.color,
-                    initial_mass=data.initial_mass,
-                    current_mass=data.initial_mass,
+                    initial_length=data.initial_length,
+                    current_length=data.initial_length,
                     density=data.density,
                     diameter=data.diameter,
                     manufacturer=data.manufacturer,
@@ -80,7 +80,7 @@ class MaterialService:
             filters: MaterialFilters
         ) -> list[dict]:
 
-        if filters.sort_by and filters.sort_by not in ["id", "name", "current_mass"]:
+        if filters.sort_by and filters.sort_by not in ["id", "name", "current_length"]:
             raise MaterialInvalidData(f"Катушки не сортируются по {filters.sort_by}")
 
         materials = self.repo.get_all_by_owner(db, owner_id, filters)
