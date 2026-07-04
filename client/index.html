@@ -321,15 +321,43 @@
                 <button class="filter-option" onclick="sortFilaments('progressDesc')" id="filterProgressDesc">
                     <i class="fa-solid fa-circle"></i> <span>По остатку (убывание)</span>
                 </button>
-                <button class="filter-option" onclick="sortFilaments('colorSort')" id="filterColorSort">
-                    <i class="fa-solid fa-palette"></i> <span>По цвету</span>
+            </div>
+            
+            <div class="filter-divider"></div>
+            
+            <!-- Сортировка ПО -->
+            <div class="filter-section">
+                <label class="filter-label">Сортировка по</label>
+                
+                <!-- По цвету -->
+                <button class="filter-option" onclick="toggleSortColor()" id="sortColorToggle">
+                    <i class="fa-solid fa-palette"></i> 
+                    <span id="sortColorLabel">Цвету</span>
+                    <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
                 </button>
-                <button class="filter-option" onclick="sortFilaments('type')" id="filterTypeSort">
-                    <i class="fa-solid fa-cube"></i> <span>По типу</span>
+                <div id="sortColorContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:150px; overflow-y:auto;">
+                    <!-- Заполняется динамически -->
+                </div>
+                
+                <!-- По типу -->
+                <button class="filter-option" onclick="toggleSortType()" id="sortTypeToggle">
+                    <i class="fa-solid fa-cube"></i> 
+                    <span id="sortTypeLabel">Типу</span>
+                    <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
                 </button>
-                <button class="filter-option" onclick="sortFilaments('manufacturer')" id="filterManufacturerSort">
-                    <i class="fa-solid fa-building"></i> <span>По производителю</span>
+                <div id="sortTypeContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:150px; overflow-y:auto;">
+                    <!-- Заполняется динамически -->
+                </div>
+                
+                <!-- По производителю -->
+                <button class="filter-option" onclick="toggleSortManufacturer()" id="sortManufacturerToggle">
+                    <i class="fa-solid fa-building"></i> 
+                    <span id="sortManufacturerLabel">Производителю</span>
+                    <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
                 </button>
+                <div id="sortManufacturerContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:150px; overflow-y:auto;">
+                    <!-- Заполняется динамически -->
+                </div>
             </div>
             
             <div class="filter-divider"></div>
@@ -342,7 +370,7 @@
                     <span id="filterTypeLabel">Все типы</span>
                     <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
                 </button>
-                <div id="typeFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:200px; overflow-y:auto;">
+                <div id="typeFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:150px; overflow-y:auto;">
                     <!-- Заполняется динамически -->
                 </div>
             </div>
@@ -357,7 +385,7 @@
                     <span id="filterColorLabel">Все цвета</span>
                     <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
                 </button>
-                <div id="colorFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:200px; overflow-y:auto;">
+                <div id="colorFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:150px; overflow-y:auto;">
                     <!-- Заполняется динамически -->
                 </div>
             </div>
@@ -372,7 +400,7 @@
                     <span id="filterManufacturerLabel">Все производители</span>
                     <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
                 </button>
-                <div id="manufacturerFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:200px; overflow-y:auto;">
+                <div id="manufacturerFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:150px; overflow-y:auto;">
                     <!-- Заполняется динамически -->
                 </div>
             </div>
