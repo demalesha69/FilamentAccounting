@@ -1,9 +1,12 @@
-const API_URL = 'http://186.246.28.163/api';
+const API_URL = '/api';
 let allFilaments = [];
 let currentSort = 'default';
-let currentFilterType = 'all';
-let currentFilterManufacturer = 'all';
-let currentFilterColor = 'all';
+
+// Выбранные фильтры (множественный выбор)
+let selectedTypes = [];
+let selectedColors = [];
+let selectedManufacturers = [];
+
 let currentSearchQuery = '';
 let currentFilamentId = null;
 let compositionData = [];
@@ -12,9 +15,6 @@ let compositionData = [];
 let typeFilterExpanded = false;
 let colorFilterExpanded = false;
 let manufacturerFilterExpanded = false;
-let sortColorExpanded = false;
-let sortTypeExpanded = false;
-let sortManufacturerExpanded = false;
 
 // Кеш для уникальных значений
 let uniqueTypes = [];
@@ -232,34 +232,34 @@ function toggleManufacturerFilter() {
     if (manufacturerFilterExpanded) updateManufacturerFilterList();
 }
 
-function toggleSortColor() {
-    sortColorExpanded = toggleElement('sortColorContainer', 'sortColorToggle', sortColorExpanded);
-    if (sortColorExpanded) updateSortColorList();
-}
-
-function toggleSortType() {
-    sortTypeExpanded = toggleElement('sortTypeContainer', 'sortTypeToggle', sortTypeExpanded);
-    if (sortTypeExpanded) updateSortTypeList();
-}
-
-function toggleSortManufacturer() {
-    sortManufacturerExpanded = toggleElement('sortManufacturerContainer', 'sortManufacturerToggle', sortManufacturerExpanded);
-    if (sortManufacturerExpanded) updateSortManufacturerList();
-}
-
 // ===== ОБНОВЛЕНИЕ ЛЕЙБЛОВ =====
 
-function updateTypeLabel(type) {
+function updateTypeLabel() {
     const label = document.getElementById('filterTypeLabel');
+    const count = document.getElementById('filterTypeCount');
     if (!label) return;
-    label.textContent = type === 'all' ? 'Все типы' : type.toUpperCase();
+    
+    if (selectedTypes.length === 0) {
+        label.textContent = 'Все типы';
+        if (count) count.style.display = 'none';
+    } else if (selectedTypes.length === 1) {
+        label.textContent = selectedTypes[0].toUpperCase();
+        if (count) count.style.display = 'none';
+    } else {
+        label.textContent = `Типы (${selectedTypes.length})`;
+        if (count) {
+            count.textContent = `+${selectedTypes.length}`;
+            count.style.display = 'inline';
+        }
+    }
 }
 
-function updateColorLabel(color) {
+function updateColorLabel() {
     const label = document.getElementById('filterColorLabel');
+    const count = document.getElementById('filterColorCount');
     if (!label) return;
-    const colorNames = {
-        'all': 'Все цвета',
+    
+    const colorDisplayNames = {
         'green': 'Зеленый',
         'yellow': 'Желтый',
         'red': 'Красный',
@@ -285,13 +285,40 @@ function updateColorLabel(color) {
         'glow': 'Светящийся',
         'multicolor': 'Мультицвет'
     };
-    label.textContent = colorNames[color] || 'Все цвета';
+    
+    if (selectedColors.length === 0) {
+        label.textContent = 'Все цвета';
+        if (count) count.style.display = 'none';
+    } else if (selectedColors.length === 1) {
+        label.textContent = colorDisplayNames[selectedColors[0]] || selectedColors[0];
+        if (count) count.style.display = 'none';
+    } else {
+        label.textContent = `Цвета (${selectedColors.length})`;
+        if (count) {
+            count.textContent = `+${selectedColors.length}`;
+            count.style.display = 'inline';
+        }
+    }
 }
 
-function updateManufacturerLabel(manufacturer) {
+function updateManufacturerLabel() {
     const label = document.getElementById('filterManufacturerLabel');
+    const count = document.getElementById('filterManufacturerCount');
     if (!label) return;
-    label.textContent = manufacturer === 'all' ? 'Все производители' : manufacturer;
+    
+    if (selectedManufacturers.length === 0) {
+        label.textContent = 'Все производители';
+        if (count) count.style.display = 'none';
+    } else if (selectedManufacturers.length === 1) {
+        label.textContent = selectedManufacturers[0];
+        if (count) count.style.display = 'none';
+    } else {
+        label.textContent = `Производители (${selectedManufacturers.length})`;
+        if (count) {
+            count.textContent = `+${selectedManufacturers.length}`;
+            count.style.display = 'inline';
+        }
+    }
 }
 
 // ===== УПРАВЛЕНИЕ СОСТАВОМ =====
@@ -519,133 +546,20 @@ function closeFilter() {
 function openFilter() {
     document.getElementById('filterModal').style.display = 'flex';
     
-    // Обновляем лейблы
-    updateTypeLabel(currentFilterType);
-    updateColorLabel(currentFilterColor);
-    updateManufacturerLabel(currentFilterManufacturer);
+    updateTypeLabel();
+    updateColorLabel();
+    updateManufacturerLabel();
     
-    // Обновляем списки для раскрытых аккордеонов
     if (typeFilterExpanded) updateTypeFilterList();
     if (colorFilterExpanded) updateColorFilterList();
     if (manufacturerFilterExpanded) updateManufacturerFilterList();
-    if (sortColorExpanded) updateSortColorList();
-    if (sortTypeExpanded) updateSortTypeList();
-    if (sortManufacturerExpanded) updateSortManufacturerList();
 }
 
 document.getElementById('filterModal').addEventListener('click', function(e) {
     if (e.target === this) closeFilter();
 });
 
-// ===== ОБНОВЛЕНИЕ СПИСКОВ ДЛЯ СОРТИРОВКИ ПО =====
-
-function updateSortColorList() {
-    const container = document.getElementById('sortColorContainer');
-    if (!container) return;
-    
-    if (uniqueColors.length === 0) {
-        container.innerHTML = `<div style="text-align:center;padding:8px;color:#6b7280;font-size:13px;">Нет цветов</div>`;
-        return;
-    }
-    
-    const colorHex = {
-        'green': '#22c55e',
-        'yellow': '#eab308',
-        'red': '#ef4444',
-        'blue': '#3b82f6',
-        'orange': '#f97316',
-        'purple': '#a855f7',
-        'black': '#1a1a1a',
-        'white': '#f3f4f6',
-        'gray': '#6b7280',
-        'silver': '#c0c0c0',
-        'crimson': '#dc2626',
-        'pink': '#ec4899',
-        'gold': '#f59e0b',
-        'lime': '#84cc16',
-        'teal': '#14b8a6',
-        'cyan': '#06b6d4',
-        'navy': '#1e3a8a',
-        'violet': '#8b5cf6',
-        'magenta': '#d946ef',
-        'brown': '#92400e',
-        'beige': '#f5e6d3',
-        'transparent': 'rgba(255,255,255,0.1)',
-        'glow': '#22d3ee',
-        'multicolor': '#8b5cf6'
-    };
-    
-    const colorDisplayNames = {
-        'green': 'Зеленый',
-        'yellow': 'Желтый',
-        'red': 'Красный',
-        'blue': 'Синий',
-        'orange': 'Оранжевый',
-        'purple': 'Фиолетовый',
-        'black': 'Черный',
-        'white': 'Белый',
-        'gray': 'Серый',
-        'silver': 'Серебристый',
-        'crimson': 'Малиновый',
-        'pink': 'Розовый',
-        'gold': 'Золотой',
-        'lime': 'Лайм',
-        'teal': 'Бирюзовый',
-        'cyan': 'Циан',
-        'navy': 'Темно-синий',
-        'violet': 'Лиловый',
-        'magenta': 'Пурпурный',
-        'brown': 'Коричневый',
-        'beige': 'Бежевый',
-        'transparent': 'Прозрачный',
-        'glow': 'Светящийся',
-        'multicolor': 'Мультицвет'
-    };
-    
-    container.innerHTML = uniqueColors.map(c => {
-        const lowerC = c.toLowerCase();
-        return `
-            <button class="filter-option" onclick="sortByColor('${lowerC}')" style="padding:6px 12px; font-size:13px;">
-                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:${colorHex[lowerC] || '#8b5cf6'}; margin-right:8px;"></span>
-                <span>${colorDisplayNames[lowerC] || c}</span>
-            </button>
-        `;
-    }).join('');
-}
-
-function updateSortTypeList() {
-    const container = document.getElementById('sortTypeContainer');
-    if (!container) return;
-    
-    if (uniqueTypes.length === 0) {
-        container.innerHTML = `<div style="text-align:center;padding:8px;color:#6b7280;font-size:13px;">Нет типов</div>`;
-        return;
-    }
-    
-    container.innerHTML = uniqueTypes.map(t => `
-        <button class="filter-option" onclick="sortByType('${t.toLowerCase()}')" style="padding:6px 12px; font-size:13px;">
-            <i class="fa-solid fa-cube"></i> <span>${t}</span>
-        </button>
-    `).join('');
-}
-
-function updateSortManufacturerList() {
-    const container = document.getElementById('sortManufacturerContainer');
-    if (!container) return;
-    
-    if (uniqueManufacturers.length === 0) {
-        container.innerHTML = `<div style="text-align:center;padding:8px;color:#6b7280;font-size:13px;">Нет производителей</div>`;
-        return;
-    }
-    
-    container.innerHTML = uniqueManufacturers.map(m => `
-        <button class="filter-option" onclick="sortByManufacturer('${m.replace(/'/g, "\\'")}')" style="padding:6px 12px; font-size:13px;">
-            <i class="fa-solid fa-building"></i> <span>${m}</span>
-        </button>
-    `).join('');
-}
-
-// ===== ОБНОВЛЕНИЕ СПИСКОВ ДЛЯ ФИЛЬТРОВ =====
+// ===== ОБНОВЛЕНИЕ СПИСКОВ =====
 
 function updateTypeFilterList() {
     const container = document.getElementById('typeFilterContainer');
@@ -656,16 +570,15 @@ function updateTypeFilterList() {
         return;
     }
     
-    container.innerHTML = `
-        <button class="filter-option ${currentFilterType === 'all' ? 'active' : ''}" onclick="filterByType('all')" style="padding:6px 12px; font-size:13px;">
-            <i class="fa-solid fa-layer-group"></i> <span>Все типы</span>
-        </button>
-        ${uniqueTypes.map(t => `
-            <button class="filter-option ${currentFilterType === t.toLowerCase() ? 'active' : ''}" onclick="filterByType('${t.toLowerCase()}')" style="padding:6px 12px; font-size:13px;">
-                <i class="fa-solid fa-cube"></i> <span>${t}</span>
+    container.innerHTML = uniqueTypes.map(t => {
+        const isSelected = selectedTypes.includes(t.toLowerCase());
+        return `
+            <button class="filter-option ${isSelected ? 'active' : ''}" onclick="toggleType('${t.toLowerCase()}')" style="padding:6px 12px; font-size:13px;">
+                <i class="fa-solid ${isSelected ? 'fa-check-circle' : 'fa-circle'}"></i>
+                <span>${t}</span>
             </button>
-        `).join('')}
-    `;
+        `;
+    }).join('');
 }
 
 function updateColorFilterList() {
@@ -731,20 +644,17 @@ function updateColorFilterList() {
         'multicolor': 'Мультицвет'
     };
     
-    container.innerHTML = `
-        <button class="filter-option ${currentFilterColor === 'all' ? 'active' : ''}" onclick="filterByColor('all')" style="padding:6px 12px; font-size:13px;">
-            <i class="fa-solid fa-palette"></i> <span>Все цвета</span>
-        </button>
-        ${uniqueColors.map(c => {
-            const lowerC = c.toLowerCase();
-            return `
-                <button class="filter-option ${currentFilterColor === lowerC ? 'active' : ''}" onclick="filterByColor('${lowerC}')" style="padding:6px 12px; font-size:13px;">
-                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:${colorHex[lowerC] || '#8b5cf6'}; margin-right:8px;"></span>
-                    <span>${colorDisplayNames[lowerC] || c}</span>
-                </button>
-            `;
-        }).join('')}
-    `;
+    container.innerHTML = uniqueColors.map(c => {
+        const lowerC = c.toLowerCase();
+        const isSelected = selectedColors.includes(lowerC);
+        return `
+            <button class="filter-option ${isSelected ? 'active' : ''}" onclick="toggleColor('${lowerC}')" style="padding:6px 12px; font-size:13px;">
+                <i class="fa-solid ${isSelected ? 'fa-check-circle' : 'fa-circle'}"></i>
+                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:${colorHex[lowerC] || '#8b5cf6'}; margin:0 8px;"></span>
+                <span>${colorDisplayNames[lowerC] || c}</span>
+            </button>
+        `;
+    }).join('');
 }
 
 function updateManufacturerFilterList() {
@@ -756,64 +666,55 @@ function updateManufacturerFilterList() {
         return;
     }
     
-    container.innerHTML = `
-        <button class="filter-option ${currentFilterManufacturer === 'all' ? 'active' : ''}" onclick="filterByManufacturer('all')" style="padding:6px 12px; font-size:13px;">
-            <i class="fa-solid fa-industry"></i> <span>Все производители</span>
-        </button>
-        ${uniqueManufacturers.map(m => `
-            <button class="filter-option ${currentFilterManufacturer === m ? 'active' : ''}" onclick="filterByManufacturer('${m.replace(/'/g, "\\'")}')" style="padding:6px 12px; font-size:13px;">
-                <i class="fa-solid fa-building"></i> <span>${m}</span>
+    container.innerHTML = uniqueManufacturers.map(m => {
+        const isSelected = selectedManufacturers.includes(m);
+        return `
+            <button class="filter-option ${isSelected ? 'active' : ''}" onclick="toggleManufacturer('${m.replace(/'/g, "\\'")}')" style="padding:6px 12px; font-size:13px;">
+                <i class="fa-solid ${isSelected ? 'fa-check-circle' : 'fa-circle'}"></i>
+                <span>${m}</span>
             </button>
-        `).join('')}
-    `;
+        `;
+    }).join('');
 }
 
-// ===== ФУНКЦИИ СОРТИРОВКИ ПО =====
+// ===== ПЕРЕКЛЮЧЕНИЕ ФИЛЬТРОВ =====
 
-function sortByColor(color) {
-    currentSort = `color_${color}`;
-    applyFiltersAndSort();
-    closeFilter();
+function toggleType(type) {
+    const index = selectedTypes.indexOf(type);
+    if (index === -1) {
+        selectedTypes.push(type);
+    } else {
+        selectedTypes.splice(index, 1);
+    }
+    updateTypeFilterList();
+    updateTypeLabel();
 }
 
-function sortByType(type) {
-    currentSort = `type_${type}`;
-    applyFiltersAndSort();
-    closeFilter();
+function toggleColor(color) {
+    const index = selectedColors.indexOf(color);
+    if (index === -1) {
+        selectedColors.push(color);
+    } else {
+        selectedColors.splice(index, 1);
+    }
+    updateColorFilterList();
+    updateColorLabel();
 }
 
-function sortByManufacturer(manufacturer) {
-    currentSort = `manufacturer_${manufacturer}`;
-    applyFiltersAndSort();
-    closeFilter();
-}
-
-// ===== ФИЛЬТРЫ =====
-
-function filterByType(type) {
-    currentFilterType = type;
-    if (typeFilterExpanded) updateTypeFilterList();
-    updateTypeLabel(type);
-    applyFiltersAndSort();
-}
-
-function filterByColor(color) {
-    currentFilterColor = color;
-    if (colorFilterExpanded) updateColorFilterList();
-    updateColorLabel(color);
-    applyFiltersAndSort();
-}
-
-function filterByManufacturer(manufacturer) {
-    currentFilterManufacturer = manufacturer;
-    if (manufacturerFilterExpanded) updateManufacturerFilterList();
-    updateManufacturerLabel(manufacturer);
-    applyFiltersAndSort();
+function toggleManufacturer(manufacturer) {
+    const index = selectedManufacturers.indexOf(manufacturer);
+    if (index === -1) {
+        selectedManufacturers.push(manufacturer);
+    } else {
+        selectedManufacturers.splice(index, 1);
+    }
+    updateManufacturerFilterList();
+    updateManufacturerLabel();
 }
 
 // ===== СОРТИРОВКА =====
 
-function sortFilaments(type) {
+function setSort(type) {
     currentSort = type;
     document.querySelectorAll('.filter-option').forEach(btn => btn.classList.remove('active'));
     const activeBtn = { 
@@ -821,53 +722,50 @@ function sortFilaments(type) {
         'name': 'filterName', 
         'nameDesc': 'filterNameDesc', 
         'progress': 'filterProgress', 
-        'progressDesc': 'filterProgressDesc'
+        'progressDesc': 'filterProgressDesc',
+        'color': 'filterColorSort',
+        'type': 'filterTypeSort',
+        'manufacturer': 'filterManufacturerSort'
     }[type];
     if (activeBtn) document.getElementById(activeBtn).classList.add('active');
-    applyFiltersAndSort();
-    closeFilter();
 }
 
 // ===== ПОИСК =====
 
 function searchFilaments() {
     currentSearchQuery = document.getElementById('searchInput')?.value.trim() || '';
-    applyFiltersAndSort();
+    loadFilaments();
 }
 
-// ===== ПРИМЕНЕНИЕ =====
+// ===== ПРИМЕНЕНИЕ ФИЛЬТРОВ =====
 
-function applyFiltersAndSort() {
+function applyFilters() {
     loadFilaments();
+    closeFilter();
 }
 
 // ===== СБРОС ФИЛЬТРОВ =====
 
 function resetFilters() {
-    currentFilterType = 'all';
     currentSort = 'default';
-    currentFilterManufacturer = 'all';
-    currentFilterColor = 'all';
+    selectedTypes = [];
+    selectedColors = [];
+    selectedManufacturers = [];
     currentSearchQuery = '';
     document.getElementById('searchInput').value = '';
     
     document.querySelectorAll('.filter-option').forEach(btn => btn.classList.remove('active'));
     document.getElementById('filterDefault').classList.add('active');
     
-    updateTypeLabel('all');
-    updateColorLabel('all');
-    updateManufacturerLabel('all');
+    updateTypeLabel();
+    updateColorLabel();
+    updateManufacturerLabel();
     
-    // Закрываем все аккордеоны
-    if (typeFilterExpanded) { toggleTypeFilter(); }
-    if (colorFilterExpanded) { toggleColorFilter(); }
-    if (manufacturerFilterExpanded) { toggleManufacturerFilter(); }
-    if (sortColorExpanded) { toggleSortColor(); }
-    if (sortTypeExpanded) { toggleSortType(); }
-    if (sortManufacturerExpanded) { toggleSortManufacturer(); }
+    if (typeFilterExpanded) updateTypeFilterList();
+    if (colorFilterExpanded) updateColorFilterList();
+    if (manufacturerFilterExpanded) updateManufacturerFilterList();
     
-    applyFiltersAndSort();
-    closeFilter();
+    loadFilaments();
 }
 
 // ===== ПОСТРОЕНИЕ URL =====
@@ -879,28 +777,30 @@ function buildMaterialsUrl() {
         params.append('name', currentSearchQuery);
     }
     
-    if (currentFilterType !== 'all') {
-        params.append('material', currentFilterType.toUpperCase());
-    }
+    // Типы - добавляем каждый выбранный
+    selectedTypes.forEach(t => {
+        params.append('material', t.toUpperCase());
+    });
     
-    if (currentFilterManufacturer !== 'all') {
-        params.append('manufacturer', currentFilterManufacturer);
-    }
+    // Цвета - добавляем каждый выбранный
+    selectedColors.forEach(c => {
+        params.append('color', c);
+    });
     
-    if (currentFilterColor !== 'all') {
-        params.append('color', currentFilterColor);
-    }
+    // Производители - добавляем каждого выбранного
+    selectedManufacturers.forEach(m => {
+        params.append('manufacturer', m);
+    });
     
     // Сортировка
     let sortParam = 'id';
-    
     if (currentSort === 'name') sortParam = 'name';
     else if (currentSort === 'nameDesc') sortParam = '-name';
     else if (currentSort === 'progress') sortParam = 'progress';
     else if (currentSort === 'progressDesc') sortParam = '-progress';
-    else if (currentSort.startsWith('color_')) sortParam = 'color';
-    else if (currentSort.startsWith('type_')) sortParam = 'material_type';
-    else if (currentSort.startsWith('manufacturer_')) sortParam = 'manufacturer';
+    else if (currentSort === 'color') sortParam = 'color';
+    else if (currentSort === 'type') sortParam = 'material_type';
+    else if (currentSort === 'manufacturer') sortParam = 'manufacturer';
     
     params.append('sort', sortParam);
     

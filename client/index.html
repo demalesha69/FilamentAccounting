@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 </head>
 <body>
 
@@ -19,22 +19,24 @@
 
 <div class="app">
     <div class="top-section">
-        <div class="header">
-            <h1 class="logo">Катушки</h1>
-            <div id="authContainer"></div>
-        </div>
-        <div class="search-section">
-            <div class="search-box">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="searchInput" placeholder="Поиск филамента..." oninput="searchFilaments()" />
+        <div class="top-section-inner">
+            <div class="header">
+                <h1 class="logo">Катушки</h1>
+                <div id="authContainer"></div>
             </div>
-            <button class="filter-button" onclick="openFilter()">
-                <i class="fa-solid fa-sliders"></i>
-            </button>
+            <div class="search-section">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchInput" placeholder="Поиск филамента..." oninput="searchFilaments()" />
+                </div>
+                <button class="filter-button" onclick="openFilter()">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+            </div>
         </div>
     </div>
 
-    <main class="content">
+    <main class="content content-padded">
         <section class="filament-grid" id="filamentGrid"></section>
     </main>
 
@@ -306,58 +308,30 @@
             <!-- Сортировка -->
             <div class="filter-section">
                 <label class="filter-label">Сортировка</label>
-                <button class="filter-option active" onclick="sortFilaments('default')" id="filterDefault">
+                <button class="filter-option active" onclick="setSort('default')" id="filterDefault">
                     <i class="fa-solid fa-list"></i> <span>По умолчанию</span>
                 </button>
-                <button class="filter-option" onclick="sortFilaments('name')" id="filterName">
+                <button class="filter-option" onclick="setSort('name')" id="filterName">
                     <i class="fa-solid fa-font"></i> <span>По названию (А-Я)</span>
                 </button>
-                <button class="filter-option" onclick="sortFilaments('nameDesc')" id="filterNameDesc">
+                <button class="filter-option" onclick="setSort('nameDesc')" id="filterNameDesc">
                     <i class="fa-solid fa-font"></i> <span>По названию (Я-А)</span>
                 </button>
-                <button class="filter-option" onclick="sortFilaments('progress')" id="filterProgress">
+                <button class="filter-option" onclick="setSort('progress')" id="filterProgress">
                     <i class="fa-solid fa-circle"></i> <span>По остатку (возрастание)</span>
                 </button>
-                <button class="filter-option" onclick="sortFilaments('progressDesc')" id="filterProgressDesc">
+                <button class="filter-option" onclick="setSort('progressDesc')" id="filterProgressDesc">
                     <i class="fa-solid fa-circle"></i> <span>По остатку (убывание)</span>
                 </button>
-            </div>
-            
-            <div class="filter-divider"></div>
-            
-            <!-- Сортировка ПО -->
-            <div class="filter-section">
-                <label class="filter-label">Сортировка по</label>
-                
-                <!-- По цвету -->
-                <button class="filter-option" onclick="toggleSortColor()" id="sortColorToggle">
-                    <i class="fa-solid fa-palette"></i> 
-                    <span id="sortColorLabel">Цвету</span>
-                    <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
+                <button class="filter-option" onclick="setSort('color')" id="filterColorSort">
+                    <i class="fa-solid fa-palette"></i> <span>По цвету</span>
                 </button>
-                <div id="sortColorContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:150px; overflow-y:auto;">
-                    <!-- Заполняется динамически -->
-                </div>
-                
-                <!-- По типу -->
-                <button class="filter-option" onclick="toggleSortType()" id="sortTypeToggle">
-                    <i class="fa-solid fa-cube"></i> 
-                    <span id="sortTypeLabel">Типу</span>
-                    <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
+                <button class="filter-option" onclick="setSort('type')" id="filterTypeSort">
+                    <i class="fa-solid fa-cube"></i> <span>По типу</span>
                 </button>
-                <div id="sortTypeContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:150px; overflow-y:auto;">
-                    <!-- Заполняется динамически -->
-                </div>
-                
-                <!-- По производителю -->
-                <button class="filter-option" onclick="toggleSortManufacturer()" id="sortManufacturerToggle">
-                    <i class="fa-solid fa-building"></i> 
-                    <span id="sortManufacturerLabel">Производителю</span>
-                    <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
+                <button class="filter-option" onclick="setSort('manufacturer')" id="filterManufacturerSort">
+                    <i class="fa-solid fa-building"></i> <span>По производителю</span>
                 </button>
-                <div id="sortManufacturerContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:150px; overflow-y:auto;">
-                    <!-- Заполняется динамически -->
-                </div>
             </div>
             
             <div class="filter-divider"></div>
@@ -368,9 +342,10 @@
                 <button class="filter-option" onclick="toggleTypeFilter()" id="filterTypeToggle">
                     <i class="fa-solid fa-cube"></i> 
                     <span id="filterTypeLabel">Все типы</span>
-                    <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
+                    <span id="filterTypeCount" style="color:#8b5cf6; font-size:12px; margin-left:auto; display:none;"></span>
+                    <i class="fa-solid fa-chevron-down" style="margin-left:6px;"></i>
                 </button>
-                <div id="typeFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:150px; overflow-y:auto;">
+                <div id="typeFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:8px 0 0 12px; max-height:150px; overflow-y:auto;">
                     <!-- Заполняется динамически -->
                 </div>
             </div>
@@ -383,9 +358,10 @@
                 <button class="filter-option" onclick="toggleColorFilter()" id="filterColorToggle">
                     <i class="fa-solid fa-palette"></i> 
                     <span id="filterColorLabel">Все цвета</span>
-                    <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
+                    <span id="filterColorCount" style="color:#8b5cf6; font-size:12px; margin-left:auto; display:none;"></span>
+                    <i class="fa-solid fa-chevron-down" style="margin-left:6px;"></i>
                 </button>
-                <div id="colorFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:150px; overflow-y:auto;">
+                <div id="colorFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:8px 0 0 12px; max-height:150px; overflow-y:auto;">
                     <!-- Заполняется динамически -->
                 </div>
             </div>
@@ -398,16 +374,22 @@
                 <button class="filter-option" onclick="toggleManufacturerFilter()" id="filterManufacturerToggle">
                     <i class="fa-solid fa-building"></i> 
                     <span id="filterManufacturerLabel">Все производители</span>
-                    <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
+                    <span id="filterManufacturerCount" style="color:#8b5cf6; font-size:12px; margin-left:auto; display:none;"></span>
+                    <i class="fa-solid fa-chevron-down" style="margin-left:6px;"></i>
                 </button>
-                <div id="manufacturerFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:150px; overflow-y:auto;">
+                <div id="manufacturerFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:8px 0 0 12px; max-height:150px; overflow-y:auto;">
                     <!-- Заполняется динамически -->
                 </div>
             </div>
             
-            <button class="filter-reset" onclick="resetFilters()">
-                <i class="fa-solid fa-rotate-left"></i> Сбросить фильтры
-            </button>
+            <div style="display:flex; gap:10px; margin-top:12px;">
+                <button class="auth-button" onclick="resetFilters()" style="flex:1; background:#232734; color:#9ca3af; font-size:14px; padding:12px; margin:0;">
+                    <i class="fa-solid fa-rotate-left"></i> Сбросить
+                </button>
+                <button class="auth-button" onclick="applyFilters()" style="flex:2; background:#8b5cf6; font-size:14px; padding:12px; margin:0;">
+                    <i class="fa-solid fa-check"></i> Применить
+                </button>
+            </div>
         </div>
     </div>
 </div>
