@@ -1,4 +1,4 @@
-const API_URL = '/api';
+const API_URL = 'http://186.246.28.163/api';
 let allFilaments = [];
 let currentSort = 'default';
 let currentFilterType = 'all';
@@ -7,8 +7,10 @@ let currentFilterColor = 'all';
 let currentSearchQuery = '';
 let currentFilamentId = null;
 let compositionData = [];
+
 let typeFilterExpanded = false;
 let colorFilterExpanded = false;
+let manufacturerFilterExpanded = false;
 
 const MAX_FILAMENT_WEIGHT = 1000000;
 
@@ -202,6 +204,7 @@ function toggleTypeFilter() {
     if (typeFilterExpanded) {
         container.style.display = 'flex';
         if (chevron) chevron.className = 'fa-solid fa-chevron-up';
+        updateTypeFilterList();
     } else {
         container.style.display = 'none';
         if (chevron) chevron.className = 'fa-solid fa-chevron-down';
@@ -218,6 +221,22 @@ function toggleColorFilter() {
         container.style.display = 'flex';
         if (chevron) chevron.className = 'fa-solid fa-chevron-up';
         updateColorFilterList();
+    } else {
+        container.style.display = 'none';
+        if (chevron) chevron.className = 'fa-solid fa-chevron-down';
+    }
+}
+
+function toggleManufacturerFilter() {
+    manufacturerFilterExpanded = !manufacturerFilterExpanded;
+    const container = document.getElementById('manufacturerFilterContainer');
+    const toggle = document.getElementById('filterManufacturerToggle');
+    const chevron = toggle?.querySelector('.fa-chevron-down');
+    
+    if (manufacturerFilterExpanded) {
+        container.style.display = 'flex';
+        if (chevron) chevron.className = 'fa-solid fa-chevron-up';
+        updateManufacturerFilterList();
     } else {
         container.style.display = 'none';
         if (chevron) chevron.className = 'fa-solid fa-chevron-down';
@@ -286,6 +305,12 @@ function updateColorLabel(color) {
         'multicolor': 'Мультицвет'
     };
     label.textContent = colorNames[color] || 'Все цвета';
+}
+
+function updateManufacturerLabel(manufacturer) {
+    const label = document.getElementById('filterManufacturerLabel');
+    if (!label) return;
+    label.textContent = manufacturer === 'all' ? 'Все производители' : manufacturer;
 }
 
 // ===== УПРАВЛЕНИЕ СОСТАВОМ =====
@@ -466,17 +491,37 @@ function closeFilter() {
 
 function openFilter() {
     document.getElementById('filterModal').style.display = 'flex';
-    updateManufacturerFilterList();
+    
+    if (typeFilterExpanded) {
+        updateTypeFilterList();
+    }
     if (colorFilterExpanded) {
         updateColorFilterList();
     }
+    if (manufacturerFilterExpanded) {
+        updateManufacturerFilterList();
+    }
+    
     updateTypeLabel(currentFilterType);
     updateColorLabel(currentFilterColor);
+    updateManufacturerLabel(currentFilterManufacturer);
 }
 
 document.getElementById('filterModal').addEventListener('click', function(e) {
     if (e.target === this) closeFilter();
 });
+
+// ===== ПОЛУЧЕНИЕ УНИКАЛЬНЫХ ЗНАЧЕНИЙ =====
+
+function getUniqueTypes() {
+    const types = new Set();
+    allFilaments.forEach(f => {
+        if (f.material_type && f.material_type.trim()) {
+            types.add(f.material_type.trim());
+        }
+    });
+    return Array.from(types).sort();
+}
 
 function getUniqueManufacturers() {
     const manufacturers = new Set();
@@ -498,32 +543,36 @@ function getUniqueColors() {
     return Array.from(colors).sort();
 }
 
-function updateManufacturerFilterList() {
-    const container = document.getElementById('manufacturerFilterContainer');
+// ===== ОБНОВЛЕНИЕ СПИСКА ТИПОВ =====
+
+function updateTypeFilterList() {
+    const container = document.getElementById('typeFilterContainer');
     if (!container) return;
     
-    const manufacturers = getUniqueManufacturers();
+    const types = getUniqueTypes();
     
-    if (manufacturers.length === 0) {
+    if (types.length === 0) {
         container.innerHTML = `
             <div style="text-align:center; padding:8px; color:#6b7280; font-size:13px;">
-                <i class="fa-solid fa-info-circle"></i> Нет производителей
+                <i class="fa-solid fa-info-circle"></i> Нет типов
             </div>
         `;
         return;
     }
     
     container.innerHTML = `
-        <button class="filter-option ${currentFilterManufacturer === 'all' ? 'active' : ''}" onclick="filterByManufacturer('all')" id="filterManufacturerAll" style="padding:6px 12px; font-size:13px;">
-            <i class="fa-solid fa-industry"></i> <span>Все производители</span>
+        <button class="filter-option ${currentFilterType === 'all' ? 'active' : ''}" onclick="filterByType('all')" id="filterTypeAll" style="padding:6px 12px; font-size:13px;">
+            <i class="fa-solid fa-layer-group"></i> <span>Все типы</span>
         </button>
-        ${manufacturers.map(m => `
-            <button class="filter-option ${currentFilterManufacturer === m ? 'active' : ''}" onclick="filterByManufacturer('${m.replace(/'/g, "\\'")}')" id="filterManufacturer_${m.replace(/[^a-zA-Z0-9]/g, '_')}" style="padding:6px 12px; font-size:13px;">
-                <i class="fa-solid fa-building"></i> <span>${m}</span>
+        ${types.map(t => `
+            <button class="filter-option ${currentFilterType === t.toLowerCase() ? 'active' : ''}" onclick="filterByType('${t.toLowerCase()}')" id="filterType_${t.replace(/[^a-zA-Z0-9]/g, '_')}" style="padding:6px 12px; font-size:13px;">
+                <i class="fa-solid fa-cube"></i> <span>${t}</span>
             </button>
         `).join('')}
     `;
 }
+
+// ===== ОБНОВЛЕНИЕ СПИСКА ЦВЕТОВ =====
 
 function updateColorFilterList() {
     const container = document.getElementById('colorFilterContainer');
@@ -607,17 +656,49 @@ function updateColorFilterList() {
     `;
 }
 
-function filterByManufacturer(manufacturer) {
-    currentFilterManufacturer = manufacturer;
-    document.querySelectorAll('#manufacturerFilterContainer .filter-option').forEach(btn => btn.classList.remove('active'));
-    if (manufacturer === 'all') {
-        const btn = document.getElementById('filterManufacturerAll');
+// ===== ОБНОВЛЕНИЕ СПИСКА ПРОИЗВОДИТЕЛЕЙ =====
+
+function updateManufacturerFilterList() {
+    const container = document.getElementById('manufacturerFilterContainer');
+    if (!container) return;
+    
+    const manufacturers = getUniqueManufacturers();
+    
+    if (manufacturers.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; padding:8px; color:#6b7280; font-size:13px;">
+                <i class="fa-solid fa-info-circle"></i> Нет производителей
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = `
+        <button class="filter-option ${currentFilterManufacturer === 'all' ? 'active' : ''}" onclick="filterByManufacturer('all')" id="filterManufacturerAll" style="padding:6px 12px; font-size:13px;">
+            <i class="fa-solid fa-industry"></i> <span>Все производители</span>
+        </button>
+        ${manufacturers.map(m => `
+            <button class="filter-option ${currentFilterManufacturer === m ? 'active' : ''}" onclick="filterByManufacturer('${m.replace(/'/g, "\\'")}')" id="filterManufacturer_${m.replace(/[^a-zA-Z0-9]/g, '_')}" style="padding:6px 12px; font-size:13px;">
+                <i class="fa-solid fa-building"></i> <span>${m}</span>
+            </button>
+        `).join('')}
+    `;
+}
+
+// ===== ФИЛЬТРЫ =====
+
+function filterByType(type) {
+    currentFilterType = type;
+    document.querySelectorAll('#typeFilterContainer .filter-option').forEach(btn => btn.classList.remove('active'));
+    if (type === 'all') {
+        const btn = document.getElementById('filterTypeAll');
         if (btn) btn.classList.add('active');
     } else {
-        const id = `filterManufacturer_${manufacturer.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const id = `filterType_${type.replace(/[^a-zA-Z0-9]/g, '_')}`;
         const btn = document.getElementById(id);
         if (btn) btn.classList.add('active');
     }
+    updateTypeLabel(type);
     applyFiltersAndSort();
 }
 
@@ -636,6 +717,23 @@ function filterByColor(color) {
     applyFiltersAndSort();
 }
 
+function filterByManufacturer(manufacturer) {
+    currentFilterManufacturer = manufacturer;
+    document.querySelectorAll('#manufacturerFilterContainer .filter-option').forEach(btn => btn.classList.remove('active'));
+    if (manufacturer === 'all') {
+        const btn = document.getElementById('filterManufacturerAll');
+        if (btn) btn.classList.add('active');
+    } else {
+        const id = `filterManufacturer_${manufacturer.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.add('active');
+    }
+    updateManufacturerLabel(manufacturer);
+    applyFiltersAndSort();
+}
+
+// ===== СОРТИРОВКА =====
+
 function sortFilaments(type) {
     currentSort = type;
     document.querySelectorAll('.filter-option').forEach(btn => btn.classList.remove('active'));
@@ -645,30 +743,29 @@ function sortFilaments(type) {
         'nameDesc': 'filterNameDesc', 
         'progress': 'filterProgress', 
         'progressDesc': 'filterProgressDesc', 
-        'color': 'filterColor' 
+        'colorSort': 'filterColorSort',
+        'type': 'filterTypeSort',
+        'manufacturer': 'filterManufacturerSort'
     }[type];
     if (activeBtn) document.getElementById(activeBtn).classList.add('active');
     applyFiltersAndSort();
     closeFilter();
 }
 
-function filterByType(type) {
-    currentFilterType = type;
-    document.querySelectorAll('#typeFilterContainer .filter-option').forEach(btn => btn.classList.remove('active'));
-    const btn = document.getElementById(`filterType${type.charAt(0).toUpperCase() + type.slice(1)}`);
-    if (btn) btn.classList.add('active');
-    updateTypeLabel(type);
-    applyFiltersAndSort();
-}
+// ===== ПОИСК =====
 
 function searchFilaments() {
     currentSearchQuery = document.getElementById('searchInput')?.value.trim() || '';
     applyFiltersAndSort();
 }
 
+// ===== ПРИМЕНЕНИЕ ФИЛЬТРОВ =====
+
 function applyFiltersAndSort() {
     loadFilaments();
 }
+
+// ===== СБРОС ФИЛЬТРОВ =====
 
 function resetFilters() {
     currentFilterType = 'all';
@@ -680,16 +777,10 @@ function resetFilters() {
     
     document.querySelectorAll('.filter-option').forEach(btn => btn.classList.remove('active'));
     document.getElementById('filterDefault').classList.add('active');
-    document.getElementById('filterTypeAll').classList.add('active');
     
     updateTypeLabel('all');
     updateColorLabel('all');
-    
-    const allManBtn = document.getElementById('filterManufacturerAll');
-    if (allManBtn) allManBtn.classList.add('active');
-    
-    const allColorBtn = document.getElementById('filterColorAll');
-    if (allColorBtn) allColorBtn.classList.add('active');
+    updateManufacturerLabel('all');
     
     if (typeFilterExpanded) {
         toggleTypeFilter();
@@ -697,10 +788,15 @@ function resetFilters() {
     if (colorFilterExpanded) {
         toggleColorFilter();
     }
+    if (manufacturerFilterExpanded) {
+        toggleManufacturerFilter();
+    }
     
     applyFiltersAndSort();
     closeFilter();
 }
+
+// ===== ПОСТРОЕНИЕ URL =====
 
 function buildMaterialsUrl() {
     const params = new URLSearchParams();
@@ -710,29 +806,7 @@ function buildMaterialsUrl() {
     }
     
     if (currentFilterType !== 'all') {
-        const typeMap = {
-            'pla': 'PLA',
-            'petg': 'PETG',
-            'abs': 'ABS',
-            'hips': 'HIPS',
-            'sbs': 'SBS',
-            'tpu': 'TPU',
-            'nylon': 'NYLON',
-            'asa': 'ASA',
-            'pp': 'PP',
-            'pc': 'PC',
-            'pom': 'POM',
-            'pmma': 'PMMA',
-            'peek': 'PEEK',
-            'ceramo': 'Ceramo',
-            'pva': 'PVA',
-            'wax': 'WAX',
-            'clearing': 'Clearing'
-        };
-        const mappedType = typeMap[currentFilterType];
-        if (mappedType) {
-            params.append('material', mappedType);
-        }
+        params.append('material', currentFilterType.toUpperCase());
     }
     
     if (currentFilterManufacturer !== 'all') {
@@ -749,13 +823,17 @@ function buildMaterialsUrl() {
         'nameDesc': '-name',
         'progress': 'progress',
         'progressDesc': '-progress',
-        'color': 'color'
+        'colorSort': 'color',
+        'type': 'material_type',
+        'manufacturer': 'manufacturer'
     };
     const sortParam = sortMap[currentSort] || 'id';
     params.append('sort', sortParam);
     
     return `${API_URL}/materials/?${params.toString()}`;
 }
+
+// ===== ЗАГРУЗКА КАТУШЕК =====
 
 async function loadFilaments() {
     const token = localStorage.getItem('token');
@@ -780,10 +858,18 @@ async function loadFilaments() {
             throw new Error(data.message || data.error || 'Ошибка загрузки');
         }
         allFilaments = data.data || [];
-        updateManufacturerFilterList();
+        
+        // Обновляем списки фильтров только если они раскрыты
+        if (typeFilterExpanded) {
+            updateTypeFilterList();
+        }
         if (colorFilterExpanded) {
             updateColorFilterList();
         }
+        if (manufacturerFilterExpanded) {
+            updateManufacturerFilterList();
+        }
+        
         renderFilaments(allFilaments);
     } catch (error) {
         console.error('Ошибка загрузки катушек:', error);
