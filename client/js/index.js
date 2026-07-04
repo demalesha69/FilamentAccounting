@@ -7,6 +7,8 @@ let currentFilterColor = 'all';
 let currentSearchQuery = '';
 let currentFilamentId = null;
 let compositionData = [];
+let typeFilterExpanded = false;
+let colorFilterExpanded = false;
 
 const MAX_FILAMENT_WEIGHT = 1000000;
 
@@ -189,6 +191,103 @@ function updateAdvancedDefaults() {
     }
 }
 
+// ===== УПРАВЛЕНИЕ РАСКРЫТИЕМ ФИЛЬТРОВ =====
+
+function toggleTypeFilter() {
+    typeFilterExpanded = !typeFilterExpanded;
+    const container = document.getElementById('typeFilterContainer');
+    const toggle = document.getElementById('filterTypeToggle');
+    const chevron = toggle?.querySelector('.fa-chevron-down');
+    
+    if (typeFilterExpanded) {
+        container.style.display = 'flex';
+        if (chevron) chevron.className = 'fa-solid fa-chevron-up';
+    } else {
+        container.style.display = 'none';
+        if (chevron) chevron.className = 'fa-solid fa-chevron-down';
+    }
+}
+
+function toggleColorFilter() {
+    colorFilterExpanded = !colorFilterExpanded;
+    const container = document.getElementById('colorFilterContainer');
+    const toggle = document.getElementById('filterColorToggle');
+    const chevron = toggle?.querySelector('.fa-chevron-down');
+    
+    if (colorFilterExpanded) {
+        container.style.display = 'flex';
+        if (chevron) chevron.className = 'fa-solid fa-chevron-up';
+        updateColorFilterList();
+    } else {
+        container.style.display = 'none';
+        if (chevron) chevron.className = 'fa-solid fa-chevron-down';
+    }
+}
+
+// ===== ОБНОВЛЕНИЕ ЛЕЙБЛОВ =====
+
+function updateTypeLabel(type) {
+    const label = document.getElementById('filterTypeLabel');
+    if (!label) return;
+    
+    const typeNames = {
+        'all': 'Все типы',
+        'pla': 'PLA',
+        'petg': 'PETG',
+        'abs': 'ABS',
+        'hips': 'HIPS',
+        'sbs': 'SBS',
+        'tpu': 'TPU',
+        'nylon': 'NYLON',
+        'asa': 'ASA',
+        'pp': 'PP',
+        'pc': 'PC',
+        'pom': 'POM',
+        'pmma': 'PMMA',
+        'peek': 'PEEK',
+        'ceramo': 'Ceramo',
+        'pva': 'PVA',
+        'wax': 'WAX',
+        'clearing': 'Clearing',
+        'other': 'Другое'
+    };
+    label.textContent = typeNames[type] || 'Все типы';
+}
+
+function updateColorLabel(color) {
+    const label = document.getElementById('filterColorLabel');
+    if (!label) return;
+    
+    const colorNames = {
+        'all': 'Все цвета',
+        'green': 'Зеленый',
+        'yellow': 'Желтый',
+        'red': 'Красный',
+        'blue': 'Синий',
+        'orange': 'Оранжевый',
+        'purple': 'Фиолетовый',
+        'black': 'Черный',
+        'white': 'Белый',
+        'gray': 'Серый',
+        'silver': 'Серебристый',
+        'crimson': 'Малиновый',
+        'pink': 'Розовый',
+        'gold': 'Золотой',
+        'lime': 'Лайм',
+        'teal': 'Бирюзовый',
+        'cyan': 'Циан',
+        'navy': 'Темно-синий',
+        'violet': 'Лиловый',
+        'magenta': 'Пурпурный',
+        'brown': 'Коричневый',
+        'beige': 'Бежевый',
+        'transparent': 'Прозрачный',
+        'glow': 'Светящийся',
+        'multicolor': 'Мультицвет'
+    };
+    label.textContent = colorNames[color] || 'Все цвета';
+}
+
 // ===== УПРАВЛЕНИЕ СОСТАВОМ =====
 
 function openCompositionModal() {
@@ -368,7 +467,11 @@ function closeFilter() {
 function openFilter() {
     document.getElementById('filterModal').style.display = 'flex';
     updateManufacturerFilterList();
-    updateColorFilterList();
+    if (colorFilterExpanded) {
+        updateColorFilterList();
+    }
+    updateTypeLabel(currentFilterType);
+    updateColorLabel(currentFilterColor);
 }
 
 document.getElementById('filterModal').addEventListener('click', function(e) {
@@ -411,11 +514,11 @@ function updateManufacturerFilterList() {
     }
     
     container.innerHTML = `
-        <button class="filter-option ${currentFilterManufacturer === 'all' ? 'active' : ''}" onclick="filterByManufacturer('all')" id="filterManufacturerAll">
+        <button class="filter-option ${currentFilterManufacturer === 'all' ? 'active' : ''}" onclick="filterByManufacturer('all')" id="filterManufacturerAll" style="padding:6px 12px; font-size:13px;">
             <i class="fa-solid fa-industry"></i> <span>Все производители</span>
         </button>
         ${manufacturers.map(m => `
-            <button class="filter-option ${currentFilterManufacturer === m ? 'active' : ''}" onclick="filterByManufacturer('${m.replace(/'/g, "\\'")}')" id="filterManufacturer_${m.replace(/[^a-zA-Z0-9]/g, '_')}">
+            <button class="filter-option ${currentFilterManufacturer === m ? 'active' : ''}" onclick="filterByManufacturer('${m.replace(/'/g, "\\'")}')" id="filterManufacturer_${m.replace(/[^a-zA-Z0-9]/g, '_')}" style="padding:6px 12px; font-size:13px;">
                 <i class="fa-solid fa-building"></i> <span>${m}</span>
             </button>
         `).join('')}
@@ -492,12 +595,12 @@ function updateColorFilterList() {
     };
     
     container.innerHTML = `
-        <button class="filter-option ${currentFilterColor === 'all' ? 'active' : ''}" onclick="filterByColor('all')" id="filterColorAll">
+        <button class="filter-option ${currentFilterColor === 'all' ? 'active' : ''}" onclick="filterByColor('all')" id="filterColorAll" style="padding:6px 12px; font-size:13px;">
             <i class="fa-solid fa-palette"></i> <span>Все цвета</span>
         </button>
         ${colors.map(c => `
-            <button class="filter-option ${currentFilterColor === c ? 'active' : ''}" onclick="filterByColor('${c}')" id="filterColor_${c.replace(/[^a-zA-Z0-9]/g, '_')}">
-                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:${colorHex[c] || '#8b5cf6'}; margin-right:4px;"></span>
+            <button class="filter-option ${currentFilterColor === c ? 'active' : ''}" onclick="filterByColor('${c}')" id="filterColor_${c.replace(/[^a-zA-Z0-9]/g, '_')}" style="padding:6px 12px; font-size:13px;">
+                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:${colorHex[c] || '#8b5cf6'}; margin-right:8px;"></span>
                 <span>${colorDisplayNames[c] || c}</span>
             </button>
         `).join('')}
@@ -506,26 +609,56 @@ function updateColorFilterList() {
 
 function filterByManufacturer(manufacturer) {
     currentFilterManufacturer = manufacturer;
+    document.querySelectorAll('#manufacturerFilterContainer .filter-option').forEach(btn => btn.classList.remove('active'));
+    if (manufacturer === 'all') {
+        const btn = document.getElementById('filterManufacturerAll');
+        if (btn) btn.classList.add('active');
+    } else {
+        const id = `filterManufacturer_${manufacturer.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.add('active');
+    }
     applyFiltersAndSort();
-    closeFilter();
 }
 
 function filterByColor(color) {
     currentFilterColor = color;
+    document.querySelectorAll('#colorFilterContainer .filter-option').forEach(btn => btn.classList.remove('active'));
+    if (color === 'all') {
+        const btn = document.getElementById('filterColorAll');
+        if (btn) btn.classList.add('active');
+    } else {
+        const id = `filterColor_${color.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.add('active');
+    }
+    updateColorLabel(color);
     applyFiltersAndSort();
-    closeFilter();
 }
 
 function sortFilaments(type) {
     currentSort = type;
+    document.querySelectorAll('.filter-option').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = { 
+        'default': 'filterDefault', 
+        'name': 'filterName', 
+        'nameDesc': 'filterNameDesc', 
+        'progress': 'filterProgress', 
+        'progressDesc': 'filterProgressDesc', 
+        'color': 'filterColor' 
+    }[type];
+    if (activeBtn) document.getElementById(activeBtn).classList.add('active');
     applyFiltersAndSort();
     closeFilter();
 }
 
 function filterByType(type) {
     currentFilterType = type;
+    document.querySelectorAll('#typeFilterContainer .filter-option').forEach(btn => btn.classList.remove('active'));
+    const btn = document.getElementById(`filterType${type.charAt(0).toUpperCase() + type.slice(1)}`);
+    if (btn) btn.classList.add('active');
+    updateTypeLabel(type);
     applyFiltersAndSort();
-    closeFilter();
 }
 
 function searchFilaments() {
@@ -544,6 +677,27 @@ function resetFilters() {
     currentFilterColor = 'all';
     currentSearchQuery = '';
     document.getElementById('searchInput').value = '';
+    
+    document.querySelectorAll('.filter-option').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('filterDefault').classList.add('active');
+    document.getElementById('filterTypeAll').classList.add('active');
+    
+    updateTypeLabel('all');
+    updateColorLabel('all');
+    
+    const allManBtn = document.getElementById('filterManufacturerAll');
+    if (allManBtn) allManBtn.classList.add('active');
+    
+    const allColorBtn = document.getElementById('filterColorAll');
+    if (allColorBtn) allColorBtn.classList.add('active');
+    
+    if (typeFilterExpanded) {
+        toggleTypeFilter();
+    }
+    if (colorFilterExpanded) {
+        toggleColorFilter();
+    }
+    
     applyFiltersAndSort();
     closeFilter();
 }
@@ -627,7 +781,9 @@ async function loadFilaments() {
         }
         allFilaments = data.data || [];
         updateManufacturerFilterList();
-        updateColorFilterList();
+        if (colorFilterExpanded) {
+            updateColorFilterList();
+        }
         renderFilaments(allFilaments);
     } catch (error) {
         console.error('Ошибка загрузки катушек:', error);
