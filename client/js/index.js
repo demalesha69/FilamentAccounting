@@ -1,4 +1,4 @@
-const API_URL = 'http://186.246.28.163/api';
+const API_URL = '/api';
 let allFilaments = [];
 let currentSort = 'default';
 let currentFilterType = 'all';
