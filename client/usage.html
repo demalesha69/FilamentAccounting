@@ -18,28 +18,32 @@
 
 <div class="app">
     <div class="top-section">
-        <div class="header">
-            <h1 class="logo">Использование</h1>
-            <div id="authContainer"></div>
-        </div>
-        <div class="search-section">
-            <div class="search-box">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="searchInput" placeholder="Поиск..." oninput="filterHistory()" />
+        <div class="top-section-inner">
+            <div class="header">
+                <h1 class="logo">Использование</h1>
+                <div id="authContainer"></div>
             </div>
-            <button class="filter-button" onclick="toggleSort()" title="Сортировка">
-                <i class="fa-solid fa-arrow-up-wide-short"></i>
-            </button>
+            <div class="search-section">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchInput" placeholder="Поиск..." oninput="filterHistory()" />
+                </div>
+                <button class="filter-button" onclick="toggleSort()" title="Сортировка">
+                    <i class="fa-solid fa-arrow-up-wide-short"></i>
+                </button>
+            </div>
         </div>
     </div>
 
-    <main class="content">
+    <main class="content content-padded">
         <div class="history-list" id="historyList"></div>
     </main>
 
-    <button class="fab-button" onclick="openAddConsumption()">
-        <i class="fa-solid fa-plus"></i>
-    </button>
+    <div class="fab-single">
+        <button class="fab-button" onclick="openAddConsumption()">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+    </div>
 
     <footer class="bottom-nav">
         <a href="index.html" class="nav-item">
