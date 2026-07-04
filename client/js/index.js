@@ -1399,7 +1399,7 @@ async function loadConsumptionHistory(materialId) {
     const token = localStorage.getItem('token');
     if (!token) return `<div style="text-align:center;padding:8px 0;color:#9ca3af;font-size:13px;">Авторизуйтесь для просмотра истории</div>`;
     try {
-        const response = await fetch(`${API_URL}/consumptions/${materialId}`, {
+        const response = await fetch(`${API_URL}/consumptions/by_material/${materialId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -1412,13 +1412,13 @@ async function loadConsumptionHistory(materialId) {
             redirectToLogin();
             return `<div style="text-align:center;padding:8px 0;color:#ff5f5f;font-size:13px;">Сессия истекла</div>`;
         }
-        const data = await response.json();
-        if (data.status === 404) {
+        if (response.status === 404) {
             return `<div style="text-align:center;padding:8px 0;color:#9ca3af;font-size:13px;">
                 <i class="fa-solid fa-inbox" style="display:block;font-size:18px;margin-bottom:4px;opacity:0.5;"></i>
                 Пока что расходов по этой катушке не было
             </div>`;
         }
+        const data = await response.json();
         if (data.status !== 200) {
             throw new Error(data.message || data.error || 'Ошибка загрузки истории');
         }
@@ -1429,22 +1429,34 @@ async function loadConsumptionHistory(materialId) {
                 Пока что расходов по этой катушке не было
             </div>`;
         }
+        
+        // Статусы для отображения
+        const statusMap = {
+            'success': { icon: 'fa-solid fa-check-circle', color: '#4ade80', label: 'Успешно' },
+            'waste': { icon: 'fa-solid fa-circle-xmark', color: '#ef4444', label: 'Брак' },
+            'interrupted': { icon: 'fa-solid fa-triangle-exclamation', color: '#f59e0b', label: 'Прервано' }
+        };
+        
         return `<div style="display:flex;flex-direction:column;gap:6px;max-height:150px;overflow-y:auto;padding-right:4px;">
             ${history.map(item => {
                 const localTime = item.timestamp ? formatLocalDate(item.timestamp) : '';
                 const remainLength = formatLength(item.remain_length || 0);
                 const usedLength = formatLength(item.used_length || 0);
+                const status = item.status || 'success';
+                const statusDisplay = statusMap[status] || statusMap['success'];
+                
                 return `
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#1a1d26;border-radius:8px;border-left:3px solid #ff5f5f;">
-                    <div style="display:flex;align-items:center;gap:12px;flex:1;">
-                        <span style="color:#ffffff;font-size:13px;font-weight:500;">${item.title || 'Без названия'}</span>
-                        <span style="color:#9ca3af;font-size:11px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#1a1d26;border-radius:8px;border-left:3px solid ${statusDisplay.color};">
+                    <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+                        <span style="color:#ffffff;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.title || 'Без названия'}</span>
+                        <span style="background:${statusDisplay.color}; color:${status === 'success' ? '#1a1d26' : 'white'}; font-size:9px; padding:2px 6px; border-radius:3px; white-space:nowrap;">${statusDisplay.label}</span>
+                        <span style="color:#9ca3af;font-size:11px;white-space:nowrap;">
                             <i class="fa-regular fa-calendar"></i> ${localTime}
                         </span>
                     </div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:13px;color:#9ca3af;">Остаток: ${remainLength}</span>
-                        <span style="font-size:15px;font-weight:700;color:#ff5f5f;white-space:nowrap;">-${usedLength}</span>
+                    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                        <span style="font-size:12px;color:#9ca3af;white-space:nowrap;">Остаток: ${remainLength}</span>
+                        <span style="font-size:14px;font-weight:700;color:#ff5f5f;white-space:nowrap;">-${usedLength}</span>
                     </div>
                 </div>
             `}).join('')}
