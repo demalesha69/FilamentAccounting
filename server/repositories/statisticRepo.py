@@ -22,7 +22,7 @@ class StatisticsRepository:
 
         return (
             db.query(
-                func.sum(Consumption.used_mass)
+                func.sum(Consumption.used_length)
             )
             .filter(
                 Consumption.owner_id == owner_id,
@@ -82,7 +82,7 @@ class StatisticsRepository:
             db.query(
                 Material.id,
                 Material.name,
-                func.sum(Consumption.used_mass).label("used_mass")
+                func.sum(Consumption.used_length).label("used_length")
             )
             .join(
                 Consumption,
