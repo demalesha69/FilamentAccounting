@@ -6,6 +6,8 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 
+from sqlalchemy.dialects.postgresql import JSONB
+
 from database.db.db import Base
 
 class Material(Base):
@@ -34,6 +36,11 @@ class Material(Base):
     manufacturer: Mapped[str] = mapped_column(
         String(100)
     ) 
+
+    composition: Mapped[list] = mapped_column(
+        JSONB,
+        default=list
+    )
 
     diameter: Mapped[float] = mapped_column(
         Float

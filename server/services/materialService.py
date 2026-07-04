@@ -34,6 +34,7 @@ class MaterialService:
             "initial_mass": material.initial_mass,
             "current_mass": material.current_mass,
             "manufacturer": material.manufacturer,
+            "composition": material.composition,
             "density": material.density
         }
 
@@ -55,6 +56,10 @@ class MaterialService:
                     density=data.density,
                     diameter=data.diameter,
                     manufacturer=data.manufacturer,
+                    composition=[
+                        item.model_dump()
+                        for item in data.composition
+                    ],
                     owner_id=owner_id,
                     qr_code=str(uuid.uuid4())
                 )
