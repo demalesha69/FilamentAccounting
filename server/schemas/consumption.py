@@ -33,4 +33,6 @@ class ConsumptionFilters(BaseModel):
 
     status: list[str] | None = None
 
+    title: str | None = None
+
     sort_order: str = Field()

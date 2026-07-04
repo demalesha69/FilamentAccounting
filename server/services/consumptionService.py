@@ -1,3 +1,5 @@
+from datetime import datetime, UTC
+
 from database.models.consumption import Consumption
 
 from server.repositories.consumptionRepo import ConsumptionRepository
@@ -54,7 +56,8 @@ class ConsumptionService:
             used_length=data.used_length,
             remain_length=remain_length,
             status=data.status,
-            owner_id=owner_id
+            owner_id=owner_id,
+            timestamp=datetime.now(UTC)
         )
 
         created_consumption = self.repo.create(db, consumption)

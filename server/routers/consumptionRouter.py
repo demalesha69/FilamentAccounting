@@ -56,6 +56,7 @@ def get_all_consumptions_by_material(material_id: int, db: Session = Depends(get
 
 @consumptionlRouter.get("/")
 def get_consumptions_by_user(
+    title: str | None = Query(default=None),
     status: list[str] | None = Query(default=None),
     sort_order: str | None = Query(default="desc"),
     db: Session = Depends(get_db), 
@@ -63,6 +64,7 @@ def get_consumptions_by_user(
 ):
 
     consumptionFilter = ConsumptionFilters(
+        title=title,
         status=status,
         sort_order=sort_order
     )

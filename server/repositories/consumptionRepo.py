@@ -36,6 +36,11 @@ class ConsumptionRepository:
                 Consumption.status.in_(filters.status)
             )
 
+        if filters.title:
+            query = query.filter(
+                Consumption.title.ilike(filters.title)
+            )
+
         column = Consumption.timestamp
 
         if filters.sort_order == "desc":
