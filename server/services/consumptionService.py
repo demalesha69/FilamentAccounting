@@ -8,7 +8,7 @@ from server.exceptions.materialExceptions import MaterialNotFound
 from server.exceptions.consumptionExceptions import ConsumptionInvalidData
 from server.exceptions.parseExceptions import ParseDataNotFound
 
-from server.schemas.consumption import ConsumptionCreate
+from server.schemas.consumption import ConsumptionCreate, ConsumptionFilters
 
 from server.services.parseService import ParseService
 
@@ -89,9 +89,9 @@ class ConsumptionService:
             for consumption in consumptions
         ]
     
-    def get_all_user_consumptions(self, db, owner_id: int) -> list[dict]:
+    def get_all_user_consumptions(self, db, owner_id: int, filters: ConsumptionFilters) -> list[dict]:
         
-        consumptions = self.repo.get_all_by_user(db, owner_id)
+        consumptions = self.repo.get_all_by_user(db, owner_id, filters)
 
         return [
             self._format_answer(consumption)

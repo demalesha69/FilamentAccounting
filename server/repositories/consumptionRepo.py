@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 
 from database.models.consumption import Consumption
 
+from server.schemas.consumption import ConsumptionFilters
+
 class ConsumptionRepository:
 
     def create(self, db: Session, consumption: Consumption) -> Consumption:
@@ -25,14 +27,23 @@ class ConsumptionRepository:
             .all()
         )
 
-    def get_all_by_user(self, db: Session, owner_id: int) -> list[Consumption]:
+    def get_all_by_user(self, db: Session, owner_id: int, filters: ConsumptionFilters) -> list[Consumption]:
 
-        return (
-            db.query(Consumption)
-            .filter(Consumption.owner_id == owner_id)
-            .order_by(Consumption.timestamp.desc())
-            .all()
-        )
+        query = db.query(Consumption).filter(Consumption.owner_id == owner_id)
+
+        if filters.status:
+            query = query.filter(
+                Consumption.status.in_(filters.status)
+            )
+
+        column = Consumption.timestamp
+
+        if filters.sort_order == "desc":
+            query = query.order_by(column.desc())
+        else:
+            query = query.order_by(column.asc())
+
+        return query.all()
 
     def get_first(self, db: Session, owner_id: int, start_day: int) -> Consumption | None:
 

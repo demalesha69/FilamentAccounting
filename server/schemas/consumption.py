@@ -28,3 +28,9 @@ class ConsumptionCreate(BaseModel):
             raise ConsumptionInvalidData("Поле title не может быть пустым")
         
         return field
+
+class ConsumptionFilters(BaseModel):
+
+    status: list[str] | None = None
+
+    sort_order: str = Field()

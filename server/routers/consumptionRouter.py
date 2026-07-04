@@ -1,13 +1,13 @@
 import os
 
 from fastapi import APIRouter, UploadFile, File
-from fastapi import Depends
+from fastapi import Depends, Query
 
 from sqlalchemy.orm import Session
 
 from database.db.db import get_db
 
-from server.schemas.consumption import ConsumptionCreate
+from server.schemas.consumption import ConsumptionCreate, ConsumptionFilters
 
 from server.services.consumptionService import ConsumptionService
 
@@ -39,7 +39,7 @@ def create_consumption(data: ConsumptionCreate, db: Session = Depends(get_db), c
     )
 
 
-@consumptionlRouter.get("/{material_id}")
+@consumptionlRouter.get("/by_material/{material_id}")
 def get_all_consumptions_by_material(material_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
 
     result = consumption_service.get_all_material_comsuptions(
@@ -55,11 +55,22 @@ def get_all_consumptions_by_material(material_id: int, db: Session = Depends(get
 
 
 @consumptionlRouter.get("/")
-def get_consumptions_by_user(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+def get_consumptions_by_user(
+    status: list[str] | None = Query(default=None),
+    sort_order: str | None = Query(default="desc"),
+    db: Session = Depends(get_db), 
+    current_user=Depends(get_current_user)
+):
+
+    consumptionFilter = ConsumptionFilters(
+        status=status,
+        sort_order=sort_order
+    )
 
     result = consumption_service.get_all_user_consumptions(
         db,
-        current_user["user_id"]
+        current_user["user_id"],
+        consumptionFilter
     )
 
     return ApiResponse.success(
