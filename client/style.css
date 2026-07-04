@@ -1969,3 +1969,51 @@ body {
         font-size: 9px;
     }
 }
+/* ========== СОСТАВ КАТУШКИ ========== */
+#compositionDetailBody {
+    padding: 4px 0;
+}
+
+#compositionDetailBody .composition-item-detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+#compositionDetailBody .composition-item-detail:last-child {
+    border-bottom: none;
+}
+
+#compositionDetailBody .composition-material-name {
+    color: #ffffff;
+    font-size: 14px;
+}
+
+#compositionDetailBody .composition-percent {
+    color: #8b5cf6;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+#compositionDetailBody .composition-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0 4px 0;
+    border-top: 2px solid rgba(139,92,246,0.3);
+    margin-top: 4px;
+}
+
+#compositionDetailBody .composition-total-label {
+    color: #9ca3af;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+#compositionDetailBody .composition-total-value {
+    color: #4ade80;
+    font-weight: 700;
+    font-size: 15px;
+}

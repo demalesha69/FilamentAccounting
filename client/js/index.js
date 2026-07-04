@@ -1,6 +1,8 @@
-const API_URL = 'http://186.246.28.163/api';
+const API_URL = '/api';
 let allFilaments = [];
 let currentSort = 'default';
+let currentSortBy = 'id';
+let currentSortOrder = 'asc';
 
 // Выбранные фильтры (множественный выбор)
 let selectedTypes = [];
@@ -44,84 +46,84 @@ const MATERIAL_DEFAULTS = {
 };
 
 const COLOR_MAP = {
-    'green': '#22c55e',
-    'yellow': '#eab308',
-    'red': '#ef4444',
-    'blue': '#3b82f6',
-    'orange': '#f97316',
-    'purple': '#a855f7',
-    'black': '#1a1a1a',
-    'white': '#f3f4f6',
-    'gray': '#6b7280',
-    'silver': '#c0c0c0',
-    'crimson': '#dc2626',
-    'pink': '#ec4899',
-    'gold': '#f59e0b',
-    'lime': '#84cc16',
-    'teal': '#14b8a6',
-    'cyan': '#06b6d4',
-    'navy': '#1e3a8a',
-    'violet': '#8b5cf6',
-    'magenta': '#d946ef',
-    'brown': '#92400e',
-    'beige': '#f5e6d3',
-    'transparent': 'rgba(255,255,255,0.1)',
-    'glow': '#22d3ee',
-    'multicolor': '#8b5cf6'
+    'Green': '#22c55e',
+    'Yellow': '#eab308',
+    'Red': '#ef4444',
+    'Blue': '#3b82f6',
+    'Orange': '#f97316',
+    'Purple': '#a855f7',
+    'Black': '#1a1a1a',
+    'White': '#f3f4f6',
+    'Gray': '#6b7280',
+    'Silver': '#c0c0c0',
+    'Crimson': '#dc2626',
+    'Pink': '#ec4899',
+    'Gold': '#f59e0b',
+    'Lime': '#84cc16',
+    'Teal': '#14b8a6',
+    'Cyan': '#06b6d4',
+    'Navy': '#1e3a8a',
+    'Violet': '#8b5cf6',
+    'Magenta': '#d946ef',
+    'Brown': '#92400e',
+    'Beige': '#f5e6d3',
+    'Transparent': 'rgba(255,255,255,0.1)',
+    'Glow': '#22d3ee',
+    'Multicolor': '#8b5cf6'
 };
 
 const COLOR_NAMES = {
-    'green': 'Зеленый',
-    'yellow': 'Желтый',
-    'red': 'Красный',
-    'blue': 'Синий',
-    'orange': 'Оранжевый',
-    'purple': 'Фиолетовый',
-    'black': 'Черный',
-    'white': 'Белый',
-    'gray': 'Серый',
-    'silver': 'Серебристый',
-    'crimson': 'Малиновый',
-    'pink': 'Розовый',
-    'gold': 'Золотой',
-    'lime': 'Лайм',
-    'teal': 'Бирюзовый',
-    'cyan': 'Циан',
-    'navy': 'Темно-синий',
-    'violet': 'Лиловый',
-    'magenta': 'Пурпурный',
-    'brown': 'Коричневый',
-    'beige': 'Бежевый',
-    'transparent': 'Прозрачный',
-    'glow': 'Светящийся',
-    'multicolor': 'Мультицвет'
+    'Green': 'Зеленый',
+    'Yellow': 'Желтый',
+    'Red': 'Красный',
+    'Blue': 'Синий',
+    'Orange': 'Оранжевый',
+    'Purple': 'Фиолетовый',
+    'Black': 'Черный',
+    'White': 'Белый',
+    'Gray': 'Серый',
+    'Silver': 'Серебристый',
+    'Crimson': 'Малиновый',
+    'Pink': 'Розовый',
+    'Gold': 'Золотой',
+    'Lime': 'Лайм',
+    'Teal': 'Бирюзовый',
+    'Cyan': 'Циан',
+    'Navy': 'Темно-синий',
+    'Violet': 'Лиловый',
+    'Magenta': 'Пурпурный',
+    'Brown': 'Коричневый',
+    'Beige': 'Бежевый',
+    'Transparent': 'Прозрачный',
+    'Glow': 'Светящийся',
+    'Multicolor': 'Мультицвет'
 };
 
 const RING_COLOR_MAP = {
-    'green': '#22c55e',
-    'yellow': '#eab308',
-    'red': '#ef4444',
-    'blue': '#3b82f6',
-    'orange': '#f97316',
-    'purple': '#a855f7',
-    'black': '#4a4a4a',
-    'white': '#e5e7eb',
-    'gray': '#9ca3af',
-    'silver': '#d1d5db',
-    'crimson': '#dc2626',
-    'pink': '#ec4899',
-    'gold': '#f59e0b',
-    'lime': '#84cc16',
-    'teal': '#14b8a6',
-    'cyan': '#06b6d4',
-    'navy': '#3b82f6',
-    'violet': '#8b5cf6',
-    'magenta': '#d946ef',
-    'brown': '#b45309',
-    'beige': '#d4c5b0',
-    'transparent': '#9ca3af',
-    'glow': '#22d3ee',
-    'multicolor': '#8b5cf6'
+    'Green': '#22c55e',
+    'Yellow': '#eab308',
+    'Red': '#ef4444',
+    'Blue': '#3b82f6',
+    'Orange': '#f97316',
+    'Purple': '#a855f7',
+    'Black': '#4a4a4a',
+    'White': '#e5e7eb',
+    'Gray': '#9ca3af',
+    'Silver': '#d1d5db',
+    'Crimson': '#dc2626',
+    'Pink': '#ec4899',
+    'Gold': '#f59e0b',
+    'Lime': '#84cc16',
+    'Teal': '#14b8a6',
+    'Cyan': '#06b6d4',
+    'Navy': '#3b82f6',
+    'Violet': '#8b5cf6',
+    'Magenta': '#d946ef',
+    'Brown': '#b45309',
+    'Beige': '#d4c5b0',
+    'Transparent': '#9ca3af',
+    'Glow': '#22d3ee',
+    'Multicolor': '#8b5cf6'
 };
 
 function formatWeight(grams) {
@@ -243,7 +245,7 @@ function updateTypeLabel() {
         label.textContent = 'Все типы';
         if (count) count.style.display = 'none';
     } else if (selectedTypes.length === 1) {
-        label.textContent = selectedTypes[0].toUpperCase();
+        label.textContent = selectedTypes[0];
         if (count) count.style.display = 'none';
     } else {
         label.textContent = `Типы (${selectedTypes.length})`;
@@ -259,38 +261,11 @@ function updateColorLabel() {
     const count = document.getElementById('filterColorCount');
     if (!label) return;
     
-    const colorDisplayNames = {
-        'green': 'Зеленый',
-        'yellow': 'Желтый',
-        'red': 'Красный',
-        'blue': 'Синий',
-        'orange': 'Оранжевый',
-        'purple': 'Фиолетовый',
-        'black': 'Черный',
-        'white': 'Белый',
-        'gray': 'Серый',
-        'silver': 'Серебристый',
-        'crimson': 'Малиновый',
-        'pink': 'Розовый',
-        'gold': 'Золотой',
-        'lime': 'Лайм',
-        'teal': 'Бирюзовый',
-        'cyan': 'Циан',
-        'navy': 'Темно-синий',
-        'violet': 'Лиловый',
-        'magenta': 'Пурпурный',
-        'brown': 'Коричневый',
-        'beige': 'Бежевый',
-        'transparent': 'Прозрачный',
-        'glow': 'Светящийся',
-        'multicolor': 'Мультицвет'
-    };
-    
     if (selectedColors.length === 0) {
         label.textContent = 'Все цвета';
         if (count) count.style.display = 'none';
     } else if (selectedColors.length === 1) {
-        label.textContent = colorDisplayNames[selectedColors[0]] || selectedColors[0];
+        label.textContent = COLOR_NAMES[selectedColors[0]] || selectedColors[0];
         if (count) count.style.display = 'none';
     } else {
         label.textContent = `Цвета (${selectedColors.length})`;
@@ -571,9 +546,9 @@ function updateTypeFilterList() {
     }
     
     container.innerHTML = uniqueTypes.map(t => {
-        const isSelected = selectedTypes.includes(t.toLowerCase());
+        const isSelected = selectedTypes.includes(t);
         return `
-            <button class="filter-option ${isSelected ? 'active' : ''}" onclick="toggleType('${t.toLowerCase()}')" style="padding:6px 12px; font-size:13px;">
+            <button class="filter-option ${isSelected ? 'active' : ''}" onclick="toggleType('${t}')" style="padding:6px 12px; font-size:13px;">
                 <i class="fa-solid ${isSelected ? 'fa-check-circle' : 'fa-circle'}"></i>
                 <span>${t}</span>
             </button>
@@ -590,68 +565,15 @@ function updateColorFilterList() {
         return;
     }
     
-    const colorHex = {
-        'green': '#22c55e',
-        'yellow': '#eab308',
-        'red': '#ef4444',
-        'blue': '#3b82f6',
-        'orange': '#f97316',
-        'purple': '#a855f7',
-        'black': '#1a1a1a',
-        'white': '#f3f4f6',
-        'gray': '#6b7280',
-        'silver': '#c0c0c0',
-        'crimson': '#dc2626',
-        'pink': '#ec4899',
-        'gold': '#f59e0b',
-        'lime': '#84cc16',
-        'teal': '#14b8a6',
-        'cyan': '#06b6d4',
-        'navy': '#1e3a8a',
-        'violet': '#8b5cf6',
-        'magenta': '#d946ef',
-        'brown': '#92400e',
-        'beige': '#f5e6d3',
-        'transparent': 'rgba(255,255,255,0.1)',
-        'glow': '#22d3ee',
-        'multicolor': '#8b5cf6'
-    };
-    
-    const colorDisplayNames = {
-        'green': 'Зеленый',
-        'yellow': 'Желтый',
-        'red': 'Красный',
-        'blue': 'Синий',
-        'orange': 'Оранжевый',
-        'purple': 'Фиолетовый',
-        'black': 'Черный',
-        'white': 'Белый',
-        'gray': 'Серый',
-        'silver': 'Серебристый',
-        'crimson': 'Малиновый',
-        'pink': 'Розовый',
-        'gold': 'Золотой',
-        'lime': 'Лайм',
-        'teal': 'Бирюзовый',
-        'cyan': 'Циан',
-        'navy': 'Темно-синий',
-        'violet': 'Лиловый',
-        'magenta': 'Пурпурный',
-        'brown': 'Коричневый',
-        'beige': 'Бежевый',
-        'transparent': 'Прозрачный',
-        'glow': 'Светящийся',
-        'multicolor': 'Мультицвет'
-    };
-    
     container.innerHTML = uniqueColors.map(c => {
-        const lowerC = c.toLowerCase();
-        const isSelected = selectedColors.includes(lowerC);
+        const isSelected = selectedColors.includes(c);
+        const colorHex = COLOR_MAP[c] || '#8b5cf6';
+        const colorName = COLOR_NAMES[c] || c;
         return `
-            <button class="filter-option ${isSelected ? 'active' : ''}" onclick="toggleColor('${lowerC}')" style="padding:6px 12px; font-size:13px;">
+            <button class="filter-option ${isSelected ? 'active' : ''}" onclick="toggleColor('${c}')" style="padding:6px 12px; font-size:13px;">
                 <i class="fa-solid ${isSelected ? 'fa-check-circle' : 'fa-circle'}"></i>
-                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:${colorHex[lowerC] || '#8b5cf6'}; margin:0 8px;"></span>
-                <span>${colorDisplayNames[lowerC] || c}</span>
+                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:${colorHex}; margin:0 8px;"></span>
+                <span>${colorName}</span>
             </button>
         `;
     }).join('');
@@ -716,16 +638,41 @@ function toggleManufacturer(manufacturer) {
 
 function setSort(type) {
     currentSort = type;
+    
+    // Настройка sort_by и sort_order
+    switch(type) {
+        case 'default':
+            currentSortBy = 'id';
+            currentSortOrder = 'asc';
+            break;
+        case 'name':
+            currentSortBy = 'name';
+            currentSortOrder = 'asc';
+            break;
+        case 'nameDesc':
+            currentSortBy = 'name';
+            currentSortOrder = 'desc';
+            break;
+        case 'progress':
+            currentSortBy = 'current_mass';
+            currentSortOrder = 'asc';
+            break;
+        case 'progressDesc':
+            currentSortBy = 'current_mass';
+            currentSortOrder = 'desc';
+            break;
+        default:
+            currentSortBy = 'id';
+            currentSortOrder = 'asc';
+    }
+    
     document.querySelectorAll('.filter-option').forEach(btn => btn.classList.remove('active'));
     const activeBtn = { 
         'default': 'filterDefault', 
         'name': 'filterName', 
         'nameDesc': 'filterNameDesc', 
         'progress': 'filterProgress', 
-        'progressDesc': 'filterProgressDesc',
-        'color': 'filterColorSort',
-        'type': 'filterTypeSort',
-        'manufacturer': 'filterManufacturerSort'
+        'progressDesc': 'filterProgressDesc'
     }[type];
     if (activeBtn) document.getElementById(activeBtn).classList.add('active');
 }
@@ -748,6 +695,8 @@ function applyFilters() {
 
 function resetFilters() {
     currentSort = 'default';
+    currentSortBy = 'id';
+    currentSortOrder = 'asc';
     selectedTypes = [];
     selectedColors = [];
     selectedManufacturers = [];
@@ -773,36 +722,32 @@ function resetFilters() {
 function buildMaterialsUrl() {
     const params = new URLSearchParams();
     
+    // Поиск по названию
     if (currentSearchQuery) {
         params.append('name', currentSearchQuery);
     }
     
-    // Типы - добавляем каждый выбранный
+    // Типы - множественный параметр (OR логика)
     selectedTypes.forEach(t => {
-        params.append('material', t.toUpperCase());
+        params.append('material', t);
     });
     
-    // Цвета - добавляем каждый выбранный
+    // Цвета - множественный параметр (OR логика)
+    // Передаём цвета в том виде, в котором они пришли с сервера (с большой буквы)
     selectedColors.forEach(c => {
         params.append('color', c);
     });
     
-    // Производители - добавляем каждого выбранного
+    // Производители - множественный параметр (OR логика)
     selectedManufacturers.forEach(m => {
         params.append('manufacturer', m);
     });
     
     // Сортировка
-    let sortParam = 'id';
-    if (currentSort === 'name') sortParam = 'name';
-    else if (currentSort === 'nameDesc') sortParam = '-name';
-    else if (currentSort === 'progress') sortParam = 'progress';
-    else if (currentSort === 'progressDesc') sortParam = '-progress';
-    else if (currentSort === 'color') sortParam = 'color';
-    else if (currentSort === 'type') sortParam = 'material_type';
-    else if (currentSort === 'manufacturer') sortParam = 'manufacturer';
-    
-    params.append('sort', sortParam);
+    if (currentSortBy) {
+        params.append('sort_by', currentSortBy);
+        params.append('sort_order', currentSortOrder);
+    }
     
     return `${API_URL}/materials/?${params.toString()}`;
 }
@@ -851,7 +796,7 @@ function renderFilaments(filaments) {
     }
     
     grid.innerHTML = filaments.map(f => {
-        const colorKey = (f.color || '').toLowerCase();
+        const colorKey = f.color || '';
         const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
         const ringColor = RING_COLOR_MAP[colorKey] || '#8b5cf6';
         const colorName = COLOR_NAMES[colorKey] || f.color || 'Без цвета';
@@ -872,7 +817,7 @@ function renderFilaments(filaments) {
         const weightColor = isEmpty ? '#6b7280' : colorHex;
         
         let ringStyle;
-        if (colorKey === 'multicolor') {
+        if (colorKey === 'Multicolor') {
             const multiColors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
             const totalColors = multiColors.length;
             const segmentSize = 100 / totalColors;
@@ -921,7 +866,7 @@ function renderFilaments(filaments) {
             ringStyle = `background: conic-gradient(${ringColor} ${progress}%, #2b2f3a 0);`;
         }
         
-        const dotStyle = colorKey === 'multicolor' 
+        const dotStyle = colorKey === 'Multicolor' 
             ? 'background: linear-gradient(45deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7);' 
             : `background: ${colorHex};`;
         
@@ -1009,7 +954,7 @@ async function openDetailModal(id) {
         const modal = document.getElementById('detailModal');
         const body = document.getElementById('detailBody');
         
-        const colorKey = (filament.color || '').toLowerCase();
+        const colorKey = filament.color || '';
         const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
         const ringColor = RING_COLOR_MAP[colorKey] || '#8b5cf6';
         const colorName = COLOR_NAMES[colorKey] || filament.color || 'Без цвета';
@@ -1023,7 +968,7 @@ async function openDetailModal(id) {
         const manufacturer = filament.manufacturer || '';
         
         let ringStyle;
-        if (colorKey === 'multicolor') {
+        if (colorKey === 'Multicolor') {
             const colors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
             const totalColors = colors.length;
             const segmentSize = 100 / totalColors;
@@ -1050,6 +995,8 @@ async function openDetailModal(id) {
         const historyHtml = await loadConsumptionHistory(id);
         
         const emptyEmoji = isEmpty ? ' 📦' : '';
+        
+        const hasComposition = filament.composition && Array.isArray(filament.composition) && filament.composition.length > 0;
         
         body.innerHTML = `
             <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; ${isEmpty ? 'opacity:0.6;' : ''}">
@@ -1108,7 +1055,34 @@ async function openDetailModal(id) {
                     </div>
                 </div>
             </div>
+            
             <div style="margin-top:16px; background:#232734; border-radius:10px; padding:12px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                    <i class="fa-solid fa-flask" style="color:#9ca3af; font-size:14px;"></i>
+                    <span style="font-size:13px; font-weight:600; color:#9ca3af;">СОСТАВ</span>
+                </div>
+                ${hasComposition ? `
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        ${filament.composition.map(item => `
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; background:#1a1d26; border-radius:6px;">
+                                <span style="color:#ffffff; font-size:13px;">${item.material || 'Неизвестный материал'}</span>
+                                <span style="color:#8b5cf6; font-weight:600; font-size:13px;">${item.percent || 0}%</span>
+                            </div>
+                        `).join('')}
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px 2px 8px; border-top:2px solid rgba(139,92,246,0.3); margin-top:2px;">
+                            <span style="color:#9ca3af; font-size:12px; font-weight:500;">Итого</span>
+                            <span style="color:#4ade80; font-weight:700; font-size:13px;">${filament.composition.reduce((sum, item) => sum + (item.percent || 0), 0)}%</span>
+                        </div>
+                    </div>
+                ` : `
+                    <div style="text-align:center; padding:8px; color:#6b7280; font-size:13px;">
+                        <i class="fa-solid fa-circle-info" style="margin-right:6px;"></i>
+                        Состав не указан
+                    </div>
+                `}
+            </div>
+            
+            <div style="margin-top:12px; background:#232734; border-radius:10px; padding:12px;">
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
                     <i class="fa-solid fa-clock-rotate-left" style="color:#9ca3af; font-size:14px;"></i>
                     <span style="font-size:13px; font-weight:600; color:#9ca3af;">ИСТОРИЯ РАСХОДА</span>
@@ -1125,6 +1099,65 @@ async function openDetailModal(id) {
         showNotification('Ошибка загрузки катушки: ' + error.message, 'error');
     }
 }
+
+// ===== СОСТАВ КАТУШКИ =====
+
+function openCompositionDetail(materialId) {
+    const filament = allFilaments.find(f => f.id === materialId);
+    if (!filament) {
+        showNotification('Катушка не найдена', 'error');
+        return;
+    }
+    
+    const composition = filament.composition || [];
+    const modal = document.getElementById('compositionDetailModal');
+    const body = document.getElementById('compositionDetailBody');
+    
+    if (!composition || composition.length === 0) {
+        body.innerHTML = `
+            <div style="text-align:center; padding:20px; color:#9ca3af;">
+                <i class="fa-solid fa-flask" style="font-size:32px; display:block; margin-bottom:12px; opacity:0.5;"></i>
+                <p>Состав не указан</p>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        return;
+    }
+    
+    let html = `
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="background:#232734; border-radius:10px; padding:12px;">
+                <div style="color:#9ca3af; font-size:12px; margin-bottom:8px;">Материал</div>
+                <div style="color:#ffffff; font-size:16px; font-weight:600;">${filament.name}</div>
+                ${filament.material_type ? `<div style="color:#9ca3af; font-size:13px; margin-top:4px;">Тип: ${filament.material_type}</div>` : ''}
+            </div>
+            <div style="background:#232734; border-radius:10px; padding:12px;">
+                <div style="color:#9ca3af; font-size:12px; margin-bottom:8px;">Состав</div>
+                ${composition.map(item => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+                        <span style="color:#ffffff;">${item.material || 'Неизвестный материал'}</span>
+                        <span style="color:#8b5cf6; font-weight:600;">${item.percent || 0}%</span>
+                    </div>
+                `).join('')}
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0 4px 0; border-top:2px solid rgba(139,92,246,0.3); margin-top:4px;">
+                    <span style="color:#9ca3af; font-weight:500;">Итого</span>
+                    <span style="color:#4ade80; font-weight:700;">${composition.reduce((sum, item) => sum + (item.percent || 0), 0)}%</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    body.innerHTML = html;
+    modal.style.display = 'flex';
+}
+
+function closeCompositionDetail() {
+    document.getElementById('compositionDetailModal').style.display = 'none';
+}
+
+document.getElementById('compositionDetailModal').addEventListener('click', function(e) {
+    if (e.target === this) closeCompositionDetail();
+});
 
 function printQRCode() {
     if (window.api?.printQR) {
