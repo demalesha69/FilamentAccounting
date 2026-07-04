@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 
 from database.models.material import Material
 
+from server.schemas.material import MaterialFilters
 
 class MaterialRepository:
 
@@ -15,13 +16,34 @@ class MaterialRepository:
 
         return material
 
-    def get_all_by_owner(self, db: Session, owner_id: int) -> list[Material]:
+    def get_all_by_owner(self, db: Session, owner_id: int, filters: MaterialFilters) -> list[Material]:
 
-        return (
+        query = (
             db.query(Material)
             .filter(Material.owner_id == owner_id)
-            .all()
         )
+
+        if filters.name:
+            query = query.filter(
+                Material.name.ilike(f"%{filters.name}%")
+            )
+
+        if filters.color:
+            query = query.filter(
+                Material.color.in_(filters.color)
+            )
+
+        if filters.material_type:
+            query = query.filter(
+                Material.type.in_(filters.material_type)
+            )
+
+        if filters.manufacturer:
+            query = query.filter(
+                Material.manufacturer.in_(filters.manufacturer)
+            )
+
+        return query.all()
 
     def get_by_id(self, db: Session, material_id: int) -> Material | None:
 

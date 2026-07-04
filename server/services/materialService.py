@@ -6,7 +6,7 @@ from database.models.material import Material
 
 from server.repositories.materialRepo import MaterialRepository
 
-from server.schemas.material import MaterialCreate
+from server.schemas.material import MaterialCreate, MaterialFilters
 
 from server.exceptions.materialExceptions import (
     MaterialNotFound, 
@@ -68,9 +68,14 @@ class MaterialService:
 
         return self._format_answer(created_material)
 
-    def get_all_materials(self, db, owner_id: int) -> list[dict]:
+    def get_all_materials(
+            self, 
+            db, 
+            owner_id: int,
+            filters: MaterialFilters
+        ) -> list[dict]:
 
-        materials = self.repo.get_all_by_owner(db, owner_id)
+        materials = self.repo.get_all_by_owner(db, owner_id, filters)
 
         return [
             self._format_answer(material)

@@ -1,11 +1,11 @@
 from fastapi import APIRouter
-from fastapi import Depends
+from fastapi import Depends, Query
 
 from sqlalchemy.orm import Session
 
 from database.db.db import get_db
 
-from server.schemas.material import MaterialCreate
+from server.schemas.material import MaterialCreate, MaterialFilters
 
 from server.services.materialService import MaterialService
 
@@ -37,9 +37,23 @@ def create_material(data: MaterialCreate, db: Session = Depends(get_db), current
 
 
 @materialRouter.get("/")
-def get_all_materials(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+def get_all_materials(
+    material: list[str] | None = Query(default=None),
+    manufacturer: list[str] | None = Query(default=None),
+    color: list[str] | None = Query(default=None),
+    name: str | None = Query(default=None),
+    db: Session = Depends(get_db), 
+    current_user=Depends(get_current_user)
+):
 
-    result = material_service.get_all_materials(db, current_user["user_id"])
+    materialFilter = MaterialFilters(
+        name=name,
+        color=color,
+        material_type=material,
+        manufacturer=manufacturer
+    )
+
+    result = material_service.get_all_materials(db, current_user["user_id"], filters=materialFilter)
 
     return ApiResponse.success(
         data=result

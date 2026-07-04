@@ -96,6 +96,8 @@ class ParseService:
         mm_matches = []
 
         patterns = [
+            r"filament used\s*\[g\][:=\s]*([\d\.]+)",
+            r"filament used\s*\[mm\][:=\s]*([\d\.]+)",
             r"filament used[:=\s]*([\d\.]+)\s*g",
             r"filament used[:=\s]*([\d\.]+)\s*mm",
             r"used filament[:=\s]*([\d\.]+)\s*g",
