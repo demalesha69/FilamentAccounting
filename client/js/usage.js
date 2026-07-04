@@ -1,10 +1,12 @@
 const API_URL = '/api';
 let allConsumptions = [];
 let currentConsumptionSort = 'default';
+let currentSortOrder = 'desc'; // 'asc' или 'desc'
 let parsedFileData = null;
 
 // Выбранные фильтры статусов
 let selectedStatuses = [];
+let currentSearchQuery = '';
 
 function formatLength(mm) {
     if (mm >= 100000000) {
@@ -149,37 +151,18 @@ function showUsername() {
 function buildConsumptionsUrl() {
     const params = new URLSearchParams();
     
+    // Поиск по названию
+    if (currentSearchQuery) {
+        params.append('title', currentSearchQuery);
+    }
+    
     // Статусы - множественный параметр (OR логика)
     selectedStatuses.forEach(s => {
         params.append('status', s);
     });
     
-    // Сортировка
-    if (currentConsumptionSort !== 'default') {
-        let sortOrder = 'desc';
-        let sortField = 'timestamp';
-        
-        switch(currentConsumptionSort) {
-            case 'dateAsc':
-                sortOrder = 'asc';
-                break;
-            case 'dateDesc':
-                sortOrder = 'desc';
-                break;
-            case 'title':
-                sortField = 'title';
-                sortOrder = 'asc';
-                break;
-            case 'amount':
-                sortField = 'used_length';
-                sortOrder = 'asc';
-                break;
-            default:
-                sortOrder = 'desc';
-        }
-        
-        params.append('sort_order', sortOrder);
-    }
+    // Сортировка - всегда добавляем sort_order
+    params.append('sort_order', currentSortOrder);
     
     const queryString = params.toString();
     return `${API_URL}/consumptions/${queryString ? '?' + queryString : ''}`;
@@ -270,23 +253,41 @@ function renderConsumptions(consumptions) {
     `}).join('');
 }
 
-function filterHistory() {
-    const query = document.getElementById('searchInput').value.toLowerCase().trim();
-    document.querySelectorAll('.history-item').forEach(item => {
-        const title = item.dataset.title || '';
-        const material = item.dataset.material || '';
-        item.style.display = (title.includes(query) || material.includes(query)) ? 'flex' : 'none';
-    });
+// ===== ПОИСК =====
+
+function searchConsumptions() {
+    currentSearchQuery = document.getElementById('searchInput').value.trim();
+    loadAllConsumptions();
 }
 
 // ===== СОРТИРОВКА =====
 
 function toggleSort() {
-    const types = ['default', 'dateDesc', 'dateAsc', 'title', 'amount'];
-    const currentIndex = types.indexOf(currentConsumptionSort);
-    const nextIndex = (currentIndex + 1) % types.length;
-    currentConsumptionSort = types[nextIndex];
+    // Переключаем направление сортировки
+    if (currentSortOrder === 'desc') {
+        currentSortOrder = 'asc';
+    } else {
+        currentSortOrder = 'desc';
+    }
+    
+    // Обновляем иконку кнопки
+    updateSortButtonIcon();
+    
+    // Перезагружаем данные
     loadAllConsumptions();
+}
+
+function updateSortButtonIcon() {
+    const button = document.querySelector('.filter-button');
+    if (!button) return;
+    
+    if (currentSortOrder === 'desc') {
+        button.innerHTML = '<i class="fa-solid fa-arrow-up-wide-short"></i>';
+        button.title = 'Сортировка: по убыванию (сначала новые)';
+    } else {
+        button.innerHTML = '<i class="fa-solid fa-arrow-down-wide-short"></i>';
+        button.title = 'Сортировка: по возрастанию (сначала старые)';
+    }
 }
 
 // ===== ФИЛЬТР ПО СТАТУСУ =====
@@ -1093,5 +1094,6 @@ window.onload = async function() {
         await loadAllConsumptions();
         await loadFilamentsForSelect();
         updateStatusFilterUI();
+        updateSortButtonIcon();
     }
 };
