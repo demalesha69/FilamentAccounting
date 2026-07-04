@@ -187,9 +187,9 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="filamentWeight">Вес (граммы)</label>
-                <input type="number" id="filamentWeight" placeholder="1000" value="1000" min="1" max="1000000" step="1" maxlength="8" oninput="if(this.value.length > 8) this.value = this.value.slice(0,8); checkFilamentFields()" />
-                <small style="color:#9ca3af; font-size:12px; margin-top:4px;">Максимальный вес: 1 тонна (1 000 000 г)</small>
+                <label for="filamentLength">Длина (миллиметры)</label>
+                <input type="number" id="filamentLength" placeholder="300000" value="300000" min="1" max="100000000" step="1" maxlength="9" oninput="if(this.value.length > 9) this.value = this.value.slice(0,9); checkFilamentFields()" />
+                <small style="color:#9ca3af; font-size:12px; margin-top:4px;">Максимальная длина: 100 км (100 000 000 мм)</small>
             </div>
             
             <div style="margin-top:4px;">

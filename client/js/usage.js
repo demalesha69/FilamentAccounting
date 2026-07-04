@@ -3,13 +3,18 @@ let allConsumptions = [];
 let currentConsumptionSort = 'default';
 let parsedFileData = null;
 
-function formatWeight(grams) {
-    if (grams >= 1000000) {
-        return (grams / 1000000).toFixed(3) + ' т';
-    } else if (grams >= 10000) {
-        return (grams / 1000).toFixed(2) + ' кг';
+// Выбранные фильтры статусов
+let selectedStatuses = [];
+
+function formatLength(mm) {
+    if (mm >= 100000000) {
+        return (mm / 1000000).toFixed(3) + ' км';
+    } else if (mm >= 1000000) {
+        return (mm / 1000000).toFixed(2) + ' км';
+    } else if (mm >= 1000) {
+        return (mm / 1000).toFixed(2) + ' м';
     }
-    return grams + ' г';
+    return mm + ' мм';
 }
 
 function showNotification(message, type = 'success') {
@@ -55,6 +60,18 @@ function formatLocalDate(timestamp) {
     }
 }
 
+// ===== ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ СТАТУСА =====
+function getStatusDisplay(status) {
+    const statusMap = {
+        'success': { icon: 'fa-solid fa-check-circle', color: '#4ade80', label: 'Успешно' },
+        'waste': { icon: 'fa-solid fa-circle-xmark', color: '#ef4444', label: 'Брак' },
+        'interrupted': { icon: 'fa-solid fa-triangle-exclamation', color: '#f59e0b', label: 'Прервано' }
+    };
+    return statusMap[status] || statusMap['success'];
+}
+
+// ===== АВТОРИЗАЦИЯ =====
+
 async function checkAuth() {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -62,7 +79,7 @@ async function checkAuth() {
         return false;
     }
     try {
-        const response = await fetch(`${API_URL}/consumptions/`, {
+        const response = await fetch(`${API_URL}/materials/`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -127,11 +144,57 @@ function showUsername() {
     } catch (e) {}
 }
 
+// ===== ПОСТРОЕНИЕ URL ДЛЯ РАСХОДОВ =====
+
+function buildConsumptionsUrl() {
+    const params = new URLSearchParams();
+    
+    // Статусы - множественный параметр (OR логика)
+    selectedStatuses.forEach(s => {
+        params.append('status', s);
+    });
+    
+    // Сортировка
+    if (currentConsumptionSort !== 'default') {
+        let sortOrder = 'desc';
+        let sortField = 'timestamp';
+        
+        switch(currentConsumptionSort) {
+            case 'dateAsc':
+                sortOrder = 'asc';
+                break;
+            case 'dateDesc':
+                sortOrder = 'desc';
+                break;
+            case 'title':
+                sortField = 'title';
+                sortOrder = 'asc';
+                break;
+            case 'amount':
+                sortField = 'used_length';
+                sortOrder = 'asc';
+                break;
+            default:
+                sortOrder = 'desc';
+        }
+        
+        params.append('sort_order', sortOrder);
+    }
+    
+    const queryString = params.toString();
+    return `${API_URL}/consumptions/${queryString ? '?' + queryString : ''}`;
+}
+
+// ===== ЗАГРУЗКА ВСЕХ РАСХОДОВ =====
+
 async function loadAllConsumptions() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-        const response = await fetch(`${API_URL}/consumptions/`, {
+        const url = buildConsumptionsUrl();
+        console.log('Запрос расходов:', url);
+        
+        const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -175,27 +238,15 @@ function renderConsumptions(consumptions) {
     }
     list.innerHTML = consumptions.map(item => {
         const localTime = item.timestamp ? formatLocalDate(item.timestamp) : '';
-        const remainWeight = formatWeight(item.remain_mass || 0);
-        const usedWeight = formatWeight(item.used_mass || 0);
-        const isDefect = item.is_defect || false;
-        const wastedMass = item.wasted_mass || 0;
+        const remainLength = formatLength(item.remain_length || 0);
+        const usedLength = formatLength(item.used_length || 0);
+        const status = item.status || 'success';
+        const statusDisplay = getStatusDisplay(status);
         
-        let icon = 'fa-solid fa-print';
-        let iconColor = '#8b5cf6';
-        let statusBadge = '';
-        let statusText = '';
-        
-        if (isDefect) {
-            icon = 'fa-solid fa-triangle-exclamation';
-            iconColor = '#ef4444';
-            statusBadge = `<span style="background:#ef4444; color:white; font-size:10px; padding:2px 8px; border-radius:4px; margin-left:8px;">БРАК</span>`;
-            statusText = '• Брак';
-        } else if (wastedMass > 0) {
-            icon = 'fa-solid fa-circle-exclamation';
-            iconColor = '#f59e0b';
-            statusBadge = `<span style="background:#f59e0b; color:#1a1d26; font-size:10px; padding:2px 8px; border-radius:4px; margin-left:8px;">ПРЕРВАНО</span>`;
-            statusText = `• Перерасход: ${formatWeight(wastedMass)}`;
-        }
+        let icon = statusDisplay.icon;
+        let iconColor = statusDisplay.color;
+        let statusBadge = `<span style="background:${statusDisplay.color}; color:${status === 'success' ? '#1a1d26' : 'white'}; font-size:10px; padding:2px 8px; border-radius:4px; margin-left:8px;">${statusDisplay.label}</span>`;
+        let statusText = `• ${statusDisplay.label}`;
         
         return `
         <div class="history-item" data-title="${(item.title || '').toLowerCase()}" data-material="${item.material_id || ''}">
@@ -210,11 +261,11 @@ function renderConsumptions(consumptions) {
                 <div class="history-meta">
                     ${localTime}
                     • Катушка ID: ${item.material_id}
-                    • Остаток: ${remainWeight}
+                    • Остаток: ${remainLength}
                     ${statusText}
                 </div>
             </div>
-            <div class="history-amount-remove">-${usedWeight}</div>
+            <div class="history-amount-remove">-${usedLength}</div>
         </div>
     `}).join('');
 }
@@ -228,51 +279,101 @@ function filterHistory() {
     });
 }
 
+// ===== СОРТИРОВКА =====
+
 function toggleSort() {
     const types = ['default', 'dateDesc', 'dateAsc', 'title', 'amount'];
     const currentIndex = types.indexOf(currentConsumptionSort);
     const nextIndex = (currentIndex + 1) % types.length;
     currentConsumptionSort = types[nextIndex];
-    let sorted = [...allConsumptions];
-    switch(currentConsumptionSort) {
-        case 'dateDesc':
-            sorted.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-            break;
-        case 'dateAsc':
-            sorted.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-            break;
-        case 'title':
-            sorted.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-            break;
-        case 'amount':
-            sorted.sort((a, b) => (a.used_mass || 0) - (b.used_mass || 0));
-            break;
-        default:
-            break;
-    }
-    renderConsumptions(sorted);
-    filterHistory();
+    loadAllConsumptions();
 }
+
+// ===== ФИЛЬТР ПО СТАТУСУ =====
+
+function toggleStatusFilter(status) {
+    const index = selectedStatuses.indexOf(status);
+    if (index === -1) {
+        selectedStatuses.push(status);
+    } else {
+        selectedStatuses.splice(index, 1);
+    }
+    updateStatusFilterUI();
+    loadAllConsumptions();
+}
+
+function updateStatusFilterUI() {
+    const container = document.getElementById('statusFilterContainer');
+    if (!container) return;
+    
+    const statuses = ['success', 'waste', 'interrupted'];
+    const statusNames = {
+        'success': 'Успешные',
+        'waste': 'Брак',
+        'interrupted': 'Прерванные'
+    };
+    
+    container.innerHTML = statuses.map(s => {
+        const isSelected = selectedStatuses.includes(s);
+        return `
+            <button class="filter-option ${isSelected ? 'active' : ''}" onclick="toggleStatusFilter('${s}')" style="padding:6px 12px; font-size:13px;">
+                <i class="fa-solid ${isSelected ? 'fa-check-circle' : 'fa-circle'}"></i>
+                <span>${statusNames[s] || s}</span>
+            </button>
+        `;
+    }).join('');
+    
+    // Обновляем лейбл
+    const label = document.getElementById('filterStatusLabel');
+    const count = document.getElementById('filterStatusCount');
+    if (label) {
+        if (selectedStatuses.length === 0) {
+            label.textContent = 'Все статусы';
+            if (count) count.style.display = 'none';
+        } else if (selectedStatuses.length === 1) {
+            label.textContent = statusNames[selectedStatuses[0]] || selectedStatuses[0];
+            if (count) count.style.display = 'none';
+        } else {
+            label.textContent = `Статусы (${selectedStatuses.length})`;
+            if (count) {
+                count.textContent = `+${selectedStatuses.length}`;
+                count.style.display = 'inline';
+            }
+        }
+    }
+}
+
+// ===== РАСКРЫТИЕ ФИЛЬТРА СТАТУСОВ =====
+
+let statusFilterExpanded = false;
+
+function toggleStatusFilterContainer() {
+    statusFilterExpanded = !statusFilterExpanded;
+    const container = document.getElementById('statusFilterContainer');
+    const toggle = document.getElementById('filterStatusToggle');
+    const chevron = toggle?.querySelector('.fa-chevron-down');
+    
+    if (statusFilterExpanded) {
+        container.style.display = 'flex';
+        if (chevron) chevron.className = 'fa-solid fa-chevron-up';
+        updateStatusFilterUI();
+    } else {
+        container.style.display = 'none';
+        if (chevron) chevron.className = 'fa-solid fa-chevron-down';
+    }
+}
+
+// ===== ПРОВЕРКА ПОЛЕЙ =====
 
 function checkConsumptionFields() {
     const materialId = document.getElementById('consumptionMaterialSelect').value;
     const title = document.getElementById('consumptionTitle').value.trim();
-    const mass = document.getElementById('consumptionMass').value.trim();
-    const wastedMass = document.getElementById('wastedMass')?.value.trim() || '0';
+    const length = document.getElementById('consumptionLength').value.trim();
     const button = document.getElementById('addConsumptionBtn');
     
-    const massNum = parseFloat(mass) || 0;
-    const wastedNum = parseFloat(wastedMass) || 0;
+    const lengthNum = parseFloat(length) || 0;
     
-    if (materialId && title && mass && massNum > 0) {
-        if (wastedNum > massNum) {
-            button.disabled = true;
-            button.style.opacity = '0.5';
-            button.style.cursor = 'not-allowed';
-            document.getElementById('wastedMassWarning').style.display = 'block';
-            return;
-        }
-        document.getElementById('wastedMassWarning').style.display = 'none';
+    if (materialId && title && length && lengthNum > 0) {
         button.disabled = false;
         button.style.opacity = '1';
         button.style.cursor = 'pointer';
@@ -280,12 +381,11 @@ function checkConsumptionFields() {
         button.disabled = true;
         button.style.opacity = '0.5';
         button.style.cursor = 'not-allowed';
-        document.getElementById('wastedMassWarning').style.display = 'none';
     }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    ['consumptionMaterialSelect', 'consumptionTitle', 'consumptionMass', 'wastedMass'].forEach(id => {
+    ['consumptionMaterialSelect', 'consumptionTitle', 'consumptionLength'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener('input', checkConsumptionFields);
@@ -323,10 +423,10 @@ async function loadFilamentsForSelect() {
         filamentsData.forEach(f => {
             const option = document.createElement('option');
             option.value = f.id;
-            const currentWeight = formatWeight(f.current_mass || 0);
-            const initialWeight = formatWeight(f.initial_mass || 0);
+            const currentLength = formatLength(f.current_length || 0);
+            const initialLength = formatLength(f.initial_length || 0);
             const materialType = f.material_type || 'без типа';
-            option.textContent = `${f.name} (${materialType}) — ${currentWeight} / ${initialWeight}`;
+            option.textContent = `${f.name} (${materialType}) — ${currentLength} / ${initialLength}`;
             option.dataset.density = f.density || 1.24;
             option.dataset.diameter = f.diameter || 1.75;
             select.appendChild(option);
@@ -347,14 +447,14 @@ function parseGCodeFile(content) {
     const lines = content.split('\n');
     const result = {
         total: 0,
-        unit: 'g',
+        unit: 'mm',
         tools: {},
         tool_count: 0,
         filament_used: {}
     };
     
     let totalFilament = 0;
-    let unit = 'g';
+    let unit = 'mm';
     let found = false;
     
     for (const line of lines) {
@@ -457,7 +557,7 @@ function parseBgCodeFile(content) {
     const text = content.toString('utf-8', 0, Math.min(content.length, 5000));
     const result = {
         total: 0,
-        unit: 'g',
+        unit: 'mm',
         tools: {},
         tool_count: 0,
         found: false
@@ -495,7 +595,7 @@ function parse3mfFile(file) {
                 const text = e.target.result;
                 const result = {
                     total: 0,
-                    unit: 'g',
+                    unit: 'mm',
                     tools: {},
                     tool_count: 0,
                     found: false
@@ -519,7 +619,7 @@ function parse3mfFile(file) {
                 }
                 resolve(result);
             } catch (error) {
-                resolve({ total: 0, unit: 'g', tools: {}, tool_count: 0, found: false });
+                resolve({ total: 0, unit: 'mm', tools: {}, tool_count: 0, found: false });
             }
         };
         reader.readAsText(file);
@@ -557,12 +657,12 @@ async function handleFileUpload(file) {
     }
 }
 
-function convertMmToG(mm, density, diameter) {
+function convertGToMm(g, density, diameter) {
     const radius = diameter / 2;
-    const volume_mm3 = Math.PI * radius * radius * mm;
-    const volume_cm3 = volume_mm3 / 1000;
-    const mass = volume_cm3 * density;
-    return mass;
+    const volume_cm3 = g / density;
+    const volume_mm3 = volume_cm3 * 1000;
+    const length_mm = volume_mm3 / (Math.PI * radius * radius);
+    return length_mm;
 }
 
 // ========== МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ РАСХОДА ==========
@@ -572,16 +672,12 @@ function openAddConsumption() {
     modal.style.display = 'flex';
     
     document.getElementById('consumptionTitle').value = '';
-    document.getElementById('consumptionMass').value = '10';
-    document.getElementById('consumptionMass').disabled = false;
-    document.getElementById('consumptionMass').style.opacity = '1';
-    document.getElementById('consumptionMass').placeholder = '50';
-    document.getElementById('consumptionMass').step = '1';
-    document.getElementById('wastedMass').value = '0';
-    document.getElementById('wastedMass').disabled = false;
-    document.getElementById('wastedMass').style.opacity = '1';
-    document.getElementById('wastedMassWarning').style.display = 'none';
-    document.getElementById('isDefect').checked = false;
+    document.getElementById('consumptionLength').value = '1000';
+    document.getElementById('consumptionLength').disabled = false;
+    document.getElementById('consumptionLength').style.opacity = '1';
+    document.getElementById('consumptionLength').placeholder = '1000';
+    document.getElementById('consumptionLength').step = '1';
+    document.getElementById('printStatus').value = 'success';
     document.getElementById('fileUploadArea').style.display = 'none';
     document.getElementById('manualInputArea').style.display = 'block';
     document.getElementById('fileUploadBtn').textContent = 'Загрузить файл слайсера';
@@ -605,7 +701,7 @@ function openAddConsumption() {
     addBtn.disabled = true;
     addBtn.style.opacity = '0.5';
     
-    ['consumptionMaterialSelect', 'consumptionTitle', 'consumptionMass', 'wastedMass'].forEach(id => {
+    ['consumptionMaterialSelect', 'consumptionTitle', 'consumptionLength'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.borderColor = '';
     });
@@ -627,8 +723,7 @@ function toggleFileUpload() {
     const fileArea = document.getElementById('fileUploadArea');
     const manualArea = document.getElementById('manualInputArea');
     const fileBtn = document.getElementById('fileUploadBtn');
-    const massInput = document.getElementById('consumptionMass');
-    const wastedInput = document.getElementById('wastedMass');
+    const lengthInput = document.getElementById('consumptionLength');
     const addBtn = document.getElementById('addConsumptionBtn');
     
     if (fileArea.style.display === 'none' || fileArea.style.display === '') {
@@ -637,10 +732,8 @@ function toggleFileUpload() {
         fileBtn.textContent = 'Ввести вручную';
         fileBtn.style.background = '#8b5cf6';
         fileBtn.style.color = '#ffffff';
-        massInput.disabled = true;
-        massInput.style.opacity = '0.5';
-        wastedInput.disabled = true;
-        wastedInput.style.opacity = '0.5';
+        lengthInput.disabled = true;
+        lengthInput.style.opacity = '0.5';
         
         addBtn.textContent = 'Отправить расходы из файла';
         addBtn.onclick = submitFileConsumptions;
@@ -659,10 +752,8 @@ function toggleFileUpload() {
         fileBtn.textContent = 'Загрузить файл слайсера';
         fileBtn.style.background = '#232734';
         fileBtn.style.color = '#9ca3af';
-        massInput.disabled = false;
-        massInput.style.opacity = '1';
-        wastedInput.disabled = false;
-        wastedInput.style.opacity = '1';
+        lengthInput.disabled = false;
+        lengthInput.style.opacity = '1';
         
         addBtn.textContent = 'Сохранить расход';
         addBtn.onclick = createConsumption;
@@ -724,9 +815,9 @@ async function handleFileSelect(event) {
         infoHtml += `</div>`;
     }
     
-    if (result.unit === 'mm') {
+    if (result.unit === 'g') {
         infoHtml += `<div style="color:#f59e0b; font-size:11px; margin-top:6px; background:rgba(245,158,11,0.1); padding:6px 10px; border-radius:6px; border:1px solid rgba(245,158,11,0.2);">
-            <i class="fa-solid fa-info-circle"></i> Расход указан в миллиметрах. Будет переведен в граммы с учетом плотности и диаметра выбранной катушки.
+            <i class="fa-solid fa-info-circle"></i> Расход указан в граммах. Будет переведен в миллиметры с учетом плотности и диаметра выбранной катушки.
         </div>`;
     }
     
@@ -762,7 +853,7 @@ function showToolSelector(toolKeys) {
                             <option value="">Выберите катушку</option>
                             ${filamentsData.map(f => `
                                 <option value="${f.id}" data-density="${f.density || 1.24}" data-diameter="${f.diameter || 1.75}">
-                                    ${f.name} (${f.material_type || 'без типа'}) — ${formatWeight(f.current_mass || 0)}
+                                    ${f.name} (${f.material_type || 'без типа'}) — ${formatLength(f.current_length || 0)}
                                 </option>
                             `).join('')}
                         </select>
@@ -803,16 +894,16 @@ async function submitFileConsumptions() {
                 break;
             }
             const toolData = parsedFileData.tools[key];
-            let mass = toolData.used;
-            if (toolData.unit === 'mm') {
+            let length = toolData.used;
+            if (toolData.unit === 'g') {
                 const density = parseFloat(select.options[select.selectedIndex].dataset.density) || 1.24;
                 const diameter = parseFloat(select.options[select.selectedIndex].dataset.diameter) || 1.75;
-                mass = convertMmToG(mass, density, diameter);
+                length = convertGToMm(length, density, diameter);
             }
             
-            if (mass > (filament.current_mass || 0)) {
+            if (length > (filament.current_length || 0)) {
                 showNotification(
-                    `Недостаточно материала на катушке "${filament.name}" для T${key}! Доступно: ${formatWeight(filament.current_mass || 0)}, требуется: ${formatWeight(mass)}`,
+                    `Недостаточно материала на катушке "${filament.name}" для T${key}! Доступно: ${formatLength(filament.current_length || 0)}, требуется: ${formatLength(length)}`,
                     'error'
                 );
                 hasError = true;
@@ -822,9 +913,8 @@ async function submitFileConsumptions() {
             consumptions.push({
                 material_id: filament.id,
                 title: `Печать (T${key}) из файла ${document.getElementById('fileName').textContent || ''}`,
-                used_mass: Math.round(mass * 100) / 100,
-                is_defect: document.getElementById('isDefect')?.checked || false,
-                wasted_mass: 0
+                used_length: Math.round(length * 100) / 100,
+                status: 'success'
             });
         }
         if (hasError) return;
@@ -840,16 +930,16 @@ async function submitFileConsumptions() {
             return;
         }
         
-        let mass = parsedFileData.total;
-        if (parsedFileData.unit === 'mm') {
+        let length = parsedFileData.total;
+        if (parsedFileData.unit === 'g') {
             const density = filament.density || 1.24;
             const diameter = filament.diameter || 1.75;
-            mass = convertMmToG(mass, density, diameter);
+            length = convertGToMm(length, density, diameter);
         }
         
-        if (mass > (filament.current_mass || 0)) {
+        if (length > (filament.current_length || 0)) {
             showNotification(
-                `Недостаточно материала на катушке "${filament.name}"! Доступно: ${formatWeight(filament.current_mass || 0)}, требуется: ${formatWeight(mass)}`,
+                `Недостаточно материала на катушке "${filament.name}"! Доступно: ${formatLength(filament.current_length || 0)}, требуется: ${formatLength(length)}`,
                 'error'
             );
             return;
@@ -861,9 +951,8 @@ async function submitFileConsumptions() {
         consumptions.push({
             material_id: filament.id,
             title: title,
-            used_mass: Math.round(mass * 100) / 100,
-            is_defect: document.getElementById('isDefect')?.checked || false,
-            wasted_mass: 0
+            used_length: Math.round(length * 100) / 100,
+            status: 'success'
         });
     }
     
@@ -919,35 +1008,29 @@ async function submitFileConsumptions() {
 async function createConsumption() {
     const materialId = document.getElementById('consumptionMaterialSelect').value;
     const title = document.getElementById('consumptionTitle').value.trim();
-    const usedMass = parseFloat(document.getElementById('consumptionMass').value);
-    const wastedMass = parseFloat(document.getElementById('wastedMass').value) || 0;
-    const isDefect = document.getElementById('isDefect')?.checked || false;
+    const usedLength = parseFloat(document.getElementById('consumptionLength').value);
+    const status = document.getElementById('printStatus').value;
     
-    if (!materialId || !title || !usedMass || usedMass <= 0) {
+    if (!materialId || !title || !usedLength || usedLength <= 0) {
         showNotification('Заполните все поля корректно', 'error');
-        return;
-    }
-    
-    if (wastedMass > usedMass) {
-        showNotification('Перерасход не может превышать общий расход', 'error');
         return;
     }
     
     const filament = filamentsData.find(f => f.id === parseInt(materialId));
     if (filament) {
-        const currentMass = filament.current_mass || 0;
-        if (usedMass > currentMass) {
-            const availableWeight = formatWeight(currentMass);
-            const requestedWeight = formatWeight(usedMass);
+        const currentLength = filament.current_length || 0;
+        if (usedLength > currentLength) {
+            const availableLength = formatLength(currentLength);
+            const requestedLength = formatLength(usedLength);
             showNotification(
-                `Ошибка: недостаточно материала! Доступно: ${availableWeight}, запрошено: ${requestedWeight}`,
+                `Ошибка: недостаточно материала! Доступно: ${availableLength}, запрошено: ${requestedLength}`,
                 'error'
             );
             return;
         }
-        if (usedMass >= currentMass * 0.9 && usedMass <= currentMass) {
+        if (usedLength >= currentLength * 0.9 && usedLength <= currentLength) {
             showNotification(
-                `Внимание: вы расходуете почти весь материал! Остаток: ${formatWeight(currentMass - usedMass)}`,
+                `Внимание: вы расходуете почти весь материал! Остаток: ${formatLength(currentLength - usedLength)}`,
                 'info'
             );
         }
@@ -963,9 +1046,8 @@ async function createConsumption() {
         const payload = {
             material_id: parseInt(materialId),
             title: title,
-            used_mass: usedMass,
-            is_defect: isDefect,
-            wasted_mass: wastedMass
+            used_length: usedLength,
+            status: status
         };
         
         const response = await fetch(`${API_URL}/consumptions/create`, {
@@ -989,13 +1071,13 @@ async function createConsumption() {
             throw new Error(data.message || data.error || 'Ошибка создания расхода');
         }
         
-        if (isDefect) {
-            showNotification('Расход отмечен как брак', 'success');
-        } else if (wastedMass > 0) {
-            showNotification(`Расход с перерасходом ${formatWeight(wastedMass)} успешно добавлен`, 'success');
-        } else {
-            showNotification('Расход успешно добавлен', 'success');
-        }
+        const statusNames = {
+            'success': 'Успешная печать',
+            'waste': 'Брак',
+            'interrupted': 'Прерванная печать'
+        };
+        
+        showNotification(`Расход (${statusNames[status] || status}) успешно добавлен`, 'success');
         closeAddConsumption();
         await loadAllConsumptions();
     } catch (error) {
@@ -1010,5 +1092,6 @@ window.onload = async function() {
     if (isAuth) {
         await loadAllConsumptions();
         await loadFilamentsForSelect();
+        updateStatusFilterUI();
     }
 };

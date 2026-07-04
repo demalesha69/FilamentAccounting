@@ -3,13 +3,15 @@ let currentPeriod = 'all';
 let currentStartTimestamp = null;
 let currentEndTimestamp = null;
 
-function formatWeight(grams) {
-    if (grams >= 1000000) {
-        return (grams / 1000000).toFixed(3) + ' т';
-    } else if (grams >= 10000) {
-        return (grams / 1000).toFixed(2) + ' кг';
+function formatLength(mm) {
+    if (mm >= 100000000) {
+        return (mm / 1000000).toFixed(3) + ' км';
+    } else if (mm >= 1000000) {
+        return (mm / 1000000).toFixed(2) + ' км';
+    } else if (mm >= 1000) {
+        return (mm / 1000).toFixed(2) + ' м';
     }
-    return grams + ' г';
+    return mm + ' мм';
 }
 
 function showNotification(message, type = 'success') {
@@ -231,7 +233,7 @@ async function loadStats(startTimestamp = null, endTimestamp = null) {
 }
 
 function updateStats(data) {
-    const totalUsed = data.total_used_mass || 0;
+    const totalUsed = data.total_used_length || 0;
     const materialsCount = data.materials_count || 0;
     const consumptionsCount = data.consumptions_count || 0;
     
@@ -247,10 +249,10 @@ function updateStats(data) {
         avgPerDay = totalUsed / days;
     }
     
-    document.getElementById('totalUsed').textContent = formatWeight(totalUsed);
+    document.getElementById('totalUsed').textContent = formatLength(totalUsed);
     document.getElementById('totalMaterials').textContent = materialsCount;
     document.getElementById('totalOperations').textContent = consumptionsCount;
-    document.getElementById('avgPerDay').textContent = avgPerDay > 0 ? formatWeight(Math.round(avgPerDay)) : '—';
+    document.getElementById('avgPerDay').textContent = avgPerDay > 0 ? formatLength(Math.round(avgPerDay)) : '—';
 }
 
 function setPeriod(period) {

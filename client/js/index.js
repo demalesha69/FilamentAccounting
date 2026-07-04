@@ -23,7 +23,7 @@ let uniqueTypes = [];
 let uniqueColors = [];
 let uniqueManufacturers = [];
 
-const MAX_FILAMENT_WEIGHT = 1000000;
+const MAX_FILAMENT_LENGTH = 100000000; // 100 км в миллиметрах
 
 const MATERIAL_DEFAULTS = {
     'PLA': { density: 1.24, diameter: 1.75 },
@@ -126,13 +126,15 @@ const RING_COLOR_MAP = {
     'Multicolor': '#8b5cf6'
 };
 
-function formatWeight(grams) {
-    if (grams >= 1000000) {
-        return (grams / 1000000).toFixed(3) + ' т';
-    } else if (grams >= 10000) {
-        return (grams / 1000).toFixed(2) + ' кг';
+function formatLength(mm) {
+    if (mm >= 100000000) {
+        return (mm / 1000000).toFixed(3) + ' км';
+    } else if (mm >= 1000000) {
+        return (mm / 1000000).toFixed(2) + ' км';
+    } else if (mm >= 1000) {
+        return (mm / 1000).toFixed(2) + ' м';
     }
-    return grams + ' г';
+    return mm + ' мм';
 }
 
 function showNotification(message, type = 'success') {
@@ -639,7 +641,6 @@ function toggleManufacturer(manufacturer) {
 function setSort(type) {
     currentSort = type;
     
-    // Настройка sort_by и sort_order
     switch(type) {
         case 'default':
             currentSortBy = 'id';
@@ -654,11 +655,11 @@ function setSort(type) {
             currentSortOrder = 'desc';
             break;
         case 'progress':
-            currentSortBy = 'current_mass';
+            currentSortBy = 'current_length';
             currentSortOrder = 'asc';
             break;
         case 'progressDesc':
-            currentSortBy = 'current_mass';
+            currentSortBy = 'current_length';
             currentSortOrder = 'desc';
             break;
         default:
@@ -722,28 +723,22 @@ function resetFilters() {
 function buildMaterialsUrl() {
     const params = new URLSearchParams();
     
-    // Поиск по названию
     if (currentSearchQuery) {
         params.append('name', currentSearchQuery);
     }
     
-    // Типы - множественный параметр (OR логика)
     selectedTypes.forEach(t => {
         params.append('material', t);
     });
     
-    // Цвета - множественный параметр (OR логика)
-    // Передаём цвета в том виде, в котором они пришли с сервера (с большой буквы)
     selectedColors.forEach(c => {
         params.append('color', c);
     });
     
-    // Производители - множественный параметр (OR логика)
     selectedManufacturers.forEach(m => {
         params.append('manufacturer', m);
     });
     
-    // Сортировка
     if (currentSortBy) {
         params.append('sort_by', currentSortBy);
         params.append('sort_order', currentSortOrder);
@@ -800,10 +795,12 @@ function renderFilaments(filaments) {
         const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
         const ringColor = RING_COLOR_MAP[colorKey] || '#8b5cf6';
         const colorName = COLOR_NAMES[colorKey] || f.color || 'Без цвета';
-        const progress = Math.round(((f.current_mass || 0) / (f.initial_mass || 1)) * 100);
-        const isEmpty = (f.current_mass || 0) <= 0;
+        const progress = Math.round(((f.current_length || 0) / (f.initial_length || 1)) * 100);
+        const isEmpty = (f.current_length || 0) <= 0;
         const materialType = f.material_type || 'Неизвестный тип';
         const manufacturer = f.manufacturer || '';
+        const density = f.density || 1.24;
+        const diameter = f.diameter || 1.75;
         
         const emptyStyles = isEmpty ? `
             opacity: 0.5;
@@ -811,10 +808,10 @@ function renderFilaments(filaments) {
             border-color: rgba(255,255,255,0.02);
         ` : '';
         
-        const currentWeight = formatWeight(f.current_mass || 0);
-        const initialWeight = formatWeight(f.initial_mass || 0);
-        const weightText = isEmpty ? '0 г (пусто)' : `${currentWeight} / ${initialWeight}`;
-        const weightColor = isEmpty ? '#6b7280' : colorHex;
+        const currentLength = formatLength(f.current_length || 0);
+        const initialLength = formatLength(f.initial_length || 0);
+        const lengthText = isEmpty ? '0 мм (пусто)' : `${currentLength} / ${initialLength}`;
+        const lengthColor = isEmpty ? '#6b7280' : colorHex;
         
         let ringStyle;
         if (colorKey === 'Multicolor') {
@@ -879,6 +876,12 @@ function renderFilaments(filaments) {
             </p>
         ` : '';
         
+        const specsHtml = `
+            <p style="font-size:10px; color:#4a4a5a; margin-top:1px;">
+                ρ=${density} г/см³ • Ø=${diameter} мм
+            </p>
+        `;
+        
         return `<article class="filament-card" onclick="openDetailModal(${f.id})" style="cursor:pointer; ${emptyStyles}">
             <div class="card-top">
                 <div class="progress-ring" style="--progress:${progress}; ${ringStyle}">
@@ -895,11 +898,12 @@ function renderFilaments(filaments) {
                         ${materialType}
                     </p>
                     ${manufacturerHtml}
+                    ${specsHtml}
                 </div>
             </div>
-            <div class="weight-info" style="color:${weightColor};">
+            <div class="weight-info" style="color:${lengthColor};">
                 <div class="weight-dot" style="${dotStyle}"></div>
-                <span>${weightText}</span>
+                <span>${lengthText}</span>
             </div>
             ${isEmpty ? `<div style="margin-top:6px; font-size:11px; color:#6b7280; text-align:center; border-top:1px solid rgba(255,255,255,0.05); padding-top:6px;">
                 <i class="fa-solid fa-triangle-exclamation"></i> Катушка пуста
@@ -958,14 +962,16 @@ async function openDetailModal(id) {
         const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
         const ringColor = RING_COLOR_MAP[colorKey] || '#8b5cf6';
         const colorName = COLOR_NAMES[colorKey] || filament.color || 'Без цвета';
-        const progress = Math.round(((filament.current_mass || 0) / (filament.initial_mass || 1)) * 100);
-        const used = (filament.initial_mass || 0) - (filament.current_mass || 0);
-        const isEmpty = (filament.current_mass || 0) <= 0;
+        const progress = Math.round(((filament.current_length || 0) / (filament.initial_length || 1)) * 100);
+        const used = (filament.initial_length || 0) - (filament.current_length || 0);
+        const isEmpty = (filament.current_length || 0) <= 0;
         
-        const currentWeight = formatWeight(filament.current_mass || 0);
-        const initialWeight = formatWeight(filament.initial_mass || 0);
-        const usedWeight = formatWeight(used);
+        const currentLength = formatLength(filament.current_length || 0);
+        const initialLength = formatLength(filament.initial_length || 0);
+        const usedLength = formatLength(used);
         const manufacturer = filament.manufacturer || '';
+        const density = filament.density || 1.24;
+        const diameter = filament.diameter || 1.75;
         
         let ringStyle;
         if (colorKey === 'Multicolor') {
@@ -1009,22 +1015,22 @@ async function openDetailModal(id) {
                             <h2 style="color:#ffffff; font-size:22px; margin-bottom:4px;">${filament.name}${emptyEmoji}</h2>
                             <p style="color:${isEmpty ? '#6b7280' : colorHex}; font-size:16px; font-weight:600;">${colorName} ${filament.material_type ? '• ' + filament.material_type : ''}</p>
                             ${manufacturer ? `<p style="color:#9ca3af; font-size:14px;"><i class="fa-solid fa-building"></i> ${manufacturer}</p>` : ''}
-                            ${filament.density ? `<p style="color:#9ca3af; font-size:13px;">Плотность: ${filament.density} г/см³ • Диаметр: ${filament.diameter || 1.75} мм</p>` : ''}
+                            <p style="color:#9ca3af; font-size:13px;">Плотность: ${density} г/см³ • Диаметр: ${diameter} мм</p>
                             ${isEmpty ? `<p style="color:#ff5f5f; font-size:14px; margin-top:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Катушка пуста</p>` : ''}
                         </div>
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;">
                         <div style="background:#232734; border-radius:10px; padding:12px; text-align:center;">
-                            <div style="font-size:12px; color:#9ca3af;">Начальный вес</div>
-                            <div style="font-size:20px; font-weight:700; color:#ffffff;">${initialWeight}</div>
+                            <div style="font-size:12px; color:#9ca3af;">Начальная длина</div>
+                            <div style="font-size:20px; font-weight:700; color:#ffffff;">${initialLength}</div>
                         </div>
                         <div style="background:#232734; border-radius:10px; padding:12px; text-align:center;">
-                            <div style="font-size:12px; color:#9ca3af;">Текущий вес</div>
-                            <div style="font-size:20px; font-weight:700; color:${isEmpty ? '#6b7280' : '#ffffff'};">${currentWeight}</div>
+                            <div style="font-size:12px; color:#9ca3af;">Текущая длина</div>
+                            <div style="font-size:20px; font-weight:700; color:${isEmpty ? '#6b7280' : '#ffffff'};">${currentLength}</div>
                         </div>
                         <div style="background:#232734; border-radius:10px; padding:12px; text-align:center;">
                             <div style="font-size:12px; color:#9ca3af;">Использовано</div>
-                            <div style="font-size:20px; font-weight:700; color:#ff5f5f;">${usedWeight}</div>
+                            <div style="font-size:20px; font-weight:700; color:#ff5f5f;">${usedLength}</div>
                         </div>
                         <div style="background:#232734; border-radius:10px; padding:12px; text-align:center;">
                             <div style="font-size:12px; color:#9ca3af;">ID</div>
@@ -1426,8 +1432,8 @@ async function loadConsumptionHistory(materialId) {
         return `<div style="display:flex;flex-direction:column;gap:6px;max-height:150px;overflow-y:auto;padding-right:4px;">
             ${history.map(item => {
                 const localTime = item.timestamp ? formatLocalDate(item.timestamp) : '';
-                const remainWeight = formatWeight(item.remain_mass || 0);
-                const usedWeight = formatWeight(item.used_mass || 0);
+                const remainLength = formatLength(item.remain_length || 0);
+                const usedLength = formatLength(item.used_length || 0);
                 return `
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#1a1d26;border-radius:8px;border-left:3px solid #ff5f5f;">
                     <div style="display:flex;align-items:center;gap:12px;flex:1;">
@@ -1437,8 +1443,8 @@ async function loadConsumptionHistory(materialId) {
                         </span>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:13px;color:#9ca3af;">Остаток: ${remainWeight}</span>
-                        <span style="font-size:15px;font-weight:700;color:#ff5f5f;white-space:nowrap;">-${usedWeight}</span>
+                        <span style="font-size:13px;color:#9ca3af;">Остаток: ${remainLength}</span>
+                        <span style="font-size:15px;font-weight:700;color:#ff5f5f;white-space:nowrap;">-${usedLength}</span>
                     </div>
                 </div>
             `}).join('')}
@@ -1490,9 +1496,9 @@ function checkFilamentFields() {
     const name = document.getElementById('filamentName').value.trim();
     const material_type = document.getElementById('filamentType').value.trim();
     const color = document.getElementById('filamentColor').value.trim();
-    const weight = parseFloat(document.getElementById('filamentWeight').value);
+    const length = parseFloat(document.getElementById('filamentLength').value);
     const button = document.getElementById('addFilamentBtn');
-    if (name && material_type && color && weight > 0 && weight <= MAX_FILAMENT_WEIGHT) {
+    if (name && material_type && color && length > 0 && length <= MAX_FILAMENT_LENGTH) {
         button.disabled = false;
         button.style.opacity = '1';
         button.style.cursor = 'pointer';
@@ -1504,7 +1510,7 @@ function checkFilamentFields() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    ['filamentName', 'filamentManufacturer', 'filamentType', 'filamentColor', 'filamentWeight'].forEach(id => {
+    ['filamentName', 'filamentManufacturer', 'filamentType', 'filamentColor', 'filamentLength'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener('input', checkFilamentFields);
@@ -1519,13 +1525,13 @@ function openAddFilament() {
     document.getElementById('filamentManufacturer').value = '';
     document.getElementById('filamentType').value = '';
     document.getElementById('filamentColor').value = '';
-    document.getElementById('filamentWeight').value = '1000';
+    document.getElementById('filamentLength').value = '300000';
     document.getElementById('filamentDensity').value = '1.24';
     document.getElementById('filamentDiameter').value = '1.75';
     document.getElementById('advancedSettings').style.display = 'none';
     document.getElementById('advancedIcon').className = 'fa-solid fa-gear';
     compositionData = [{ material: 'PLA', percent: 100 }];
-    ['filamentName', 'filamentManufacturer', 'filamentType', 'filamentColor', 'filamentWeight'].forEach(id => {
+    ['filamentName', 'filamentManufacturer', 'filamentType', 'filamentColor', 'filamentLength'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.borderColor = '';
     });
@@ -1558,17 +1564,17 @@ async function addFilamentManual() {
     const manufacturer = document.getElementById('filamentManufacturer').value.trim();
     const material_type = document.getElementById('filamentType').value.trim();
     const color = document.getElementById('filamentColor').value.trim();
-    const initial_mass = parseFloat(document.getElementById('filamentWeight').value);
+    const initial_length = parseFloat(document.getElementById('filamentLength').value);
     
     let density = parseFloat(document.getElementById('filamentDensity').value) || 1.24;
     let diameter = parseFloat(document.getElementById('filamentDiameter').value) || 1.75;
     
-    if (!name || !material_type || !color || !initial_mass || initial_mass < 1) {
+    if (!name || !material_type || !color || !initial_length || initial_length < 1) {
         showNotification('Заполните все поля корректно', 'error');
         return;
     }
-    if (initial_mass > MAX_FILAMENT_WEIGHT) {
-        showNotification(`Максимальный вес катушки: 1 тонна (${MAX_FILAMENT_WEIGHT} г)`, 'error');
+    if (initial_length > MAX_FILAMENT_LENGTH) {
+        showNotification(`Максимальная длина катушки: 100 км (${MAX_FILAMENT_LENGTH} мм)`, 'error');
         return;
     }
     if (density < 0.1 || density > 10) {
@@ -1596,7 +1602,7 @@ async function addFilamentManual() {
             name: name, 
             material_type: material_type,
             color: color, 
-            initial_mass: initial_mass,
+            initial_length: initial_length,
             density: density,
             diameter: diameter,
             composition: compositionData
