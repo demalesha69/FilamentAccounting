@@ -6,7 +6,7 @@ from database.models.material import Material
 
 from server.repositories.materialRepo import MaterialRepository
 
-from server.schemas.material import MaterialCreate, MaterialFilters
+from server.schemas.material import MaterialCreate, MaterialFilters, MaterialInvalidData
 
 from server.exceptions.materialExceptions import (
     MaterialNotFound, 
@@ -81,6 +81,18 @@ class MaterialService:
             self._format_answer(material)
 
             for material in materials
+        ]
+
+    def get_actual_properties(self, db, owner_id: int, field: str) -> list[str]:
+
+        if field not in ["type", "color", "manufacturer"]:
+            raise MaterialInvalidData(f"У Maeterial нет поля {field}")
+
+        actual_properties = self.repo.get_user_properties(db, owner_id, field)
+
+        return [
+            row[0]
+            for row in actual_properties
         ]
 
     def get_material_by_id(self, db, owner_id: int, material_id: int) -> dict:

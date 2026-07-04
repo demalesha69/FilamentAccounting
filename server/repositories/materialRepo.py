@@ -60,6 +60,14 @@ class MaterialRepository:
             .first()
         )
 
+    def get_user_properties(self, db: Session, owner_id: int, field: str) -> list[tuple]:
+        return (
+            db.query(getattr(Material, field))
+            .filter(Material.owner_id == owner_id)
+            .group_by(getattr(Material, field))
+            .all()
+        )
+
     def update(self, db: Session):
         db.commit()
 

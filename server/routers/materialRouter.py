@@ -59,6 +59,15 @@ def get_all_materials(
         data=result
     )
 
+@materialRouter.get("/actual/{field}")
+def get_actual_properties(field: str, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+
+    actual_properties = material_service.get_actual_properties(db, current_user["user_id"], field)
+
+    return ApiResponse.success(
+        data=actual_properties
+    )
+
 @materialRouter.get("/qr/{material_id}")
 def get_qrcode(material_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
 
