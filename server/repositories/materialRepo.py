@@ -43,6 +43,14 @@ class MaterialRepository:
                 Material.manufacturer.in_(filters.manufacturer)
             )
 
+        column = getattr(Material, filters.sort_by, None)
+
+        if column:
+            if filters.sort_order == "desc":
+                query = query.order_by(column.desc())
+            else:
+                query = query.order_by(column.asc())
+
         return query.all()
 
     def get_by_id(self, db: Session, material_id: int) -> Material | None:

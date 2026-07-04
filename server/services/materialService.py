@@ -75,6 +75,9 @@ class MaterialService:
             filters: MaterialFilters
         ) -> list[dict]:
 
+        if filters.sort_by and filters.sort_by not in ["id", "name", "current_mass"]:
+            raise MaterialInvalidData(f"Катушки не сортируются по {filters.sort_by}")
+
         materials = self.repo.get_all_by_owner(db, owner_id, filters)
 
         return [

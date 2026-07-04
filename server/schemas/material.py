@@ -55,3 +55,7 @@ class MaterialFilters(BaseModel):
     color: list[str] | None = None
 
     name: str | None = None
+
+    sort_by: str = Field()
+
+    sort_order: str = Field()

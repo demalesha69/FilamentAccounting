@@ -42,6 +42,8 @@ def get_all_materials(
     manufacturer: list[str] | None = Query(default=None),
     color: list[str] | None = Query(default=None),
     name: str | None = Query(default=None),
+    sort_by: str | None = Query(default="id"),
+    sort_order: str | None = Query(default="asc"),
     db: Session = Depends(get_db), 
     current_user=Depends(get_current_user)
 ):
@@ -50,7 +52,9 @@ def get_all_materials(
         name=name,
         color=color,
         material_type=material,
-        manufacturer=manufacturer
+        manufacturer=manufacturer,
+        sort_by=sort_by,
+        sort_order=sort_order
     )
 
     result = material_service.get_all_materials(db, current_user["user_id"], filters=materialFilter)
