@@ -12,6 +12,11 @@ let typeFilterExpanded = false;
 let colorFilterExpanded = false;
 let manufacturerFilterExpanded = false;
 
+// Кеш для уникальных значений
+let uniqueTypes = [];
+let uniqueColors = [];
+let uniqueManufacturers = [];
+
 const MAX_FILAMENT_WEIGHT = 1000000;
 
 const MATERIAL_DEFAULTS = {
@@ -114,8 +119,6 @@ const RING_COLOR_MAP = {
     'glow': '#22d3ee',
     'multicolor': '#8b5cf6'
 };
-
-const FILAMENT_TYPES = ['PLA', 'PETG', 'ABS', 'HIPS', 'SBS', 'TPU', 'NYLON', 'ASA', 'PP', 'PC', 'POM', 'PMMA', 'PEEK', 'Ceramo', 'PVA', 'WAX', 'Clearing'];
 
 function formatWeight(grams) {
     if (grams >= 1000000) {
@@ -483,6 +486,63 @@ function showUsername() {
     } catch (e) {}
 }
 
+// ===== ПОЛУЧЕНИЕ УНИКАЛЬНЫХ ЗНАЧЕНИЙ С СЕРВЕРА =====
+
+async function fetchUniqueValues(field) {
+    const token = localStorage.getItem('token');
+    if (!token) return [];
+    
+    try {
+        const response = await fetch(`${API_URL}/actual/${field}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            redirectToLogin();
+            return [];
+        }
+        
+        const data = await response.json();
+        if (data.status !== 200) {
+            console.error('Ошибка получения уникальных значений:', data.message);
+            return [];
+        }
+        
+        return data.data || [];
+    } catch (error) {
+        console.error(`Ошибка получения уникальных значений для ${field}:`, error);
+        return [];
+    }
+}
+
+async function loadUniqueValues() {
+    const [types, colors, manufacturers] = await Promise.all([
+        fetchUniqueValues('type'),
+        fetchUniqueValues('color'),
+        fetchUniqueValues('manufacturer')
+    ]);
+    
+    uniqueTypes = types;
+    uniqueColors = colors;
+    uniqueManufacturers = manufacturers;
+    
+    // Обновляем списки фильтров если они раскрыты
+    if (typeFilterExpanded) {
+        updateTypeFilterList();
+    }
+    if (colorFilterExpanded) {
+        updateColorFilterList();
+    }
+    if (manufacturerFilterExpanded) {
+        updateManufacturerFilterList();
+    }
+}
+
 // ===== ФИЛЬТРЫ =====
 
 function closeFilter() {
@@ -511,47 +571,13 @@ document.getElementById('filterModal').addEventListener('click', function(e) {
     if (e.target === this) closeFilter();
 });
 
-// ===== ПОЛУЧЕНИЕ УНИКАЛЬНЫХ ЗНАЧЕНИЙ =====
-
-function getUniqueTypes() {
-    const types = new Set();
-    allFilaments.forEach(f => {
-        if (f.material_type && f.material_type.trim()) {
-            types.add(f.material_type.trim());
-        }
-    });
-    return Array.from(types).sort();
-}
-
-function getUniqueManufacturers() {
-    const manufacturers = new Set();
-    allFilaments.forEach(f => {
-        if (f.manufacturer && f.manufacturer.trim()) {
-            manufacturers.add(f.manufacturer.trim());
-        }
-    });
-    return Array.from(manufacturers).sort();
-}
-
-function getUniqueColors() {
-    const colors = new Set();
-    allFilaments.forEach(f => {
-        if (f.color && f.color.trim()) {
-            colors.add(f.color.trim().toLowerCase());
-        }
-    });
-    return Array.from(colors).sort();
-}
-
 // ===== ОБНОВЛЕНИЕ СПИСКА ТИПОВ =====
 
 function updateTypeFilterList() {
     const container = document.getElementById('typeFilterContainer');
     if (!container) return;
     
-    const types = getUniqueTypes();
-    
-    if (types.length === 0) {
+    if (uniqueTypes.length === 0) {
         container.innerHTML = `
             <div style="text-align:center; padding:8px; color:#6b7280; font-size:13px;">
                 <i class="fa-solid fa-info-circle"></i> Нет типов
@@ -564,7 +590,7 @@ function updateTypeFilterList() {
         <button class="filter-option ${currentFilterType === 'all' ? 'active' : ''}" onclick="filterByType('all')" id="filterTypeAll" style="padding:6px 12px; font-size:13px;">
             <i class="fa-solid fa-layer-group"></i> <span>Все типы</span>
         </button>
-        ${types.map(t => `
+        ${uniqueTypes.map(t => `
             <button class="filter-option ${currentFilterType === t.toLowerCase() ? 'active' : ''}" onclick="filterByType('${t.toLowerCase()}')" id="filterType_${t.replace(/[^a-zA-Z0-9]/g, '_')}" style="padding:6px 12px; font-size:13px;">
                 <i class="fa-solid fa-cube"></i> <span>${t}</span>
             </button>
@@ -578,9 +604,7 @@ function updateColorFilterList() {
     const container = document.getElementById('colorFilterContainer');
     if (!container) return;
     
-    const colors = getUniqueColors();
-    
-    if (colors.length === 0) {
+    if (uniqueColors.length === 0) {
         container.innerHTML = `
             <div style="text-align:center; padding:8px; color:#6b7280; font-size:13px;">
                 <i class="fa-solid fa-info-circle"></i> Нет цветов
@@ -647,12 +671,15 @@ function updateColorFilterList() {
         <button class="filter-option ${currentFilterColor === 'all' ? 'active' : ''}" onclick="filterByColor('all')" id="filterColorAll" style="padding:6px 12px; font-size:13px;">
             <i class="fa-solid fa-palette"></i> <span>Все цвета</span>
         </button>
-        ${colors.map(c => `
-            <button class="filter-option ${currentFilterColor === c ? 'active' : ''}" onclick="filterByColor('${c}')" id="filterColor_${c.replace(/[^a-zA-Z0-9]/g, '_')}" style="padding:6px 12px; font-size:13px;">
-                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:${colorHex[c] || '#8b5cf6'}; margin-right:8px;"></span>
-                <span>${colorDisplayNames[c] || c}</span>
-            </button>
-        `).join('')}
+        ${uniqueColors.map(c => {
+            const lowerC = c.toLowerCase();
+            return `
+                <button class="filter-option ${currentFilterColor === lowerC ? 'active' : ''}" onclick="filterByColor('${lowerC}')" id="filterColor_${lowerC.replace(/[^a-zA-Z0-9]/g, '_')}" style="padding:6px 12px; font-size:13px;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:${colorHex[lowerC] || '#8b5cf6'}; margin-right:8px;"></span>
+                    <span>${colorDisplayNames[lowerC] || c}</span>
+                </button>
+            `;
+        }).join('')}
     `;
 }
 
@@ -662,9 +689,7 @@ function updateManufacturerFilterList() {
     const container = document.getElementById('manufacturerFilterContainer');
     if (!container) return;
     
-    const manufacturers = getUniqueManufacturers();
-    
-    if (manufacturers.length === 0) {
+    if (uniqueManufacturers.length === 0) {
         container.innerHTML = `
             <div style="text-align:center; padding:8px; color:#6b7280; font-size:13px;">
                 <i class="fa-solid fa-info-circle"></i> Нет производителей
@@ -677,7 +702,7 @@ function updateManufacturerFilterList() {
         <button class="filter-option ${currentFilterManufacturer === 'all' ? 'active' : ''}" onclick="filterByManufacturer('all')" id="filterManufacturerAll" style="padding:6px 12px; font-size:13px;">
             <i class="fa-solid fa-industry"></i> <span>Все производители</span>
         </button>
-        ${manufacturers.map(m => `
+        ${uniqueManufacturers.map(m => `
             <button class="filter-option ${currentFilterManufacturer === m ? 'active' : ''}" onclick="filterByManufacturer('${m.replace(/'/g, "\\'")}')" id="filterManufacturer_${m.replace(/[^a-zA-Z0-9]/g, '_')}" style="padding:6px 12px; font-size:13px;">
                 <i class="fa-solid fa-building"></i> <span>${m}</span>
             </button>
@@ -858,18 +883,6 @@ async function loadFilaments() {
             throw new Error(data.message || data.error || 'Ошибка загрузки');
         }
         allFilaments = data.data || [];
-        
-        // Обновляем списки фильтров только если они раскрыты
-        if (typeFilterExpanded) {
-            updateTypeFilterList();
-        }
-        if (colorFilterExpanded) {
-            updateColorFilterList();
-        }
-        if (manufacturerFilterExpanded) {
-            updateManufacturerFilterList();
-        }
-        
         renderFilaments(allFilaments);
     } catch (error) {
         console.error('Ошибка загрузки катушек:', error);
@@ -1631,7 +1644,9 @@ async function addFilamentManual() {
         }
         showNotification('Катушка успешно добавлена!', 'success');
         closeAddFilament();
-        loadFilaments();
+        // Обновляем уникальные значения после добавления
+        await loadUniqueValues();
+        await loadFilaments();
     } catch (error) {
         showNotification('Ошибка: ' + error.message, 'error');
     }
@@ -2039,6 +2054,7 @@ window.addEventListener('beforeunload', function() {
 window.onload = async function() {
     const isAuth = await checkAuth();
     if (isAuth) {
+        await loadUniqueValues();
         await loadFilaments();
     }
 };
