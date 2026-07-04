@@ -493,7 +493,7 @@ async function fetchUniqueValues(field) {
     if (!token) return [];
     
     try {
-        const response = await fetch(`${API_URL}/actual/${field}`, {
+        const response = await fetch(`${API_URL}/materials/actual/${field}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
