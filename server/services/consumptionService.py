@@ -18,9 +18,24 @@ class ConsumptionService:
         self.repo = ConsumptionRepository()
         self.material_repo = MaterialRepository()
 
+    def _format_answer(self, consumption: Consumption) -> dict:
+        return {
+            "id": consumption.id,
+            "title": consumption.title,
+            "used_length": consumption.used_length,
+            "remain_length": consumption.remain_length,
+            "timestamp": consumption.timestamp.timestamp(),
+            "owner_id": consumption.owner_id,
+            "status" : consumption.status,
+            "material_id": consumption.material_id
+        }
+
     def create_consumption(self, db, owner_id: int, data: ConsumptionCreate) -> dict:
         
         material = self.material_repo.get_by_id(db, data.material_id)
+
+        if data.status not in ["waste", "succes", "interrupted"]:
+            raise ConsumptionInvalidData("Неизвестный статус")
 
         if not material:
             raise MaterialNotFound()
@@ -38,6 +53,7 @@ class ConsumptionService:
             title=data.title,
             used_length=data.used_length,
             remain_length=remain_length,
+            status=data.status,
             owner_id=owner_id
         )
 
@@ -47,26 +63,13 @@ class ConsumptionService:
 
         self.material_repo.update(db)
 
-        return {
-            "id": created_consumption.id,
-            "title": created_consumption.title,
-            "used_length": created_consumption.used_length,
-            "remain_length": created_consumption.remain_length,
-            "owner_id": created_consumption.owner_id
-        }
+        return self._format_answer(created_consumption)
 
     def get_first(self, db, owner_id: int) -> dict:
         
         result = self.repo.get_first(db, owner_id)
 
-        return {
-                "id": result.id,
-                "title": result.title,
-                "used_length": result.used_length,
-                "timestamp": result.timestamp.timestamp(),
-                "remain_length": result.remain_length,
-                "material_id": result.material_id
-            }
+        return self._format_answer(result)
 
     def get_all_material_comsuptions(self, db, owner_id: int, material_id: int) -> list[dict]:
         
@@ -81,13 +84,7 @@ class ConsumptionService:
         consumptions = self.repo.get_all_by_material(db, material_id)
 
         return [
-            {
-                "id": consumption.id,
-                "title": consumption.title,
-                "used_length": consumption.used_length,
-                "timestamp": consumption.timestamp.timestamp(),
-                "remain_length": consumption.remain_length
-            }
+            self._format_answer(consumption)
 
             for consumption in consumptions
         ]
@@ -97,14 +94,7 @@ class ConsumptionService:
         consumptions = self.repo.get_all_by_user(db, owner_id)
 
         return [
-            {
-                "id": consumption.id,
-                "title": consumption.title,
-                "used_length": consumption.used_length,
-                "timestamp": consumption.timestamp.timestamp(),
-                "remain_length": consumption.remain_length,
-                "material_id": consumption.material_id
-            }
+            self._format_answer(consumption)
 
             for consumption in consumptions
         ]

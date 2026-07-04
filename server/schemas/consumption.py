@@ -14,6 +14,11 @@ class ConsumptionCreate(BaseModel):
         gt=0
     )
 
+    status: str = Field(
+        min_length=1,
+        max_length=100
+    )
+
     @field_validator("title")
     @classmethod
     def validate_title(cls, field: str) -> str:
