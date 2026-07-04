@@ -9,7 +9,7 @@ from database.models.consumption import Consumption
 
 class StatisticsRepository:
 
-    def get_total_used_mass(
+    def get_total_used_length(
         self,
         db: Session,
         owner_id: int,
