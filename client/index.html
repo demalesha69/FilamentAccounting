@@ -303,6 +303,7 @@
             </button>
         </div>
         <div class="modal-body">
+            <!-- Сортировка -->
             <div class="filter-section">
                 <label class="filter-label">Сортировка</label>
                 <button class="filter-option active" onclick="sortFilaments('default')" id="filterDefault">
@@ -324,85 +325,107 @@
                     <i class="fa-solid fa-palette"></i> <span>По цвету</span>
                 </button>
             </div>
+            
             <div class="filter-divider"></div>
+            
+            <!-- Фильтр по типу - аккордеон -->
             <div class="filter-section">
                 <label class="filter-label">Фильтр по типу</label>
-                <button class="filter-option active" onclick="filterByType('all')" id="filterTypeAll">
-                    <i class="fa-solid fa-layer-group"></i> <span>Все типы</span>
+                <button class="filter-option" onclick="toggleTypeFilter()" id="filterTypeToggle">
+                    <i class="fa-solid fa-cube"></i> 
+                    <span id="filterTypeLabel">Все типы</span>
+                    <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
                 </button>
-                <button class="filter-option" onclick="filterByType('pla')" id="filterTypePLA">
-                    <i class="fa-solid fa-cube"></i> <span>PLA</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('petg')" id="filterTypePETG">
-                    <i class="fa-solid fa-cube"></i> <span>PETG</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('abs')" id="filterTypeABS">
-                    <i class="fa-solid fa-cube"></i> <span>ABS</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('hips')" id="filterTypeHIPS">
-                    <i class="fa-solid fa-cube"></i> <span>HIPS</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('sbs')" id="filterTypeSBS">
-                    <i class="fa-solid fa-cube"></i> <span>SBS</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('tpu')" id="filterTypeTPU">
-                    <i class="fa-solid fa-cube"></i> <span>TPU</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('nylon')" id="filterTypeNYLON">
-                    <i class="fa-solid fa-cube"></i> <span>NYLON</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('asa')" id="filterTypeASA">
-                    <i class="fa-solid fa-cube"></i> <span>ASA</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('pp')" id="filterTypePP">
-                    <i class="fa-solid fa-cube"></i> <span>PP</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('pc')" id="filterTypePC">
-                    <i class="fa-solid fa-cube"></i> <span>PC</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('pom')" id="filterTypePOM">
-                    <i class="fa-solid fa-cube"></i> <span>POM</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('pmma')" id="filterTypePMMA">
-                    <i class="fa-solid fa-cube"></i> <span>PMMA</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('peek')" id="filterTypePEEK">
-                    <i class="fa-solid fa-cube"></i> <span>PEEK</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('ceramo')" id="filterTypeCeramo">
-                    <i class="fa-solid fa-cube"></i> <span>Ceramo</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('pva')" id="filterTypePVA">
-                    <i class="fa-solid fa-cube"></i> <span>PVA</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('wax')" id="filterTypeWAX">
-                    <i class="fa-solid fa-cube"></i> <span>WAX</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('clearing')" id="filterTypeClearing">
-                    <i class="fa-solid fa-cube"></i> <span>Clearing</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('other')" id="filterTypeOther">
-                    <i class="fa-solid fa-cube"></i> <span>Другое</span>
-                </button>
-            </div>
-            <div class="filter-divider"></div>
-            <div class="filter-section">
-                <label class="filter-label">Фильтр по производителю</label>
-                <div id="manufacturerFilterContainer">
-                    <div style="text-align:center; padding:8px; color:#6b7280; font-size:13px;">
-                        <i class="fa-solid fa-spinner fa-spin"></i> Загрузка...
-                    </div>
+                <div id="typeFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:200px; overflow-y:auto;">
+                    <button class="filter-option active" onclick="filterByType('all')" id="filterTypeAll" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-layer-group"></i> <span>Все типы</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('pla')" id="filterTypePLA" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>PLA</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('petg')" id="filterTypePETG" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>PETG</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('abs')" id="filterTypeABS" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>ABS</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('hips')" id="filterTypeHIPS" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>HIPS</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('sbs')" id="filterTypeSBS" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>SBS</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('tpu')" id="filterTypeTPU" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>TPU</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('nylon')" id="filterTypeNYLON" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>NYLON</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('asa')" id="filterTypeASA" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>ASA</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('pp')" id="filterTypePP" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>PP</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('pc')" id="filterTypePC" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>PC</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('pom')" id="filterTypePOM" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>POM</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('pmma')" id="filterTypePMMA" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>PMMA</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('peek')" id="filterTypePEEK" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>PEEK</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('ceramo')" id="filterTypeCeramo" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>Ceramo</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('pva')" id="filterTypePVA" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>PVA</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('wax')" id="filterTypeWAX" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>WAX</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('clearing')" id="filterTypeClearing" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>Clearing</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('other')" id="filterTypeOther" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>Другое</span>
+                    </button>
                 </div>
             </div>
+            
             <div class="filter-divider"></div>
+            
+            <!-- Фильтр по цвету - аккордеон -->
             <div class="filter-section">
                 <label class="filter-label">Фильтр по цвету</label>
-                <div id="colorFilterContainer">
+                <button class="filter-option" onclick="toggleColorFilter()" id="filterColorToggle">
+                    <i class="fa-solid fa-palette"></i> 
+                    <span id="filterColorLabel">Все цвета</span>
+                    <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
+                </button>
+                <div id="colorFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:200px; overflow-y:auto;">
                     <div style="text-align:center; padding:8px; color:#6b7280; font-size:13px;">
                         <i class="fa-solid fa-spinner fa-spin"></i> Загрузка...
                     </div>
                 </div>
             </div>
+            
+            <div class="filter-divider"></div>
+            
+            <!-- Фильтр по производителю -->
+            <div class="filter-section">
+                <label class="filter-label">Фильтр по производителю</label>
+                <div id="manufacturerFilterContainer" style="display:flex; flex-direction:column; gap:4px; max-height:200px; overflow-y:auto;">
+                    <div style="text-align:center; padding:8px; color:#6b7280; font-size:13px;">
+                        <i class="fa-solid fa-spinner fa-spin"></i> Загрузка...
+                    </div>
+                </div>
+            </div>
+            
             <button class="filter-reset" onclick="resetFilters()">
                 <i class="fa-solid fa-rotate-left"></i> Сбросить фильтры
             </button>
