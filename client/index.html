@@ -5,7 +5,6 @@
     <title>FilamentAccounting</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-    <!-- Библиотека для сканирования QR-кодов -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
@@ -39,7 +38,6 @@
         <section class="filament-grid" id="filamentGrid"></section>
     </main>
 
-    <!-- Две кнопки: QR-сканер и добавление -->
     <div class="fab-group">
         <button class="fab-button fab-scan" onclick="openQRScanner()" title="Сканировать QR-код">
             <i class="fa-solid fa-qrcode"></i>
@@ -76,7 +74,6 @@
         </div>
         <div class="modal-body">
             <div style="display:flex; flex-direction:column; gap:12px;">
-                <!-- Выбор способа сканирования -->
                 <div style="display:flex; gap:10px;">
                     <button class="auth-button" id="scanCameraBtn" onclick="switchScanMethod('camera')" style="flex:1; background:#3b82f6;">
                         <i class="fa-solid fa-camera"></i> Камера
@@ -86,7 +83,6 @@
                     </button>
                 </div>
                 
-                <!-- Область для камеры -->
                 <div id="qrCameraArea">
                     <div id="qr-reader" style="width:100%; min-height:250px;"></div>
                     <div id="qr-reader-results" style="margin-top:12px; text-align:center; color:#9ca3af; font-size:14px; min-height:40px;">
@@ -97,7 +93,6 @@
                     </button>
                 </div>
                 
-                <!-- Область для загрузки файла -->
                 <div id="qrFileArea" style="display:none; flex-direction:column; gap:12px;">
                     <div style="border:2px dashed rgba(255,255,255,0.1); border-radius:16px; padding:30px; text-align:center; background:#1a1d26; cursor:pointer;" 
                          onclick="document.getElementById('qrFileInput').click()">
@@ -128,6 +123,10 @@
                 <input type="text" id="filamentName" placeholder="PLA Черный" />
             </div>
             <div class="form-group">
+                <label for="filamentManufacturer">Производитель</label>
+                <input type="text" id="filamentManufacturer" placeholder="Например: Bambu Lab, eSUN, Polymaker..." />
+            </div>
+            <div class="form-group">
                 <label for="filamentType">Тип материала</label>
                 <select id="filamentType" onchange="updateAdvancedDefaults()">
                     <option value="">Выберите тип</option>
@@ -150,6 +149,9 @@
                     <option value="Clearing">Clearing</option>
                 </select>
             </div>
+            <button class="auth-button" onclick="openCompositionModal()" type="button" style="background:#232734; color:#9ca3af; font-size:14px; padding:10px; margin-top:0; border:1px solid rgba(255,255,255,0.06);">
+                <i class="fa-solid fa-flask"></i> Состав
+            </button>
             <div class="form-group">
                 <label for="filamentColor">Цвет</label>
                 <div class="color-select">
@@ -188,7 +190,6 @@
                 <small style="color:#9ca3af; font-size:12px; margin-top:4px;">Максимальный вес: 1 тонна (1 000 000 г)</small>
             </div>
             
-            <!-- Расширенные настройки -->
             <div style="margin-top:4px;">
                 <button class="auth-button" onclick="toggleAdvancedSettings()" type="button" style="background:#232734; color:#9ca3af; font-size:14px; padding:10px; margin-top:0;">
                     <i class="fa-solid fa-gear" id="advancedIcon"></i> Расширенные настройки
@@ -208,6 +209,73 @@
             <button class="auth-button" id="addFilamentBtn" onclick="addFilamentManual()" disabled>
                 <i class="fa-solid fa-plus"></i> Добавить катушку
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для состава материала -->
+<div class="modal-overlay" id="compositionModal">
+    <div class="modal modal-wide">
+        <div class="modal-header">
+            <h2>Состав</h2>
+            <button class="modal-close" onclick="closeCompositionModal()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p style="color:#9ca3af; font-size:14px; margin-bottom:12px;">
+                Укажите состав материала в процентах. Сумма всех компонентов должна быть 100%.
+            </p>
+            <div id="compositionList" style="display:flex; flex-direction:column; gap:8px;">
+                <div class="composition-item" style="display:flex; align-items:center; gap:10px; background:#232734; border-radius:10px; padding:8px 12px;">
+                    <select class="composition-material" style="flex:1; background:#1a1d26; border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px 12px; color:#ffffff; font-size:14px;">
+                        <option value="PLA">PLA</option>
+                        <option value="PETG">PETG</option>
+                        <option value="ABS">ABS</option>
+                        <option value="HIPS">HIPS</option>
+                        <option value="SBS">SBS</option>
+                        <option value="TPU">TPU</option>
+                        <option value="NYLON">NYLON</option>
+                        <option value="ASA">ASA</option>
+                        <option value="PP">PP</option>
+                        <option value="PC">PC</option>
+                        <option value="POM">POM</option>
+                        <option value="PMMA">PMMA</option>
+                        <option value="PEEK">PEEK</option>
+                        <option value="Ceramo">Ceramo</option>
+                        <option value="PVA">PVA</option>
+                        <option value="WAX">WAX</option>
+                        <option value="Clearing">Clearing</option>
+                        <option value="Углеволокно">Углеволокно</option>
+                        <option value="Стекловолокно">Стекловолокно</option>
+                        <option value="Кевлар">Кевлар</option>
+                        <option value="Металлик">Металлик</option>
+                        <option value="Дерево">Дерево</option>
+                        <option value="Светящийся">Светящийся</option>
+                        <option value="Другое">Другое</option>
+                    </select>
+                    <input type="number" class="composition-percent" placeholder="%" value="100" min="0" max="100" style="width:70px; background:#1a1d26; border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px 10px; color:#ffffff; font-size:14px; text-align:center;" />
+                    <button class="remove-composition" onclick="removeCompositionItem(this)" style="background:transparent; border:none; color:#ff5f5f; cursor:pointer; font-size:18px; padding:4px 8px;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <button class="auth-button" onclick="addCompositionItem()" type="button" style="background:#232734; color:#9ca3af; font-size:14px; padding:10px; margin-top:4px; border:1px solid rgba(255,255,255,0.06);">
+                <i class="fa-solid fa-plus"></i> Добавить материал
+            </button>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06);">
+                <span style="color:#9ca3af; font-size:14px;">Итого: <span id="compositionTotal" style="color:#4ade80; font-weight:700;">100</span>%</span>
+                <div style="display:flex; gap:10px;">
+                    <button class="auth-button" onclick="closeCompositionModal()" style="background:#232734; color:#9ca3af; padding:10px 20px; font-size:14px;">
+                        Отмена
+                    </button>
+                    <button class="auth-button" onclick="saveComposition()" style="background:#8b5cf6; padding:10px 20px; font-size:14px;">
+                        <i class="fa-solid fa-floppy-disk"></i> Сохранить
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -235,6 +303,7 @@
             </button>
         </div>
         <div class="modal-body">
+            <!-- Сортировка -->
             <div class="filter-section">
                 <label class="filter-label">Сортировка</label>
                 <button class="filter-option active" onclick="sortFilaments('default')" id="filterDefault">
@@ -256,67 +325,107 @@
                     <i class="fa-solid fa-palette"></i> <span>По цвету</span>
                 </button>
             </div>
+            
             <div class="filter-divider"></div>
+            
+            <!-- Фильтр по типу - аккордеон -->
             <div class="filter-section">
                 <label class="filter-label">Фильтр по типу</label>
-                <button class="filter-option active" onclick="filterByType('all')" id="filterTypeAll">
-                    <i class="fa-solid fa-layer-group"></i> <span>Все типы</span>
+                <button class="filter-option" onclick="toggleTypeFilter()" id="filterTypeToggle">
+                    <i class="fa-solid fa-cube"></i> 
+                    <span id="filterTypeLabel">Все типы</span>
+                    <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
                 </button>
-                <button class="filter-option" onclick="filterByType('pla')" id="filterTypePLA">
-                    <i class="fa-solid fa-cube"></i> <span>PLA</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('petg')" id="filterTypePETG">
-                    <i class="fa-solid fa-cube"></i> <span>PETG</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('abs')" id="filterTypeABS">
-                    <i class="fa-solid fa-cube"></i> <span>ABS</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('hips')" id="filterTypeHIPS">
-                    <i class="fa-solid fa-cube"></i> <span>HIPS</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('sbs')" id="filterTypeSBS">
-                    <i class="fa-solid fa-cube"></i> <span>SBS</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('tpu')" id="filterTypeTPU">
-                    <i class="fa-solid fa-cube"></i> <span>TPU</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('nylon')" id="filterTypeNYLON">
-                    <i class="fa-solid fa-cube"></i> <span>NYLON</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('asa')" id="filterTypeASA">
-                    <i class="fa-solid fa-cube"></i> <span>ASA</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('pp')" id="filterTypePP">
-                    <i class="fa-solid fa-cube"></i> <span>PP</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('pc')" id="filterTypePC">
-                    <i class="fa-solid fa-cube"></i> <span>PC</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('pom')" id="filterTypePOM">
-                    <i class="fa-solid fa-cube"></i> <span>POM</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('pmma')" id="filterTypePMMA">
-                    <i class="fa-solid fa-cube"></i> <span>PMMA</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('peek')" id="filterTypePEEK">
-                    <i class="fa-solid fa-cube"></i> <span>PEEK</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('ceramo')" id="filterTypeCeramo">
-                    <i class="fa-solid fa-cube"></i> <span>Ceramo</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('pva')" id="filterTypePVA">
-                    <i class="fa-solid fa-cube"></i> <span>PVA</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('wax')" id="filterTypeWAX">
-                    <i class="fa-solid fa-cube"></i> <span>WAX</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('clearing')" id="filterTypeClearing">
-                    <i class="fa-solid fa-cube"></i> <span>Clearing</span>
-                </button>
-                <button class="filter-option" onclick="filterByType('other')" id="filterTypeOther">
-                    <i class="fa-solid fa-cube"></i> <span>Другое</span>
-                </button>
+                <div id="typeFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:200px; overflow-y:auto;">
+                    <button class="filter-option active" onclick="filterByType('all')" id="filterTypeAll" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-layer-group"></i> <span>Все типы</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('pla')" id="filterTypePLA" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>PLA</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('petg')" id="filterTypePETG" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>PETG</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('abs')" id="filterTypeABS" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>ABS</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('hips')" id="filterTypeHIPS" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>HIPS</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('sbs')" id="filterTypeSBS" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>SBS</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('tpu')" id="filterTypeTPU" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>TPU</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('nylon')" id="filterTypeNYLON" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>NYLON</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('asa')" id="filterTypeASA" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>ASA</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('pp')" id="filterTypePP" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>PP</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('pc')" id="filterTypePC" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>PC</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('pom')" id="filterTypePOM" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>POM</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('pmma')" id="filterTypePMMA" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>PMMA</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('peek')" id="filterTypePEEK" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>PEEK</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('ceramo')" id="filterTypeCeramo" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>Ceramo</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('pva')" id="filterTypePVA" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>PVA</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('wax')" id="filterTypeWAX" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>WAX</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('clearing')" id="filterTypeClearing" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>Clearing</span>
+                    </button>
+                    <button class="filter-option" onclick="filterByType('other')" id="filterTypeOther" style="padding:6px 12px; font-size:13px;">
+                        <i class="fa-solid fa-cube"></i> <span>Другое</span>
+                    </button>
+                </div>
             </div>
+            
+            <div class="filter-divider"></div>
+            
+            <!-- Фильтр по цвету - аккордеон -->
+            <div class="filter-section">
+                <label class="filter-label">Фильтр по цвету</label>
+                <button class="filter-option" onclick="toggleColorFilter()" id="filterColorToggle">
+                    <i class="fa-solid fa-palette"></i> 
+                    <span id="filterColorLabel">Все цвета</span>
+                    <i class="fa-solid fa-chevron-down" style="margin-left:auto;"></i>
+                </button>
+                <div id="colorFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:4px 0 0 12px; max-height:200px; overflow-y:auto;">
+                    <div style="text-align:center; padding:8px; color:#6b7280; font-size:13px;">
+                        <i class="fa-solid fa-spinner fa-spin"></i> Загрузка...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="filter-divider"></div>
+            
+            <!-- Фильтр по производителю -->
+            <div class="filter-section">
+                <label class="filter-label">Фильтр по производителю</label>
+                <div id="manufacturerFilterContainer" style="display:flex; flex-direction:column; gap:4px; max-height:200px; overflow-y:auto;">
+                    <div style="text-align:center; padding:8px; color:#6b7280; font-size:13px;">
+                        <i class="fa-solid fa-spinner fa-spin"></i> Загрузка...
+                    </div>
+                </div>
+            </div>
+            
             <button class="filter-reset" onclick="resetFilters()">
                 <i class="fa-solid fa-rotate-left"></i> Сбросить фильтры
             </button>

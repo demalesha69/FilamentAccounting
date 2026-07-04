@@ -177,17 +177,41 @@ function renderConsumptions(consumptions) {
         const localTime = item.timestamp ? formatLocalDate(item.timestamp) : '';
         const remainWeight = formatWeight(item.remain_mass || 0);
         const usedWeight = formatWeight(item.used_mass || 0);
+        const isDefect = item.is_defect || false;
+        const wastedMass = item.wasted_mass || 0;
+        
+        let icon = 'fa-solid fa-print';
+        let iconColor = '#8b5cf6';
+        let statusBadge = '';
+        let statusText = '';
+        
+        if (isDefect) {
+            icon = 'fa-solid fa-triangle-exclamation';
+            iconColor = '#ef4444';
+            statusBadge = `<span style="background:#ef4444; color:white; font-size:10px; padding:2px 8px; border-radius:4px; margin-left:8px;">БРАК</span>`;
+            statusText = '• Брак';
+        } else if (wastedMass > 0) {
+            icon = 'fa-solid fa-circle-exclamation';
+            iconColor = '#f59e0b';
+            statusBadge = `<span style="background:#f59e0b; color:#1a1d26; font-size:10px; padding:2px 8px; border-radius:4px; margin-left:8px;">ПРЕРВАНО</span>`;
+            statusText = `• Перерасход: ${formatWeight(wastedMass)}`;
+        }
+        
         return `
         <div class="history-item" data-title="${(item.title || '').toLowerCase()}" data-material="${item.material_id || ''}">
-            <div class="history-icon" style="color:#8b5cf6;">
-                <i class="fa-solid fa-print"></i>
+            <div class="history-icon" style="color:${iconColor};">
+                <i class="${icon}"></i>
             </div>
             <div class="history-details">
-                <div class="history-title">${item.title || 'Без названия'}</div>
+                <div class="history-title">
+                    ${item.title || 'Без названия'}
+                    ${statusBadge}
+                </div>
                 <div class="history-meta">
                     ${localTime}
                     • Катушка ID: ${item.material_id}
                     • Остаток: ${remainWeight}
+                    ${statusText}
                 </div>
             </div>
             <div class="history-amount-remove">-${usedWeight}</div>
@@ -234,8 +258,21 @@ function checkConsumptionFields() {
     const materialId = document.getElementById('consumptionMaterialSelect').value;
     const title = document.getElementById('consumptionTitle').value.trim();
     const mass = document.getElementById('consumptionMass').value.trim();
+    const wastedMass = document.getElementById('wastedMass')?.value.trim() || '0';
     const button = document.getElementById('addConsumptionBtn');
-    if (materialId && title && mass && parseFloat(mass) > 0) {
+    
+    const massNum = parseFloat(mass) || 0;
+    const wastedNum = parseFloat(wastedMass) || 0;
+    
+    if (materialId && title && mass && massNum > 0) {
+        if (wastedNum > massNum) {
+            button.disabled = true;
+            button.style.opacity = '0.5';
+            button.style.cursor = 'not-allowed';
+            document.getElementById('wastedMassWarning').style.display = 'block';
+            return;
+        }
+        document.getElementById('wastedMassWarning').style.display = 'none';
         button.disabled = false;
         button.style.opacity = '1';
         button.style.cursor = 'pointer';
@@ -243,11 +280,12 @@ function checkConsumptionFields() {
         button.disabled = true;
         button.style.opacity = '0.5';
         button.style.cursor = 'not-allowed';
+        document.getElementById('wastedMassWarning').style.display = 'none';
     }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    ['consumptionMaterialSelect', 'consumptionTitle', 'consumptionMass'].forEach(id => {
+    ['consumptionMaterialSelect', 'consumptionTitle', 'consumptionMass', 'wastedMass'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener('input', checkConsumptionFields);
@@ -315,13 +353,11 @@ function parseGCodeFile(content) {
         filament_used: {}
     };
     
-    // Ищем использование филамента в граммах или миллиметрах
     let totalFilament = 0;
     let unit = 'g';
     let found = false;
     
     for (const line of lines) {
-        // Поиск: ; filament used [g] = 123.45
         const gMatch = line.match(/; filament used \[g\]\s*=\s*([\d.]+)/i);
         if (gMatch) {
             totalFilament = parseFloat(gMatch[1]);
@@ -330,7 +366,6 @@ function parseGCodeFile(content) {
             break;
         }
         
-        // Поиск: ; filament used [mm] = 1234.56
         const mmMatch = line.match(/; filament used \[mm\]\s*=\s*([\d.]+)/i);
         if (mmMatch) {
             totalFilament = parseFloat(mmMatch[1]);
@@ -339,7 +374,6 @@ function parseGCodeFile(content) {
             break;
         }
         
-        // Поиск: ; filament used = 123.45g
         const altMatch = line.match(/; filament used\s*=\s*([\d.]+)\s*g/i);
         if (altMatch) {
             totalFilament = parseFloat(altMatch[1]);
@@ -348,7 +382,6 @@ function parseGCodeFile(content) {
             break;
         }
         
-        // Поиск: ; filament used = 1234.56mm
         const altMmMatch = line.match(/; filament used\s*=\s*([\d.]+)\s*mm/i);
         if (altMmMatch) {
             totalFilament = parseFloat(altMmMatch[1]);
@@ -357,7 +390,6 @@ function parseGCodeFile(content) {
             break;
         }
         
-        // Поиск: ; total filament used [g] = 123.45
         const totalMatch = line.match(/; total filament used \[g\]\s*=\s*([\d.]+)/i);
         if (totalMatch) {
             totalFilament = parseFloat(totalMatch[1]);
@@ -366,7 +398,6 @@ function parseGCodeFile(content) {
             break;
         }
         
-        // Поиск: ; extruder_1_filament_used = 123.45
         const extruderMatch = line.match(/; extruder_(\d+)_filament_used\s*=\s*([\d.]+)/i);
         if (extruderMatch) {
             const tool = parseInt(extruderMatch[1]);
@@ -376,7 +407,6 @@ function parseGCodeFile(content) {
             found = true;
         }
         
-        // Поиск: ; tool_1_filament_used = 123.45
         const toolMatch = line.match(/; tool_(\d+)_filament_used\s*=\s*([\d.]+)/i);
         if (toolMatch) {
             const tool = parseInt(toolMatch[1]);
@@ -387,11 +417,9 @@ function parseGCodeFile(content) {
         }
     }
     
-    // Если нашли extruder или tool, используем их
     if (Object.keys(result.tools).length > 0) {
         result.total = Object.values(result.tools).reduce((sum, t) => sum + t.used, 0);
         result.unit = 'g';
-        // Проверяем, есть ли mm в комментариях
         for (const line of lines) {
             const mmMatch = line.match(/; tool_(\d+)_filament_used\s*=\s*([\d.]+)\s*mm/i);
             if (mmMatch) {
@@ -411,9 +439,7 @@ function parseGCodeFile(content) {
         return { ...result, found: true };
     }
     
-    // Если не нашли стандартные метки, ищем в других форматах
     for (const line of lines) {
-        // Поиск: ; filament_used: 123.45
         const simpleMatch = line.match(/; filament_used\s*[:=]\s*([\d.]+)/i);
         if (simpleMatch) {
             result.total = parseFloat(simpleMatch[1]);
@@ -428,8 +454,6 @@ function parseGCodeFile(content) {
 }
 
 function parseBgCodeFile(content) {
-    // .bgcode - бинарный формат, пробуем читать как текст
-    // Ищем маркеры использования филамента
     const text = content.toString('utf-8', 0, Math.min(content.length, 5000));
     const result = {
         total: 0,
@@ -464,13 +488,10 @@ function parseBgCodeFile(content) {
 }
 
 function parse3mfFile(file) {
-    // .3mf - zip архив, внутри есть файлы с метаданными
-    // Для простоты используем эмуляцию парсинга через чтение как текст
     return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
-                // Пытаемся найти метаданные в тексте
                 const text = e.target.result;
                 const result = {
                     total: 0,
@@ -480,7 +501,6 @@ function parse3mfFile(file) {
                     found: false
                 };
                 
-                // Ищем использование филамента
                 const gMatch = text.match(/filament\s*used\s*[:=]\s*([\d.]+)\s*g/i);
                 if (gMatch) {
                     result.total = parseFloat(gMatch[1]);
@@ -538,12 +558,10 @@ async function handleFileUpload(file) {
 }
 
 function convertMmToG(mm, density, diameter) {
-    // V = π * (d/2)^2 * L
-    // m = V * ρ
-    const radius = diameter / 2; // мм
-    const volume_mm3 = Math.PI * radius * radius * mm; // мм³
-    const volume_cm3 = volume_mm3 / 1000; // см³ (1 см³ = 1000 мм³)
-    const mass = volume_cm3 * density; // г
+    const radius = diameter / 2;
+    const volume_mm3 = Math.PI * radius * radius * mm;
+    const volume_cm3 = volume_mm3 / 1000;
+    const mass = volume_cm3 * density;
     return mass;
 }
 
@@ -553,16 +571,20 @@ function openAddConsumption() {
     const modal = document.getElementById('addConsumptionModal');
     modal.style.display = 'flex';
     
-    // Сбрасываем состояние
     document.getElementById('consumptionTitle').value = '';
     document.getElementById('consumptionMass').value = '10';
     document.getElementById('consumptionMass').disabled = false;
     document.getElementById('consumptionMass').style.opacity = '1';
     document.getElementById('consumptionMass').placeholder = '50';
     document.getElementById('consumptionMass').step = '1';
+    document.getElementById('wastedMass').value = '0';
+    document.getElementById('wastedMass').disabled = false;
+    document.getElementById('wastedMass').style.opacity = '1';
+    document.getElementById('wastedMassWarning').style.display = 'none';
+    document.getElementById('isDefect').checked = false;
     document.getElementById('fileUploadArea').style.display = 'none';
     document.getElementById('manualInputArea').style.display = 'block';
-    document.getElementById('fileUploadBtn').textContent = '📁 Загрузить файл слайсера';
+    document.getElementById('fileUploadBtn').textContent = 'Загрузить файл слайсера';
     document.getElementById('fileUploadBtn').style.background = '#232734';
     document.getElementById('fileUploadBtn').style.color = '#9ca3af';
     document.getElementById('fileInfo').style.display = 'none';
@@ -576,22 +598,21 @@ function openAddConsumption() {
     select.dataset.selectedValue = select.value;
     loadFilamentsForSelect();
     
-    // Настраиваем кнопку добавления (ручной режим)
     const addBtn = document.getElementById('addConsumptionBtn');
-    addBtn.textContent = '💾 Сохранить расход';
+    addBtn.textContent = 'Сохранить расход';
     addBtn.onclick = createConsumption;
     addBtn.style.background = '#8b5cf6';
     addBtn.disabled = true;
     addBtn.style.opacity = '0.5';
     
-    ['consumptionMaterialSelect', 'consumptionTitle', 'consumptionMass'].forEach(id => {
-        document.getElementById(id).style.borderColor = '';
+    ['consumptionMaterialSelect', 'consumptionTitle', 'consumptionMass', 'wastedMass'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.borderColor = '';
     });
 }
 
 function closeAddConsumption() {
     document.getElementById('addConsumptionModal').style.display = 'none';
-    // Очищаем input file
     const fileInput = document.getElementById('fileInput');
     if (fileInput) fileInput.value = '';
 }
@@ -607,43 +628,43 @@ function toggleFileUpload() {
     const manualArea = document.getElementById('manualInputArea');
     const fileBtn = document.getElementById('fileUploadBtn');
     const massInput = document.getElementById('consumptionMass');
+    const wastedInput = document.getElementById('wastedMass');
     const addBtn = document.getElementById('addConsumptionBtn');
     
     if (fileArea.style.display === 'none' || fileArea.style.display === '') {
-        // Переключаем на загрузку файла
         fileArea.style.display = 'block';
         manualArea.style.display = 'none';
-        fileBtn.textContent = '✏️ Ввести вручную';
+        fileBtn.textContent = 'Ввести вручную';
         fileBtn.style.background = '#8b5cf6';
         fileBtn.style.color = '#ffffff';
         massInput.disabled = true;
         massInput.style.opacity = '0.5';
+        wastedInput.disabled = true;
+        wastedInput.style.opacity = '0.5';
         
-        // Меняем кнопку на файловый режим
-        addBtn.textContent = '📤 Отправить расходы из файла';
+        addBtn.textContent = 'Отправить расходы из файла';
         addBtn.onclick = submitFileConsumptions;
         addBtn.style.background = '#3b82f6';
         addBtn.disabled = true;
         addBtn.style.opacity = '0.5';
         
-        // Сбрасываем выбранный файл
         document.getElementById('fileInput').value = '';
         document.getElementById('fileInfo').style.display = 'none';
         document.getElementById('fileParsedInfo').style.display = 'none';
         document.getElementById('toolSelector').style.display = 'none';
         parsedFileData = null;
     } else {
-        // Возвращаем к ручному вводу
         fileArea.style.display = 'none';
         manualArea.style.display = 'block';
-        fileBtn.textContent = '📁 Загрузить файл слайсера';
+        fileBtn.textContent = 'Загрузить файл слайсера';
         fileBtn.style.background = '#232734';
         fileBtn.style.color = '#9ca3af';
         massInput.disabled = false;
         massInput.style.opacity = '1';
+        wastedInput.disabled = false;
+        wastedInput.style.opacity = '1';
         
-        // Восстанавливаем кнопку для ручного режима
-        addBtn.textContent = '💾 Сохранить расход';
+        addBtn.textContent = 'Сохранить расход';
         addBtn.onclick = createConsumption;
         addBtn.style.background = '#8b5cf6';
         checkConsumptionFields();
@@ -664,20 +685,17 @@ async function handleFileSelect(event) {
         return;
     }
     
-    // Проверяем размер файла (макс 50 МБ)
     if (file.size > 50 * 1024 * 1024) {
         showNotification('Файл слишком большой (макс 50 МБ)', 'error');
         event.target.value = '';
         return;
     }
     
-    // Показываем информацию о файле
     const fileInfo = document.getElementById('fileInfo');
     fileInfo.style.display = 'flex';
     document.getElementById('fileName').textContent = file.name;
     document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' КБ';
     
-    // Парсим файл
     const result = await handleFileUpload(file);
     if (!result) {
         event.target.value = '';
@@ -686,20 +704,18 @@ async function handleFileSelect(event) {
     
     parsedFileData = result;
     
-    // Показываем информацию о расходе
     const parsedInfo = document.getElementById('fileParsedInfo');
     parsedInfo.style.display = 'block';
     
     let infoHtml = `<div style="background:#1a1d26; border-radius:10px; padding:12px; margin-top:8px;">`;
     infoHtml += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">`;
-    infoHtml += `<span style="color:#9ca3af; font-size:13px;">📊 Общий расход:</span>`;
+    infoHtml += `<span style="color:#9ca3af; font-size:13px;">Общий расход:</span>`;
     infoHtml += `<span style="color:#4ade80; font-size:16px; font-weight:700;">${result.total.toFixed(2)} ${result.unit}</span>`;
     infoHtml += `</div>`;
     
-    // Информация по инструментам
     const toolKeys = Object.keys(result.tools);
     if (toolKeys.length > 1) {
-        infoHtml += `<div style="color:#9ca3af; font-size:12px; margin-top:4px;">🔧 Найдено инструментов: ${toolKeys.length}</div>`;
+        infoHtml += `<div style="color:#9ca3af; font-size:12px; margin-top:4px;">Найдено инструментов: ${toolKeys.length}</div>`;
         infoHtml += `<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;">`;
         toolKeys.forEach(key => {
             const t = result.tools[key];
@@ -708,7 +724,6 @@ async function handleFileSelect(event) {
         infoHtml += `</div>`;
     }
     
-    // Если расход в мм, показываем подсказку
     if (result.unit === 'mm') {
         infoHtml += `<div style="color:#f59e0b; font-size:11px; margin-top:6px; background:rgba(245,158,11,0.1); padding:6px 10px; border-radius:6px; border:1px solid rgba(245,158,11,0.2);">
             <i class="fa-solid fa-info-circle"></i> Расход указан в миллиметрах. Будет переведен в граммы с учетом плотности и диаметра выбранной катушки.
@@ -718,15 +733,12 @@ async function handleFileSelect(event) {
     infoHtml += `</div>`;
     parsedInfo.innerHTML = infoHtml;
     
-    // Если несколько инструментов, показываем выбор катушек
     if (toolKeys.length > 1) {
         showToolSelector(toolKeys);
     } else {
-        // Если один инструмент, скрываем селектор
         document.getElementById('toolSelector').style.display = 'none';
     }
     
-    // Активируем кнопку добавления
     const addBtn = document.getElementById('addConsumptionBtn');
     addBtn.disabled = false;
     addBtn.style.opacity = '1';
@@ -776,7 +788,6 @@ async function submitFileConsumptions() {
     let consumptions = [];
     
     if (toolKeys.length > 1) {
-        // Несколько инструментов - собираем данные из селекторов
         let hasError = false;
         for (const key of toolKeys) {
             const select = document.getElementById(`toolSelect_${key}`);
@@ -811,12 +822,13 @@ async function submitFileConsumptions() {
             consumptions.push({
                 material_id: filament.id,
                 title: `Печать (T${key}) из файла ${document.getElementById('fileName').textContent || ''}`,
-                used_mass: Math.round(mass * 100) / 100
+                used_mass: Math.round(mass * 100) / 100,
+                is_defect: document.getElementById('isDefect')?.checked || false,
+                wasted_mass: 0
             });
         }
         if (hasError) return;
     } else {
-        // Один инструмент - используем выбранную катушку
         const select = document.getElementById('consumptionMaterialSelect');
         if (!select.value) {
             showNotification('Выберите катушку', 'error');
@@ -849,11 +861,12 @@ async function submitFileConsumptions() {
         consumptions.push({
             material_id: filament.id,
             title: title,
-            used_mass: Math.round(mass * 100) / 100
+            used_mass: Math.round(mass * 100) / 100,
+            is_defect: document.getElementById('isDefect')?.checked || false,
+            wasted_mass: 0
         });
     }
     
-    // Отправляем все расходы
     const token = localStorage.getItem('token');
     if (!token) {
         showNotification('Вы не авторизованы', 'error');
@@ -861,7 +874,6 @@ async function submitFileConsumptions() {
     }
     
     try {
-        // Если несколько расходов - отправляем по очереди
         let successCount = 0;
         for (const consumption of consumptions) {
             const response = await fetch(`${API_URL}/consumptions/create`, {
@@ -908,9 +920,16 @@ async function createConsumption() {
     const materialId = document.getElementById('consumptionMaterialSelect').value;
     const title = document.getElementById('consumptionTitle').value.trim();
     const usedMass = parseFloat(document.getElementById('consumptionMass').value);
+    const wastedMass = parseFloat(document.getElementById('wastedMass').value) || 0;
+    const isDefect = document.getElementById('isDefect')?.checked || false;
     
     if (!materialId || !title || !usedMass || usedMass <= 0) {
         showNotification('Заполните все поля корректно', 'error');
+        return;
+    }
+    
+    if (wastedMass > usedMass) {
+        showNotification('Перерасход не может превышать общий расход', 'error');
         return;
     }
     
@@ -941,17 +960,21 @@ async function createConsumption() {
     }
     
     try {
+        const payload = {
+            material_id: parseInt(materialId),
+            title: title,
+            used_mass: usedMass,
+            is_defect: isDefect,
+            wasted_mass: wastedMass
+        };
+        
         const response = await fetch(`${API_URL}/consumptions/create`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({
-                material_id: parseInt(materialId),
-                title: title,
-                used_mass: usedMass
-            })
+            body: JSON.stringify(payload)
         });
         
         if (response.status === 401) {
@@ -966,7 +989,13 @@ async function createConsumption() {
             throw new Error(data.message || data.error || 'Ошибка создания расхода');
         }
         
-        showNotification('Расход успешно добавлен!', 'success');
+        if (isDefect) {
+            showNotification('Расход отмечен как брак', 'success');
+        } else if (wastedMass > 0) {
+            showNotification(`Расход с перерасходом ${formatWeight(wastedMass)} успешно добавлен`, 'success');
+        } else {
+            showNotification('Расход успешно добавлен', 'success');
+        }
         closeAddConsumption();
         await loadAllConsumptions();
     } catch (error) {

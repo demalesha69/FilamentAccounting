@@ -2,11 +2,16 @@ const API_URL = '/api';
 let allFilaments = [];
 let currentSort = 'default';
 let currentFilterType = 'all';
+let currentFilterManufacturer = 'all';
+let currentFilterColor = 'all';
+let currentSearchQuery = '';
 let currentFilamentId = null;
+let compositionData = [];
+let typeFilterExpanded = false;
+let colorFilterExpanded = false;
 
 const MAX_FILAMENT_WEIGHT = 1000000;
 
-// Стандартные значения плотности и диаметра для разных типов материалов
 const MATERIAL_DEFAULTS = {
     'PLA': { density: 1.24, diameter: 1.75 },
     'PETG': { density: 1.27, diameter: 1.75 },
@@ -165,8 +170,6 @@ function formatLocalDate(timestamp) {
     }
 }
 
-// ===== РАСШИРЕННЫЕ НАСТРОЙКИ =====
-
 function toggleAdvancedSettings() {
     const settings = document.getElementById('advancedSettings');
     const icon = document.getElementById('advancedIcon');
@@ -188,11 +191,203 @@ function updateAdvancedDefaults() {
     }
 }
 
+// ===== УПРАВЛЕНИЕ РАСКРЫТИЕМ ФИЛЬТРОВ =====
+
+function toggleTypeFilter() {
+    typeFilterExpanded = !typeFilterExpanded;
+    const container = document.getElementById('typeFilterContainer');
+    const toggle = document.getElementById('filterTypeToggle');
+    const chevron = toggle?.querySelector('.fa-chevron-down');
+    
+    if (typeFilterExpanded) {
+        container.style.display = 'flex';
+        if (chevron) chevron.className = 'fa-solid fa-chevron-up';
+    } else {
+        container.style.display = 'none';
+        if (chevron) chevron.className = 'fa-solid fa-chevron-down';
+    }
+}
+
+function toggleColorFilter() {
+    colorFilterExpanded = !colorFilterExpanded;
+    const container = document.getElementById('colorFilterContainer');
+    const toggle = document.getElementById('filterColorToggle');
+    const chevron = toggle?.querySelector('.fa-chevron-down');
+    
+    if (colorFilterExpanded) {
+        container.style.display = 'flex';
+        if (chevron) chevron.className = 'fa-solid fa-chevron-up';
+        updateColorFilterList();
+    } else {
+        container.style.display = 'none';
+        if (chevron) chevron.className = 'fa-solid fa-chevron-down';
+    }
+}
+
+// ===== ОБНОВЛЕНИЕ ЛЕЙБЛОВ =====
+
+function updateTypeLabel(type) {
+    const label = document.getElementById('filterTypeLabel');
+    if (!label) return;
+    
+    const typeNames = {
+        'all': 'Все типы',
+        'pla': 'PLA',
+        'petg': 'PETG',
+        'abs': 'ABS',
+        'hips': 'HIPS',
+        'sbs': 'SBS',
+        'tpu': 'TPU',
+        'nylon': 'NYLON',
+        'asa': 'ASA',
+        'pp': 'PP',
+        'pc': 'PC',
+        'pom': 'POM',
+        'pmma': 'PMMA',
+        'peek': 'PEEK',
+        'ceramo': 'Ceramo',
+        'pva': 'PVA',
+        'wax': 'WAX',
+        'clearing': 'Clearing',
+        'other': 'Другое'
+    };
+    label.textContent = typeNames[type] || 'Все типы';
+}
+
+function updateColorLabel(color) {
+    const label = document.getElementById('filterColorLabel');
+    if (!label) return;
+    
+    const colorNames = {
+        'all': 'Все цвета',
+        'green': 'Зеленый',
+        'yellow': 'Желтый',
+        'red': 'Красный',
+        'blue': 'Синий',
+        'orange': 'Оранжевый',
+        'purple': 'Фиолетовый',
+        'black': 'Черный',
+        'white': 'Белый',
+        'gray': 'Серый',
+        'silver': 'Серебристый',
+        'crimson': 'Малиновый',
+        'pink': 'Розовый',
+        'gold': 'Золотой',
+        'lime': 'Лайм',
+        'teal': 'Бирюзовый',
+        'cyan': 'Циан',
+        'navy': 'Темно-синий',
+        'violet': 'Лиловый',
+        'magenta': 'Пурпурный',
+        'brown': 'Коричневый',
+        'beige': 'Бежевый',
+        'transparent': 'Прозрачный',
+        'glow': 'Светящийся',
+        'multicolor': 'Мультицвет'
+    };
+    label.textContent = colorNames[color] || 'Все цвета';
+}
+
+// ===== УПРАВЛЕНИЕ СОСТАВОМ =====
+
+function openCompositionModal() {
+    if (compositionData.length === 0) {
+        compositionData = [{ material: 'PLA', percent: 100 }];
+    }
+    
+    renderCompositionList();
+    document.getElementById('compositionModal').style.display = 'flex';
+    updateCompositionTotal();
+}
+
+function closeCompositionModal() {
+    document.getElementById('compositionModal').style.display = 'none';
+}
+
+function renderCompositionList() {
+    const list = document.getElementById('compositionList');
+    if (!list) return;
+    
+    list.innerHTML = compositionData.map((item, index) => `
+        <div class="composition-item" style="display:flex; align-items:center; gap:10px; background:#232734; border-radius:10px; padding:8px 12px;">
+            <select class="composition-material" data-index="${index}" style="flex:1; background:#1a1d26; border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px 12px; color:#ffffff; font-size:14px;">
+                ${getMaterialOptions(item.material)}
+            </select>
+            <input type="number" class="composition-percent" data-index="${index}" placeholder="%" value="${item.percent}" min="0" max="100" style="width:70px; background:#1a1d26; border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px 10px; color:#ffffff; font-size:14px; text-align:center;" oninput="updateCompositionTotal()" />
+            <button class="remove-composition" onclick="removeCompositionItem(${index})" style="background:transparent; border:none; color:#ff5f5f; cursor:pointer; font-size:18px; padding:4px 8px;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    `).join('');
+    
+    document.querySelectorAll('.composition-material').forEach(select => {
+        select.addEventListener('change', function() {
+            const index = parseInt(this.dataset.index);
+            compositionData[index].material = this.value;
+            updateCompositionTotal();
+        });
+    });
+    
+    document.querySelectorAll('.composition-percent').forEach(input => {
+        input.addEventListener('input', function() {
+            const index = parseInt(this.dataset.index);
+            compositionData[index].percent = parseFloat(this.value) || 0;
+            updateCompositionTotal();
+        });
+    });
+}
+
+function getMaterialOptions(selected) {
+    const materials = ['PLA', 'PETG', 'ABS', 'HIPS', 'SBS', 'TPU', 'NYLON', 'ASA', 'PP', 'PC', 'POM', 'PMMA', 'PEEK', 'Ceramo', 'PVA', 'WAX', 'Clearing', 'Углеволокно', 'Стекловолокно', 'Кевлар', 'Металлик', 'Дерево', 'Светящийся', 'Другое'];
+    return materials.map(m => `<option value="${m}" ${m === selected ? 'selected' : ''}>${m}</option>`).join('');
+}
+
+function addCompositionItem() {
+    compositionData.push({ material: 'Другое', percent: 0 });
+    renderCompositionList();
+    updateCompositionTotal();
+}
+
+function removeCompositionItem(index) {
+    if (compositionData.length <= 1) {
+        showNotification('Должен быть хотя бы один компонент', 'error');
+        return;
+    }
+    compositionData.splice(index, 1);
+    renderCompositionList();
+    updateCompositionTotal();
+}
+
+function updateCompositionTotal() {
+    const total = compositionData.reduce((sum, item) => sum + (item.percent || 0), 0);
+    const totalEl = document.getElementById('compositionTotal');
+    if (totalEl) {
+        totalEl.textContent = Math.round(total);
+        totalEl.style.color = Math.abs(total - 100) < 0.01 ? '#4ade80' : '#f59e0b';
+    }
+}
+
+function saveComposition() {
+    const total = compositionData.reduce((sum, item) => sum + (item.percent || 0), 0);
+    if (Math.abs(total - 100) > 0.01) {
+        showNotification(`Сумма компонентов должна быть 100% (сейчас ${Math.round(total)}%)`, 'error');
+        return;
+    }
+    
+    const invalidItems = compositionData.filter(item => (item.percent || 0) <= 0);
+    if (invalidItems.length > 0) {
+        showNotification('Все компоненты должны иметь процент > 0', 'error');
+        return;
+    }
+    
+    showNotification('Состав сохранен!', 'success');
+    closeCompositionModal();
+}
+
 // ===== АВТОРИЗАЦИЯ =====
 
 async function checkAuth() {
     const token = localStorage.getItem('token');
-    console.log('checkAuth: токен', token ? 'есть' : 'нет');
     if (!token) {
         redirectToLogin();
         return false;
@@ -205,7 +400,6 @@ async function checkAuth() {
                 'Authorization': `Bearer ${token}`
             }
         });
-        console.log('checkAuth: статус ответа', response.status);
         if (response.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
@@ -234,7 +428,6 @@ function redirectToLogin() {
 function updateAuthUI(isLoggedIn) {
     const container = document.getElementById('authContainer');
     if (!container) return;
-    console.log('updateAuthUI:', isLoggedIn);
     if (isLoggedIn) {
         container.innerHTML = `
             <span style="color:#9ca3af; font-size:14px;" id="usernameDisplay"></span>
@@ -273,16 +466,187 @@ function closeFilter() {
 
 function openFilter() {
     document.getElementById('filterModal').style.display = 'flex';
+    updateManufacturerFilterList();
+    if (colorFilterExpanded) {
+        updateColorFilterList();
+    }
+    updateTypeLabel(currentFilterType);
+    updateColorLabel(currentFilterColor);
 }
 
 document.getElementById('filterModal').addEventListener('click', function(e) {
     if (e.target === this) closeFilter();
 });
 
+function getUniqueManufacturers() {
+    const manufacturers = new Set();
+    allFilaments.forEach(f => {
+        if (f.manufacturer && f.manufacturer.trim()) {
+            manufacturers.add(f.manufacturer.trim());
+        }
+    });
+    return Array.from(manufacturers).sort();
+}
+
+function getUniqueColors() {
+    const colors = new Set();
+    allFilaments.forEach(f => {
+        if (f.color && f.color.trim()) {
+            colors.add(f.color.trim().toLowerCase());
+        }
+    });
+    return Array.from(colors).sort();
+}
+
+function updateManufacturerFilterList() {
+    const container = document.getElementById('manufacturerFilterContainer');
+    if (!container) return;
+    
+    const manufacturers = getUniqueManufacturers();
+    
+    if (manufacturers.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; padding:8px; color:#6b7280; font-size:13px;">
+                <i class="fa-solid fa-info-circle"></i> Нет производителей
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = `
+        <button class="filter-option ${currentFilterManufacturer === 'all' ? 'active' : ''}" onclick="filterByManufacturer('all')" id="filterManufacturerAll" style="padding:6px 12px; font-size:13px;">
+            <i class="fa-solid fa-industry"></i> <span>Все производители</span>
+        </button>
+        ${manufacturers.map(m => `
+            <button class="filter-option ${currentFilterManufacturer === m ? 'active' : ''}" onclick="filterByManufacturer('${m.replace(/'/g, "\\'")}')" id="filterManufacturer_${m.replace(/[^a-zA-Z0-9]/g, '_')}" style="padding:6px 12px; font-size:13px;">
+                <i class="fa-solid fa-building"></i> <span>${m}</span>
+            </button>
+        `).join('')}
+    `;
+}
+
+function updateColorFilterList() {
+    const container = document.getElementById('colorFilterContainer');
+    if (!container) return;
+    
+    const colors = getUniqueColors();
+    
+    if (colors.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; padding:8px; color:#6b7280; font-size:13px;">
+                <i class="fa-solid fa-info-circle"></i> Нет цветов
+            </div>
+        `;
+        return;
+    }
+    
+    const colorDisplayNames = {
+        'green': 'Зеленый',
+        'yellow': 'Желтый',
+        'red': 'Красный',
+        'blue': 'Синий',
+        'orange': 'Оранжевый',
+        'purple': 'Фиолетовый',
+        'black': 'Черный',
+        'white': 'Белый',
+        'gray': 'Серый',
+        'silver': 'Серебристый',
+        'crimson': 'Малиновый',
+        'pink': 'Розовый',
+        'gold': 'Золотой',
+        'lime': 'Лайм',
+        'teal': 'Бирюзовый',
+        'cyan': 'Циан',
+        'navy': 'Темно-синий',
+        'violet': 'Лиловый',
+        'magenta': 'Пурпурный',
+        'brown': 'Коричневый',
+        'beige': 'Бежевый',
+        'transparent': 'Прозрачный',
+        'glow': 'Светящийся',
+        'multicolor': 'Мультицвет'
+    };
+    
+    const colorHex = {
+        'green': '#22c55e',
+        'yellow': '#eab308',
+        'red': '#ef4444',
+        'blue': '#3b82f6',
+        'orange': '#f97316',
+        'purple': '#a855f7',
+        'black': '#1a1a1a',
+        'white': '#f3f4f6',
+        'gray': '#6b7280',
+        'silver': '#c0c0c0',
+        'crimson': '#dc2626',
+        'pink': '#ec4899',
+        'gold': '#f59e0b',
+        'lime': '#84cc16',
+        'teal': '#14b8a6',
+        'cyan': '#06b6d4',
+        'navy': '#1e3a8a',
+        'violet': '#8b5cf6',
+        'magenta': '#d946ef',
+        'brown': '#92400e',
+        'beige': '#f5e6d3',
+        'transparent': 'rgba(255,255,255,0.1)',
+        'glow': '#22d3ee',
+        'multicolor': '#8b5cf6'
+    };
+    
+    container.innerHTML = `
+        <button class="filter-option ${currentFilterColor === 'all' ? 'active' : ''}" onclick="filterByColor('all')" id="filterColorAll" style="padding:6px 12px; font-size:13px;">
+            <i class="fa-solid fa-palette"></i> <span>Все цвета</span>
+        </button>
+        ${colors.map(c => `
+            <button class="filter-option ${currentFilterColor === c ? 'active' : ''}" onclick="filterByColor('${c}')" id="filterColor_${c.replace(/[^a-zA-Z0-9]/g, '_')}" style="padding:6px 12px; font-size:13px;">
+                <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:${colorHex[c] || '#8b5cf6'}; margin-right:8px;"></span>
+                <span>${colorDisplayNames[c] || c}</span>
+            </button>
+        `).join('')}
+    `;
+}
+
+function filterByManufacturer(manufacturer) {
+    currentFilterManufacturer = manufacturer;
+    document.querySelectorAll('#manufacturerFilterContainer .filter-option').forEach(btn => btn.classList.remove('active'));
+    if (manufacturer === 'all') {
+        const btn = document.getElementById('filterManufacturerAll');
+        if (btn) btn.classList.add('active');
+    } else {
+        const id = `filterManufacturer_${manufacturer.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.add('active');
+    }
+    applyFiltersAndSort();
+}
+
+function filterByColor(color) {
+    currentFilterColor = color;
+    document.querySelectorAll('#colorFilterContainer .filter-option').forEach(btn => btn.classList.remove('active'));
+    if (color === 'all') {
+        const btn = document.getElementById('filterColorAll');
+        if (btn) btn.classList.add('active');
+    } else {
+        const id = `filterColor_${color.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.add('active');
+    }
+    updateColorLabel(color);
+    applyFiltersAndSort();
+}
+
 function sortFilaments(type) {
     currentSort = type;
     document.querySelectorAll('.filter-option').forEach(btn => btn.classList.remove('active'));
-    const activeBtn = { 'default': 'filterDefault', 'name': 'filterName', 'nameDesc': 'filterNameDesc', 'progress': 'filterProgress', 'progressDesc': 'filterProgressDesc', 'color': 'filterColor' }[type];
+    const activeBtn = { 
+        'default': 'filterDefault', 
+        'name': 'filterName', 
+        'nameDesc': 'filterNameDesc', 
+        'progress': 'filterProgress', 
+        'progressDesc': 'filterProgressDesc', 
+        'color': 'filterColor' 
+    }[type];
     if (activeBtn) document.getElementById(activeBtn).classList.add('active');
     applyFiltersAndSort();
     closeFilter();
@@ -290,87 +654,115 @@ function sortFilaments(type) {
 
 function filterByType(type) {
     currentFilterType = type;
-    document.querySelectorAll('.filter-option').forEach(btn => btn.classList.remove('active'));
-    const activeBtn = { 
-        'all': 'filterTypeAll', 
-        'pla': 'filterTypePLA', 
-        'petg': 'filterTypePETG', 
-        'abs': 'filterTypeABS',
-        'hips': 'filterTypeHIPS',
-        'sbs': 'filterTypeSBS',
-        'tpu': 'filterTypeTPU',
-        'nylon': 'filterTypeNYLON',
-        'asa': 'filterTypeASA',
-        'pp': 'filterTypePP',
-        'pc': 'filterTypePC',
-        'pom': 'filterTypePOM',
-        'pmma': 'filterTypePMMA',
-        'peek': 'filterTypePEEK',
-        'ceramo': 'filterTypeCeramo',
-        'pva': 'filterTypePVA',
-        'wax': 'filterTypeWAX',
-        'clearing': 'filterTypeClearing',
-        'other': 'filterTypeOther' 
-    }[type];
-    if (activeBtn) document.getElementById(activeBtn).classList.add('active');
+    document.querySelectorAll('#typeFilterContainer .filter-option').forEach(btn => btn.classList.remove('active'));
+    const btn = document.getElementById(`filterType${type.charAt(0).toUpperCase() + type.slice(1)}`);
+    if (btn) btn.classList.add('active');
+    updateTypeLabel(type);
     applyFiltersAndSort();
-    closeFilter();
 }
 
 function searchFilaments() {
+    currentSearchQuery = document.getElementById('searchInput')?.value.trim() || '';
     applyFiltersAndSort();
 }
 
 function applyFiltersAndSort() {
-    const searchQuery = document.getElementById('searchInput')?.value.toLowerCase().trim() || '';
-    let filtered = [...allFilaments];
-    if (searchQuery) {
-        filtered = filtered.filter(f => 
-            (f.name || '').toLowerCase().includes(searchQuery) ||
-            (f.color || '').toLowerCase().includes(searchQuery) ||
-            (f.material_type || '').toLowerCase().includes(searchQuery)
-        );
-    }
-    if (currentFilterType !== 'all') {
-        filtered = filtered.filter(f => {
-            const type = (f.material_type || '').toLowerCase();
-            if (currentFilterType === 'other') {
-                return !FILAMENT_TYPES.map(t => t.toLowerCase()).includes(type);
-            }
-            return type === currentFilterType;
-        });
-    }
-    filtered.sort((a, b) => {
-        switch(currentSort) {
-            case 'name': return (a.name || '').localeCompare(b.name || '');
-            case 'nameDesc': return (b.name || '').localeCompare(a.name || '');
-            case 'progress': return ((a.current_mass || 0) / (a.initial_mass || 1)) - ((b.current_mass || 0) / (b.initial_mass || 1));
-            case 'progressDesc': return ((b.current_mass || 0) / (b.initial_mass || 1)) - ((a.current_mass || 0) / (a.initial_mass || 1));
-            case 'color': return (a.color || '').localeCompare(b.color || '');
-            default: return (a.id || 0) - (b.id || 0);
-        }
-    });
-    renderFilaments(filtered);
+    loadFilaments();
 }
 
 function resetFilters() {
     currentFilterType = 'all';
     currentSort = 'default';
+    currentFilterManufacturer = 'all';
+    currentFilterColor = 'all';
+    currentSearchQuery = '';
     document.getElementById('searchInput').value = '';
+    
     document.querySelectorAll('.filter-option').forEach(btn => btn.classList.remove('active'));
     document.getElementById('filterDefault').classList.add('active');
     document.getElementById('filterTypeAll').classList.add('active');
+    
+    updateTypeLabel('all');
+    updateColorLabel('all');
+    
+    const allManBtn = document.getElementById('filterManufacturerAll');
+    if (allManBtn) allManBtn.classList.add('active');
+    
+    const allColorBtn = document.getElementById('filterColorAll');
+    if (allColorBtn) allColorBtn.classList.add('active');
+    
+    if (typeFilterExpanded) {
+        toggleTypeFilter();
+    }
+    if (colorFilterExpanded) {
+        toggleColorFilter();
+    }
+    
     applyFiltersAndSort();
     closeFilter();
 }
 
-// ===== ЗАГРУЗКА И ОТОБРАЖЕНИЕ КАТУШЕК =====
+function buildMaterialsUrl() {
+    const params = new URLSearchParams();
+    
+    if (currentSearchQuery) {
+        params.append('name', currentSearchQuery);
+    }
+    
+    if (currentFilterType !== 'all') {
+        const typeMap = {
+            'pla': 'PLA',
+            'petg': 'PETG',
+            'abs': 'ABS',
+            'hips': 'HIPS',
+            'sbs': 'SBS',
+            'tpu': 'TPU',
+            'nylon': 'NYLON',
+            'asa': 'ASA',
+            'pp': 'PP',
+            'pc': 'PC',
+            'pom': 'POM',
+            'pmma': 'PMMA',
+            'peek': 'PEEK',
+            'ceramo': 'Ceramo',
+            'pva': 'PVA',
+            'wax': 'WAX',
+            'clearing': 'Clearing'
+        };
+        const mappedType = typeMap[currentFilterType];
+        if (mappedType) {
+            params.append('material', mappedType);
+        }
+    }
+    
+    if (currentFilterManufacturer !== 'all') {
+        params.append('manufacturer', currentFilterManufacturer);
+    }
+    
+    if (currentFilterColor !== 'all') {
+        params.append('color', currentFilterColor);
+    }
+    
+    const sortMap = {
+        'default': 'id',
+        'name': 'name',
+        'nameDesc': '-name',
+        'progress': 'progress',
+        'progressDesc': '-progress',
+        'color': 'color'
+    };
+    const sortParam = sortMap[currentSort] || 'id';
+    params.append('sort', sortParam);
+    
+    return `${API_URL}/materials/?${params.toString()}`;
+}
 
 async function loadFilaments() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-        const response = await fetch(`${API_URL}/materials/`, {
+        const url = buildMaterialsUrl();
+        const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -388,7 +780,11 @@ async function loadFilaments() {
             throw new Error(data.message || data.error || 'Ошибка загрузки');
         }
         allFilaments = data.data || [];
-        applyFiltersAndSort();
+        updateManufacturerFilterList();
+        if (colorFilterExpanded) {
+            updateColorFilterList();
+        }
+        renderFilaments(allFilaments);
     } catch (error) {
         console.error('Ошибка загрузки катушек:', error);
         showNotification('Ошибка загрузки катушек', 'error');
@@ -405,6 +801,7 @@ function renderFilaments(filaments) {
         </div>`;
         return;
     }
+    
     grid.innerHTML = filaments.map(f => {
         const colorKey = (f.color || '').toLowerCase();
         const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
@@ -413,6 +810,7 @@ function renderFilaments(filaments) {
         const progress = Math.round(((f.current_mass || 0) / (f.initial_mass || 1)) * 100);
         const isEmpty = (f.current_mass || 0) <= 0;
         const materialType = f.material_type || 'Неизвестный тип';
+        const manufacturer = f.manufacturer || '';
         
         const emptyStyles = isEmpty ? `
             opacity: 0.5;
@@ -479,8 +877,14 @@ function renderFilaments(filaments) {
             ? 'background: linear-gradient(45deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7);' 
             : `background: ${colorHex};`;
         
-        // Добавляем 📦 если катушка пуста
         const emptyEmoji = isEmpty ? ' 📦' : '';
+        
+        const manufacturerHtml = manufacturer ? `
+            <p style="font-size:11px; color:#6b7280; margin-top:1px;">
+                <i class="fa-solid fa-building" style="font-size:10px; margin-right:3px;"></i>
+                ${manufacturer}
+            </p>
+        ` : '';
         
         return `<article class="filament-card" onclick="openDetailModal(${f.id})" style="cursor:pointer; ${emptyStyles}">
             <div class="card-top">
@@ -497,6 +901,7 @@ function renderFilaments(filaments) {
                         <i class="fa-solid fa-cube" style="font-size:11px; margin-right:4px;"></i>
                         ${materialType}
                     </p>
+                    ${manufacturerHtml}
                 </div>
             </div>
             <div class="weight-info" style="color:${weightColor};">
@@ -567,6 +972,7 @@ async function openDetailModal(id) {
         const currentWeight = formatWeight(filament.current_mass || 0);
         const initialWeight = formatWeight(filament.initial_mass || 0);
         const usedWeight = formatWeight(used);
+        const manufacturer = filament.manufacturer || '';
         
         let ringStyle;
         if (colorKey === 'multicolor') {
@@ -595,7 +1001,6 @@ async function openDetailModal(id) {
         
         const historyHtml = await loadConsumptionHistory(id);
         
-        // Добавляем 📦 если катушка пуста
         const emptyEmoji = isEmpty ? ' 📦' : '';
         
         body.innerHTML = `
@@ -608,6 +1013,7 @@ async function openDetailModal(id) {
                         <div>
                             <h2 style="color:#ffffff; font-size:22px; margin-bottom:4px;">${filament.name}${emptyEmoji}</h2>
                             <p style="color:${isEmpty ? '#6b7280' : colorHex}; font-size:16px; font-weight:600;">${colorName} ${filament.material_type ? '• ' + filament.material_type : ''}</p>
+                            ${manufacturer ? `<p style="color:#9ca3af; font-size:14px;"><i class="fa-solid fa-building"></i> ${manufacturer}</p>` : ''}
                             ${filament.density ? `<p style="color:#9ca3af; font-size:13px;">Плотность: ${filament.density} г/см³ • Диаметр: ${filament.diameter || 1.75} мм</p>` : ''}
                             ${isEmpty ? `<p style="color:#ff5f5f; font-size:14px; margin-top:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Катушка пуста</p>` : ''}
                         </div>
@@ -672,157 +1078,123 @@ async function openDetailModal(id) {
     }
 }
 
-// ===== ПЕЧАТЬ QR-КОДА =====
-
 function printQRCode() {
-
-// ===== Electron / WebView =====
-
-if (window.api?.printQR) {
-
-    const filament = window.currentFilament;
-
-    if (!filament?.uuid) {
-        showNotification('UUID не найден', 'error');
+    if (window.api?.printQR) {
+        const filament = window.currentFilament;
+        if (!filament?.uuid) {
+            showNotification('UUID не найден', 'error');
+            return;
+        }
+        window.api.printQR(filament.uuid);
         return;
     }
 
-    window.api.printQR(filament.uuid);
-
-    return;
-}
-
-// ===== Обычная браузерная печать =====
-
-const container = document.getElementById('qrCodeContainer');
-
-if (!container) {
-    showNotification('QR-код не найден', 'error');
-    return;
-}
-
-const img = container.querySelector('img');
-
-if (!img) {
-    showNotification('QR-код еще не загружен', 'error');
-    return;
-}
-
-const printContainer = document.createElement('div');
-
-printContainer.id = 'printQRContainer';
-
-printContainer.style.cssText = `
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: white;
-    z-index: 9999;
-    padding: 20px;
-`;
-
-printContainer.innerHTML = `
-    <div style="
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        width:100%;
-        height:100%;
-    ">
-        <img
-            src="${img.src}"
-            alt="QR-код"
-            style="
-                width:100%;
-                max-width:800px;
-                height:auto;
-                max-height:90vh;
-                display:block;
-                object-fit:contain;
-                background:white;
-            "
-        />
-    </div>
-`;
-
-const style = document.createElement('style');
-
-style.textContent = `
-    @page {
-        margin: 0;
-        size: A4 portrait;
+    const container = document.getElementById('qrCodeContainer');
+    if (!container) {
+        showNotification('QR-код не найден', 'error');
+        return;
     }
 
-    @media print {
-
-        html, body {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            background: white !important;
-        }
-
-        body * {
-            visibility: hidden !important;
-        }
-
-        #printQRContainer,
-        #printQRContainer * {
-            visibility: visible !important;
-        }
-
-        #printQRContainer {
-            position: fixed !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            margin: 0 !important;
-            padding: 20px !important;
-            background: white !important;
-            z-index: 9999 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }
-
-        #printQRContainer img {
-            width: 100% !important;
-            max-width: 800px !important;
-            height: auto !important;
-            max-height: 90vh !important;
-
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
+    const img = container.querySelector('img');
+    if (!img) {
+        showNotification('QR-код еще не загружен', 'error');
+        return;
     }
-`;
 
-printContainer.appendChild(style);
+    const printContainer = document.createElement('div');
+    printContainer.id = 'printQRContainer';
+    printContainer.style.cssText = `
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        z-index: 9999;
+        padding: 20px;
+    `;
+    printContainer.innerHTML = `
+        <div style="
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            width:100%;
+            height:100%;
+        ">
+            <img
+                src="${img.src}"
+                alt="QR-код"
+                style="
+                    width:100%;
+                    max-width:800px;
+                    height:auto;
+                    max-height:90vh;
+                    display:block;
+                    object-fit:contain;
+                    background:white;
+                "
+            />
+        </div>
+    `;
 
-document.body.appendChild(printContainer);
-
-setTimeout(() => {
-
-    window.print();
+    const style = document.createElement('style');
+    style.textContent = `
+        @page {
+            margin: 0;
+            size: A4 portrait;
+        }
+        @media print {
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                background: white !important;
+            }
+            body * {
+                visibility: hidden !important;
+            }
+            #printQRContainer,
+            #printQRContainer * {
+                visibility: visible !important;
+            }
+            #printQRContainer {
+                position: fixed !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                padding: 20px !important;
+                background: white !important;
+                z-index: 9999 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            #printQRContainer img {
+                width: 100% !important;
+                max-width: 800px !important;
+                height: auto !important;
+                max-height: 90vh !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    `;
+    printContainer.appendChild(style);
+    document.body.appendChild(printContainer);
 
     setTimeout(() => {
-        document
-            .getElementById('printQRContainer')
-            ?.remove();
-    }, 1000);
-
-}, 300);
-
+        window.print();
+        setTimeout(() => {
+            document.getElementById('printQRContainer')?.remove();
+        }, 1000);
+    }, 300);
 }
-
-// ===== ЗАГРУЗКА QR-КОДА =====
 
 async function loadQRCode(materialId) {
     const token = localStorage.getItem('token');
@@ -882,8 +1254,6 @@ async function loadQRCode(materialId) {
         `;
     }
 }
-
-// ===== СКАЧИВАНИЕ QR-КОДА =====
 
 function downloadQRCode() {
     const container = document.getElementById('qrCodeContainer');
@@ -1053,7 +1423,7 @@ function checkFilamentFields() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    ['filamentName', 'filamentType', 'filamentColor', 'filamentWeight'].forEach(id => {
+    ['filamentName', 'filamentManufacturer', 'filamentType', 'filamentColor', 'filamentWeight'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener('input', checkFilamentFields);
@@ -1065,6 +1435,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function openAddFilament() {
     document.getElementById('addFilamentModal').style.display = 'flex';
     document.getElementById('filamentName').value = '';
+    document.getElementById('filamentManufacturer').value = '';
     document.getElementById('filamentType').value = '';
     document.getElementById('filamentColor').value = '';
     document.getElementById('filamentWeight').value = '1000';
@@ -1072,8 +1443,10 @@ function openAddFilament() {
     document.getElementById('filamentDiameter').value = '1.75';
     document.getElementById('advancedSettings').style.display = 'none';
     document.getElementById('advancedIcon').className = 'fa-solid fa-gear';
-    ['filamentName', 'filamentType', 'filamentColor', 'filamentWeight'].forEach(id => {
-        document.getElementById(id).style.borderColor = '';
+    compositionData = [{ material: 'PLA', percent: 100 }];
+    ['filamentName', 'filamentManufacturer', 'filamentType', 'filamentColor', 'filamentWeight'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.borderColor = '';
     });
     checkFilamentFields();
 }
@@ -1101,6 +1474,7 @@ function setColor(color) {
 
 async function addFilamentManual() {
     const name = document.getElementById('filamentName').value.trim();
+    const manufacturer = document.getElementById('filamentManufacturer').value.trim();
     const material_type = document.getElementById('filamentType').value.trim();
     const color = document.getElementById('filamentColor').value.trim();
     const initial_mass = parseFloat(document.getElementById('filamentWeight').value);
@@ -1125,26 +1499,39 @@ async function addFilamentManual() {
         return;
     }
     
+    const total = compositionData.reduce((sum, item) => sum + (item.percent || 0), 0);
+    if (Math.abs(total - 100) > 0.01) {
+        showNotification('Сумма компонентов состава должна быть 100%', 'error');
+        return;
+    }
+    
     const token = localStorage.getItem('token');
     if (!token) {
         showNotification('Вы не авторизованы', 'error');
         return;
     }
     try {
+        const requestBody = { 
+            name: name, 
+            material_type: material_type,
+            color: color, 
+            initial_mass: initial_mass,
+            density: density,
+            diameter: diameter,
+            composition: compositionData
+        };
+        
+        if (manufacturer) {
+            requestBody.manufacturer = manufacturer;
+        }
+        
         const response = await fetch(`${API_URL}/materials/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ 
-                name: name, 
-                material_type: material_type,
-                color: color, 
-                initial_mass: initial_mass,
-                density: density,
-                diameter: diameter
-            })
+            body: JSON.stringify(requestBody)
         });
         if (response.status === 401) {
             localStorage.removeItem('token');
@@ -1563,16 +1950,9 @@ window.addEventListener('beforeunload', function() {
     }
 });
 
-// ===== ИНИЦИАЛИЗАЦИЯ =====
-
 window.onload = async function() {
-    console.log('=== ИНИЦИАЛИЗАЦИЯ INDEX ===');
     const isAuth = await checkAuth();
-    console.log('Авторизация:', isAuth);
     if (isAuth) {
         await loadFilaments();
-        console.log('Катушки загружены');
-    } else {
-        console.log('Пользователь не авторизован');
     }
 };
