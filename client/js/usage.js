@@ -6,6 +6,7 @@ let parsedFileData = null;
 
 // Выбранные фильтры статусов
 let selectedStatuses = [];
+let currentSearchQuery = '';
 
 function formatLength(mm) {
     if (mm >= 100000000) {
@@ -150,6 +151,11 @@ function showUsername() {
 function buildConsumptionsUrl() {
     const params = new URLSearchParams();
     
+    // Поиск по названию
+    if (currentSearchQuery) {
+        params.append('title', currentSearchQuery);
+    }
+    
     // Статусы - множественный параметр (OR логика)
     selectedStatuses.forEach(s => {
         params.append('status', s);
@@ -247,16 +253,14 @@ function renderConsumptions(consumptions) {
     `}).join('');
 }
 
-function filterHistory() {
-    const query = document.getElementById('searchInput').value.toLowerCase().trim();
-    document.querySelectorAll('.history-item').forEach(item => {
-        const title = item.dataset.title || '';
-        const material = item.dataset.material || '';
-        item.style.display = (title.includes(query) || material.includes(query)) ? 'flex' : 'none';
-    });
+// ===== ПОИСК =====
+
+function searchConsumptions() {
+    currentSearchQuery = document.getElementById('searchInput').value.trim();
+    loadAllConsumptions();
 }
 
-// ===== СОРТИРОВКА - ПРОСТО ПЕРЕКЛЮЧЕНИЕ МЕЖДУ ASC И DESC =====
+// ===== СОРТИРОВКА =====
 
 function toggleSort() {
     // Переключаем направление сортировки
