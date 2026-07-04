@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 </head>
-<body class="stats-page">
+<body>
 
 <div id="notification" class="notification" style="display:none;">
     <div class="notification-content">
@@ -18,28 +18,30 @@
 
 <div class="app">
     <div class="top-section">
-        <div class="header">
-            <h1 class="logo">Статистика</h1>
-            <div id="authContainer"></div>
-        </div>
-        <div class="stats-controls">
-            <div class="stats-period">
-                <button class="period-btn active" onclick="setPeriod('all')" data-period="all">За все время</button>
-                <button class="period-btn" onclick="setPeriod('day')" data-period="day">День</button>
-                <button class="period-btn" onclick="setPeriod('week')" data-period="week">Неделя</button>
-                <button class="period-btn" onclick="setPeriod('month')" data-period="month">Месяц</button>
-                <button class="period-btn" onclick="setPeriod('year')" data-period="year">Год</button>
+        <div class="top-section-inner">
+            <div class="header">
+                <h1 class="logo">Статистика</h1>
+                <div id="authContainer"></div>
             </div>
-            <div class="stats-custom">
-                <input type="date" id="dateFrom" />
-                <span>—</span>
-                <input type="date" id="dateTo" />
-                <button class="period-btn" onclick="setCustomPeriod()">Применить</button>
+            <div class="stats-controls">
+                <div class="stats-period">
+                    <button class="period-btn active" onclick="setPeriod('all')" data-period="all">За все время</button>
+                    <button class="period-btn" onclick="setPeriod('day')" data-period="day">День</button>
+                    <button class="period-btn" onclick="setPeriod('week')" data-period="week">Неделя</button>
+                    <button class="period-btn" onclick="setPeriod('month')" data-period="month">Месяц</button>
+                    <button class="period-btn" onclick="setPeriod('year')" data-period="year">Год</button>
+                </div>
+                <div class="stats-custom">
+                    <input type="date" id="dateFrom" />
+                    <span>—</span>
+                    <input type="date" id="dateTo" />
+                    <button class="period-btn" onclick="setCustomPeriod()">Применить</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <main class="content stats-content">
+    <main class="content">
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-value" id="totalUsed">0</div>
