@@ -60,32 +60,30 @@ def normalize_composition(composition: list[dict]) -> tuple:
 
 def build_group_key(material) -> str:
 
-    composition = tuple(
-        sorted(
-            (x["material"].strip().lower(), int(x["percent"]))
-            for x in material.composition or []
-        )
-    )
+    composition = [
+        f"{x['material'].strip().lower()}_{int(x['percent'])}"
+        for x in material.composition or []
+    ]
+
+    composition_str = ",".join(sorted(composition))
 
     return "|".join([
         material.type.strip().lower(),
         material.color.strip().lower(),
         material.manufacturer.strip().lower(),
-        str(composition)
+        composition_str
     ])
 
 def decode_group_key(group_key: str) -> dict:
 
     type_, color, manufacturer, composition_raw = group_key.split("|")
 
-    pairs = re.findall(r"\(([^)]+)\)", composition_raw)
-
     composition = []
 
-    for p in pairs:
-        material, percent = p.split(",")
-
-        composition.append(f"{material}_{percent}")
+    if composition_raw:
+        for item in composition_raw.split(","):
+            material, percent = item.split("_")
+            composition.append(f"{material}_{percent}")
 
     return {
         "type": [type_],
