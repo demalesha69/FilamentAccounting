@@ -1432,9 +1432,9 @@ async function loadConsumptionHistory(materialId) {
         
         // Статусы для отображения
         const statusMap = {
-            'success': { icon: 'fa-solid fa-check-circle', color: '#4ade80', label: 'Успешно' },
-            'waste': { icon: 'fa-solid fa-circle-xmark', color: '#ef4444', label: 'Брак' },
-            'interrupted': { icon: 'fa-solid fa-triangle-exclamation', color: '#f59e0b', label: 'Прервано' }
+            'success': { color: '#4ade80', label: 'Успешно' },
+            'waste': { color: '#ef4444', label: 'Брак' },
+            'interrupted': { color: '#f59e0b', label: 'Прервано' }
         };
         
         return `<div style="display:flex;flex-direction:column;gap:6px;max-height:150px;overflow-y:auto;padding-right:4px;">
@@ -1444,19 +1444,22 @@ async function loadConsumptionHistory(materialId) {
                 const usedLength = formatLength(item.used_length || 0);
                 const status = item.status || 'success';
                 const statusDisplay = statusMap[status] || statusMap['success'];
+                const shortTitle = item.title && item.title.length > 20 ? item.title.substring(0, 20) + '...' : (item.title || 'Без названия');
                 
                 return `
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#1a1d26;border-radius:8px;border-left:3px solid ${statusDisplay.color};">
-                    <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
-                        <span style="color:#ffffff;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.title || 'Без названия'}</span>
-                        <span style="background:${statusDisplay.color}; color:${status === 'success' ? '#1a1d26' : 'white'}; font-size:9px; padding:2px 6px; border-radius:3px; white-space:nowrap;">${statusDisplay.label}</span>
-                        <span style="color:#9ca3af;font-size:11px;white-space:nowrap;">
+                <div style="display:flex;flex-direction:column;padding:8px 12px;background:#1a1d26;border-radius:8px;border-left:3px solid ${statusDisplay.color};gap:4px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+                        <span style="color:#ffffff;font-size:13px;font-weight:500;word-break:break-word;">${shortTitle}</span>
+                        <span style="background:${statusDisplay.color}; color:${status === 'success' ? '#1a1d26' : 'white'}; font-size:9px; padding:1px 8px; border-radius:3px; white-space:nowrap; flex-shrink:0;">${statusDisplay.label}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+                        <span style="color:#6b7280;font-size:10px;">
                             <i class="fa-regular fa-calendar"></i> ${localTime}
                         </span>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-                        <span style="font-size:12px;color:#9ca3af;white-space:nowrap;">Остаток: ${remainLength}</span>
-                        <span style="font-size:14px;font-weight:700;color:#ff5f5f;white-space:nowrap;">-${usedLength}</span>
+                        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                            <span style="font-size:11px;color:#9ca3af;">Остаток: ${remainLength}</span>
+                            <span style="font-size:13px;font-weight:700;color:#ff5f5f;">-${usedLength}</span>
+                        </div>
                     </div>
                 </div>
             `}).join('')}
