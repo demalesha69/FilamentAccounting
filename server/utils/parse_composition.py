@@ -88,8 +88,8 @@ def decode_group_key(group_key: str) -> dict:
         composition.append(f"{material}_{percent}")
 
     return {
-        "type": type_,
-        "color": color,
-        "manufacturer": manufacturer,
+        "type": [type_],
+        "color": [color],
+        "manufacturer": [manufacturer],
         "composition": composition
     }
