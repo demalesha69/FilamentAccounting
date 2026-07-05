@@ -13,6 +13,16 @@ class CompositionItem(BaseModel):
         gt=0
     )
 
+    @field_validator("material")
+    @classmethod
+    def validate_str_fields(cls, field: str) -> str:
+        field = field.strip()
+
+        if not field:
+            raise MaterialInvalidData("не может быть пустым")
+
+        return field.lower()
+
 class MaterialCreate(BaseModel):
 
     name: str = Field(
@@ -57,7 +67,7 @@ class MaterialCreate(BaseModel):
         if not field:
             raise MaterialInvalidData(f"{info.field_name} не может быть пустым")
 
-        return field
+        return field.lower()
     
     @field_validator("composition")
     @classmethod
