@@ -67,6 +67,9 @@ class MaterialCreate(BaseModel):
         if not field:
             raise MaterialInvalidData(f"{info.field_name} не может быть пустым")
 
+        if info.field_name == "name":
+            return field
+
         return field.lower()
     
     @field_validator("composition")
