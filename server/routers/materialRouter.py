@@ -41,12 +41,18 @@ def get_all_materials(
     material: list[str] | None = Query(default=None),
     manufacturer: list[str] | None = Query(default=None),
     color: list[str] | None = Query(default=None),
+    composition: list[str] | None = Query(default=None),
     name: str | None = Query(default=None),
     sort_by: str | None = Query(default="id"),
     sort_order: str | None = Query(default="asc"),
+    grouped: bool | None = Query(default=False),
+    group_key: str | None = Query(default=None),
     db: Session = Depends(get_db), 
     current_user=Depends(get_current_user)
 ):
+
+    if group_key:
+        grouped = None
 
     materialFilter = MaterialFilters(
         name=name,
@@ -54,7 +60,10 @@ def get_all_materials(
         material_type=material,
         manufacturer=manufacturer,
         sort_by=sort_by,
-        sort_order=sort_order
+        sort_order=sort_order,
+        composition=composition,
+        grouped=grouped,
+        group_key=group_key
     )
 
     result = material_service.get_all_materials(db, current_user["user_id"], filters=materialFilter)

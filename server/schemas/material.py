@@ -78,8 +78,13 @@ class MaterialFilters(BaseModel):
 
     color: list[str] | None = None
 
+    composition: list[str] | None = None
+
     name: str | None = None
 
-    sort_by: str = Field()
+    sort_by: str
+    sort_order: str
 
-    sort_order: str = Field()
+    grouped: bool = False
+
+    group_key: str | None = None

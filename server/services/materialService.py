@@ -1,4 +1,7 @@
+from collections import defaultdict
+
 import uuid
+from hashlib import md5
 
 from sqlalchemy.exc import IntegrityError
 
@@ -14,6 +17,13 @@ from server.exceptions.materialExceptions import (
 )
 
 from server.exceptions.authExceptions import AccessDenied
+from server.utils.parse_composition import (
+    parse_composition, 
+    match_composition, 
+    normalize_composition, 
+    build_group_key,
+    decode_group_key
+)
 
 class MaterialService:
 
@@ -37,6 +47,62 @@ class MaterialService:
             "composition": material.composition,
             "density": material.density
         }
+
+    from collections import defaultdict
+
+
+    def _format_grouped_answer(self, materials: list[Material]) -> list[dict]:
+
+        grouped = defaultdict(list)
+
+        for material in materials:
+
+            key = (
+                material.type,
+                material.color,
+                material.manufacturer,
+                normalize_composition(material.composition)
+            )
+
+            grouped[key].append(material)
+
+        result = []
+
+        for key, items in grouped.items():
+
+            if len(items) == 1:
+
+                result.append({
+                    "is_group": False,
+                    **self._format_answer(items[0])
+                })
+
+                continue
+
+            group_key = build_group_key(items[0])
+
+            result.append({
+                "is_group": True,
+
+                "group_key": group_key,
+
+                "count": len(items),
+
+                "material_type": items[0].type,
+                "color": items[0].color,
+                "manufacturer": items[0].manufacturer,
+
+                "initial_length": sum(
+                    x.initial_length for x in items
+                ),
+
+                "current_length": sum(
+                    x.current_length for x in items
+                ),
+
+            })
+
+        return result
 
     def create_material(
         self,
@@ -83,12 +149,30 @@ class MaterialService:
         if filters.sort_by and filters.sort_by not in ["id", "name", "current_length"]:
             raise MaterialInvalidData(f"Катушки не сортируются по {filters.sort_by}")
 
+        if filters.group_key:
+            parse_gkey = decode_group_key(filters.group_key)
+            filters = filters.model_copy(update={
+                "material_type": parse_gkey["type"],
+                "manufacturer": parse_gkey["manufacturer"],
+                "color": parse_gkey["color"],
+                "composition": parse_gkey["composition"],
+            })
+
         materials = self.repo.get_all_by_owner(db, owner_id, filters)
+
+        parsed_composition = parse_composition(filters.composition)
+
+        filtered_materials = [
+            m for m in materials
+            if not parsed_composition or match_composition(m.composition, parsed_composition)
+        ]
+
+        if filters.grouped:
+            return self._format_grouped_answer(filtered_materials)
 
         return [
             self._format_answer(material)
-
-            for material in materials
+            for material in filtered_materials
         ]
 
     def get_actual_properties(self, db, owner_id: int, field: str) -> list[str]:
