@@ -52,7 +52,7 @@ def get_all_materials(
 ):
 
     if group_key:
-        grouped = None
+        grouped = False
 
     materialFilter = MaterialFilters(
         name=name,
