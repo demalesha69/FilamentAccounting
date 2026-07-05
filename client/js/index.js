@@ -1772,6 +1772,10 @@ function toggleQRScanner() {
 }
 
 async function startQRScanner() {
+	    if (window.Android?.scanQR) {
+        window.Android.scanQR();
+        return;
+    }
     const resultsDiv = document.getElementById('qr-reader-results');
     const toggleBtn = document.getElementById('qrScannerToggleBtn');
     

@@ -105,10 +105,11 @@ body {
     white-space: nowrap;
 }
 
+/* ========== SEARCH SECTION - FULL WIDTH ========== */
 .search-section {
-    display: grid;
-    grid-template-columns: 1fr 56px;
+    display: flex;
     gap: 12px;
+    width: 100%;
 }
 
 .search-box {
@@ -119,11 +120,14 @@ body {
     border-radius: 16px;
     padding: 0 18px;
     height: 56px;
+    flex: 1;
+    min-width: 0;
 }
 
 .search-box i {
     color: #9ca3af;
     font-size: 18px;
+    flex-shrink: 0;
 }
 
 .search-box input {
@@ -134,6 +138,7 @@ body {
     color: #ffffff;
     font-size: 16px;
     min-width: 0;
+    width: 100%;
 }
 
 .search-box input::placeholder {
@@ -410,6 +415,18 @@ body {
     max-height: calc(100% - 40px);
     overflow-y: auto;
     margin: auto;
+    animation: modalSlideUp 0.3s ease;
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .modal-small {
@@ -426,11 +443,15 @@ body {
     align-items: center;
     margin-bottom: 20px;
     flex-shrink: 0;
+    gap: 12px;
 }
 
 .modal-header h2 {
     color: #ffffff;
     font-size: 20px;
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
 }
 
 .modal-close {
@@ -440,6 +461,8 @@ body {
     font-size: 24px;
     cursor: pointer;
     padding: 4px 8px;
+    flex-shrink: 0;
+    transition: color 0.2s;
 }
 
 .modal-close:hover {
@@ -450,6 +473,232 @@ body {
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+/* ===== АДАПТАЦИЯ МОДАЛЬНЫХ ОКОН ПОД ТЕЛЕФОНЫ ===== */
+
+/* Планшеты */
+@media (max-width: 768px) {
+    .modal {
+        max-width: 90%;
+        padding: 20px;
+    }
+    
+    .modal-wide {
+        max-width: 95%;
+    }
+    
+    .modal-small {
+        max-width: 85%;
+    }
+}
+
+/* Телефоны */
+@media (max-width: 600px) {
+    .modal-overlay {
+        padding: 8px;
+        align-items: flex-end;
+    }
+    
+    .modal {
+        max-width: 100%;
+        width: 100%;
+        max-height: calc(100% - 20px);
+        padding: 18px;
+        border-radius: 16px 16px 0 0;
+        margin: 0;
+        animation: modalSlideUpMobile 0.3s ease;
+    }
+    
+    @keyframes modalSlideUpMobile {
+        from {
+            opacity: 0;
+            transform: translateY(50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .modal-wide {
+        max-width: 100%;
+        padding: 18px;
+        border-radius: 16px 16px 0 0;
+    }
+    
+    .modal-small {
+        max-width: 100%;
+        padding: 18px;
+        border-radius: 16px 16px 0 0;
+    }
+    
+    .modal-header h2 {
+        font-size: 18px;
+    }
+    
+    .modal-close {
+        font-size: 22px;
+    }
+    
+    .modal-body {
+        gap: 12px;
+    }
+}
+
+/* Маленькие телефоны */
+@media (max-width: 480px) {
+    .modal-overlay {
+        padding: 4px;
+    }
+    
+    .modal {
+        padding: 16px;
+        max-height: calc(100% - 10px);
+        border-radius: 14px 14px 0 0;
+    }
+    
+    .modal-wide {
+        padding: 16px;
+        border-radius: 14px 14px 0 0;
+    }
+    
+    .modal-small {
+        padding: 16px;
+        border-radius: 14px 14px 0 0;
+    }
+    
+    .modal-header h2 {
+        font-size: 16px;
+    }
+    
+    .modal-close {
+        font-size: 20px;
+    }
+    
+    .modal-body {
+        gap: 10px;
+    }
+}
+
+/* Очень маленькие телефоны */
+@media (max-width: 360px) {
+    .modal {
+        padding: 14px;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .modal-wide {
+        padding: 14px;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .modal-small {
+        padding: 14px;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .modal-header h2 {
+        font-size: 15px;
+    }
+    
+    .modal-close {
+        font-size: 18px;
+    }
+    
+    .modal-body {
+        gap: 8px;
+    }
+    
+    .modal-header {
+        margin-bottom: 14px;
+    }
+}
+
+/* Альбомная ориентация на телефонах */
+@media (max-height: 600px) and (orientation: landscape) {
+    .modal-overlay {
+        align-items: center;
+        padding: 8px;
+    }
+    
+    .modal {
+        max-height: calc(100% - 20px);
+        padding: 14px;
+        border-radius: 16px;
+        animation: modalSlideUp 0.3s ease;
+    }
+    
+    .modal-wide {
+        padding: 14px;
+        border-radius: 16px;
+    }
+    
+    .modal-small {
+        padding: 14px;
+        border-radius: 16px;
+    }
+    
+    .modal-header h2 {
+        font-size: 16px;
+    }
+    
+    .modal-body {
+        gap: 8px;
+    }
+    
+    .modal-header {
+        margin-bottom: 12px;
+    }
+}
+
+/* ========== ФИЛЬТРЫ В МОДАЛЬНЫХ ОКНАХ ========== */
+.modal .filter-option {
+    padding: 10px 14px;
+    font-size: 14px;
+    min-height: 44px;
+}
+
+.modal .filter-label {
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+/* Адаптация фильтров на телефонах */
+@media (max-width: 480px) {
+    .modal .filter-option {
+        padding: 10px 12px;
+        font-size: 14px;
+        min-height: 40px;
+        border-radius: 10px;
+    }
+    
+    .modal .filter-option i {
+        font-size: 16px;
+        width: 18px;
+    }
+    
+    .modal .filter-label {
+        font-size: 11px;
+    }
+    
+    .modal .filter-divider {
+        margin: 6px 0;
+    }
+}
+
+@media (max-width: 360px) {
+    .modal .filter-option {
+        padding: 8px 10px;
+        font-size: 13px;
+        min-height: 36px;
+        border-radius: 8px;
+    }
+    
+    .modal .filter-option i {
+        font-size: 14px;
+        width: 16px;
+    }
 }
 
 /* ========== FILTERS ========== */
@@ -1271,6 +1520,55 @@ body {
     background-clip: text;
 }
 
+/* ========== СОСТАВ КАТУШКИ ========== */
+#compositionDetailBody {
+    padding: 4px 0;
+}
+
+#compositionDetailBody .composition-item-detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+#compositionDetailBody .composition-item-detail:last-child {
+    border-bottom: none;
+}
+
+#compositionDetailBody .composition-material-name {
+    color: #ffffff;
+    font-size: 14px;
+}
+
+#compositionDetailBody .composition-percent {
+    color: #8b5cf6;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+#compositionDetailBody .composition-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0 4px 0;
+    border-top: 2px solid rgba(139,92,246,0.3);
+    margin-top: 4px;
+}
+
+#compositionDetailBody .composition-total-label {
+    color: #9ca3af;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+#compositionDetailBody .composition-total-value {
+    color: #4ade80;
+    font-weight: 700;
+    font-size: 15px;
+}
+
 /* ========== RESPONSIVE ========== */
 
 /* Планшеты */
@@ -1467,11 +1765,6 @@ body {
     
     .nav-item span {
         font-size: 10px;
-    }
-    
-    .modal {
-        padding: 18px;
-        border-radius: 16px;
     }
     
     .modal-header h2 {
@@ -1986,52 +2279,4 @@ body {
     .nav-item span {
         font-size: 9px;
     }
-}
-/* ========== СОСТАВ КАТУШКИ ========== */
-#compositionDetailBody {
-    padding: 4px 0;
-}
-
-#compositionDetailBody .composition-item-detail {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-}
-
-#compositionDetailBody .composition-item-detail:last-child {
-    border-bottom: none;
-}
-
-#compositionDetailBody .composition-material-name {
-    color: #ffffff;
-    font-size: 14px;
-}
-
-#compositionDetailBody .composition-percent {
-    color: #8b5cf6;
-    font-weight: 600;
-    font-size: 14px;
-}
-
-#compositionDetailBody .composition-total {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0 4px 0;
-    border-top: 2px solid rgba(139,92,246,0.3);
-    margin-top: 4px;
-}
-
-#compositionDetailBody .composition-total-label {
-    color: #9ca3af;
-    font-weight: 500;
-    font-size: 13px;
-}
-
-#compositionDetailBody .composition-total-value {
-    color: #4ade80;
-    font-weight: 700;
-    font-size: 15px;
 }
