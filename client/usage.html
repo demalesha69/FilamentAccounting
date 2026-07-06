@@ -82,7 +82,7 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body modal-scrollable">
             <div class="form-group">
                 <label for="consumptionMaterialSelect"><i class="fa-solid fa-box"></i> Катушка</label>
                 <select id="consumptionMaterialSelect" class="styled-select">
@@ -90,12 +90,10 @@
                 </select>
             </div>
             
-            <!-- Кнопка переключения режима -->
             <button class="auth-button" id="fileUploadBtn" onclick="toggleFileUpload()" type="button" style="background:#232734; color:#9ca3af; font-size:14px; padding:10px; margin-top:0;">
                 Загрузить файл слайсера
             </button>
             
-            <!-- Область загрузки файла -->
             <div id="fileUploadArea" style="display:none; flex-direction:column; gap:12px; margin-top:8px;">
                 <div style="border:2px dashed rgba(255,255,255,0.1); border-radius:16px; padding:20px; text-align:center; background:#1a1d26; cursor:pointer;" 
                      onclick="document.getElementById('fileInput').click()">
@@ -105,7 +103,6 @@
                 </div>
                 <input type="file" id="fileInput" accept=".gcode,.bgcode,.3mf" style="display:none;" onchange="handleFileSelect(event)" />
                 
-                <!-- Информация о загруженном файле -->
                 <div id="fileInfo" style="display:none; background:#232734; border-radius:10px; padding:10px 14px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
@@ -118,14 +115,11 @@
                     </div>
                 </div>
                 
-                <!-- Результат парсинга -->
                 <div id="fileParsedInfo" style="display:none;"></div>
                 
-                <!-- Селектор инструментов для многокатушечных файлов -->
                 <div id="toolSelector" style="display:none;"></div>
             </div>
             
-            <!-- Область ручного ввода -->
             <div id="manualInputArea" style="display:block;">
                 <div class="form-group" style="margin-top:8px;">
                     <label for="consumptionTitle"><i class="fa-solid fa-pen"></i> Название действия</label>
@@ -136,7 +130,6 @@
                     <input type="number" id="consumptionLength" placeholder="1000" value="1000" step="1" />
                 </div>
                 
-                <!-- ВЫБОР СТАТУСА ПЕЧАТИ -->
                 <div class="form-group">
                     <label for="printStatus"><i class="fa-solid fa-circle-check"></i> Статус печати</label>
                     <select id="printStatus" class="styled-select">
@@ -147,9 +140,11 @@
                 </div>
             </div>
             
-            <button class="auth-button" id="addConsumptionBtn" disabled>
-                <i class="fa-solid fa-floppy-disk"></i> Сохранить расход
-            </button>
+            <div class="modal-footer">
+                <button class="auth-button" id="addConsumptionBtn" disabled>
+                    <i class="fa-solid fa-floppy-disk"></i> Сохранить расход
+                </button>
+            </div>
         </div>
     </div>
 </div>
