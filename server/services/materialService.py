@@ -177,7 +177,7 @@ class MaterialService:
 
     def get_actual_properties(self, db, owner_id: int, field: str) -> list[str]:
 
-        if field not in ["type", "color", "manufacturer"]:
+        if field not in ["type", "color", "manufacturer", "composition"]:
             raise MaterialInvalidData(f"У Maeterial нет поля {field}")
 
         actual_properties = self.repo.get_user_properties(db, owner_id, field)

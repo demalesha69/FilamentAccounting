@@ -1,3 +1,5 @@
+from sqlalchemy import func
+
 from sqlalchemy.orm import Session
 
 from database.models.material import Material
@@ -69,10 +71,23 @@ class MaterialRepository:
         )
 
     def get_user_properties(self, db: Session, owner_id: int, field: str) -> list[tuple]:
+        column = getattr(Material, field)
+
+        if field != "composition":
+            return (
+                db.query(column)
+                .filter(Material.owner_id == owner_id)
+                .group_by(column)
+                .all()
+            )
+
         return (
-            db.query(getattr(Material, field))
+            db.query(
+                func.distinct(
+                    func.jsonb_array_elements(column).op("->>")("material")
+                )
+            )
             .filter(Material.owner_id == owner_id)
-            .group_by(getattr(Material, field))
             .all()
         )
 
