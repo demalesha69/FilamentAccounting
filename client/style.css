@@ -388,7 +388,7 @@ body {
     font-size: 11px;
 }
 
-/* ========== МОДАЛЬНЫЕ ОКНА - УЛУЧШЕННАЯ ВЕРСИЯ ========== */
+/* ========== МОДАЛЬНЫЕ ОКНА - С SAFE AREA ========== */
 
 .modal-overlay {
     display: none;
@@ -403,8 +403,11 @@ body {
     justify-content: center;
     align-items: center;
     padding: 12px;
+    padding-top: calc(12px + var(--safe-top));
+    padding-bottom: calc(12px + var(--safe-bottom));
+    padding-left: calc(12px + var(--safe-left));
+    padding-right: calc(12px + var(--safe-right));
     overflow: hidden;
-    /* Важно: оверлей не скроллится, скроллится только модальное окно */
 }
 
 .modal {
@@ -423,7 +426,6 @@ body {
     position: relative;
 }
 
-/* Для очень длинных модальных окон - делаем скролл внутри */
 .modal-scrollable {
     flex: 1;
     overflow-y: auto;
@@ -431,7 +433,6 @@ body {
     padding-right: 4px;
 }
 
-/* Скрываем скроллбар, но оставляем возможность скроллить */
 .modal-scrollable::-webkit-scrollbar {
     width: 4px;
 }
@@ -491,7 +492,6 @@ body {
     overflow-y: visible;
 }
 
-/* Фиксируем кнопки внизу модального окна */
 .modal-footer {
     flex-shrink: 0;
     padding-top: 16px;
@@ -529,7 +529,7 @@ body {
     max-width: 600px;
 }
 
-/* ===== АДАПТАЦИЯ МОДАЛЬНЫХ ОКОН ПОД ТЕЛЕФОНЫ ===== */
+/* ===== АДАПТАЦИЯ МОДАЛЬНЫХ ОКОН ПОД ТЕЛЕФОНЫ С SAFE AREA ===== */
 
 /* Планшеты */
 @media (max-width: 768px) {
@@ -548,10 +548,14 @@ body {
     }
 }
 
-/* Телефоны - основная адаптация */
+/* Телефоны - основная адаптация с учетом safe area */
 @media (max-width: 600px) {
     .modal-overlay {
         padding: 8px;
+        padding-top: calc(8px + var(--safe-top));
+        padding-bottom: calc(8px + var(--safe-bottom));
+        padding-left: calc(8px + var(--safe-left));
+        padding-right: calc(8px + var(--safe-right));
         align-items: flex-end;
     }
     
@@ -560,9 +564,23 @@ body {
         width: 100%;
         max-height: calc(100% - 16px);
         padding: 16px 16px 20px 16px;
+        padding-top: calc(16px + var(--safe-top));
+        padding-bottom: calc(20px + var(--safe-bottom));
+        padding-left: calc(16px + var(--safe-left));
+        padding-right: calc(16px + var(--safe-right));
         border-radius: 16px 16px 0 0;
         margin: 0;
         animation: modalSlideUpMobile 0.3s ease;
+    }
+    
+    /* Для модальных окон, которые должны быть по центру на телефонах */
+    .modal-centered-on-mobile {
+        align-items: center;
+    }
+    
+    .modal-centered-on-mobile .modal {
+        border-radius: 16px;
+        max-height: calc(100% - 32px);
     }
     
     @keyframes modalSlideUpMobile {
@@ -579,18 +597,30 @@ body {
     .modal-wide {
         max-width: 100%;
         padding: 16px 16px 20px 16px;
+        padding-top: calc(16px + var(--safe-top));
+        padding-bottom: calc(20px + var(--safe-bottom));
+        padding-left: calc(16px + var(--safe-left));
+        padding-right: calc(16px + var(--safe-right));
         border-radius: 16px 16px 0 0;
     }
     
     .modal-small {
         max-width: 100%;
         padding: 16px 16px 20px 16px;
+        padding-top: calc(16px + var(--safe-top));
+        padding-bottom: calc(20px + var(--safe-bottom));
+        padding-left: calc(16px + var(--safe-left));
+        padding-right: calc(16px + var(--safe-right));
         border-radius: 16px 16px 0 0;
     }
     
     .modal-header {
         padding: 4px 0 10px 0;
         margin-bottom: 12px;
+        position: sticky;
+        top: 0;
+        background: #1a1d26;
+        z-index: 10;
     }
     
     .modal-header h2 {
@@ -611,31 +641,64 @@ body {
     .modal-footer {
         padding-top: 12px;
         margin-top: 8px;
+        position: sticky;
+        bottom: 0;
+        background: #1a1d26;
+        z-index: 10;
+        padding-bottom: calc(12px + var(--safe-bottom));
     }
 }
 
 /* Маленькие телефоны */
 @media (max-width: 480px) {
+    :root {
+        --header-height: calc(48px + var(--safe-top));
+        --search-height: 44px;
+        --top-section-height: calc(var(--header-height) + var(--search-height) + 24px);
+        --nav-height: calc(54px + var(--safe-bottom));
+        --content-padding: 12px;
+    }
+    
     .modal-overlay {
         padding: 4px;
+        padding-top: calc(4px + var(--safe-top));
+        padding-bottom: calc(4px + var(--safe-bottom));
+        padding-left: calc(4px + var(--safe-left));
+        padding-right: calc(4px + var(--safe-right));
         align-items: flex-end;
     }
     
     .modal {
         padding: 14px 14px 18px 14px;
+        padding-top: calc(14px + var(--safe-top));
+        padding-bottom: calc(18px + var(--safe-bottom));
+        padding-left: calc(14px + var(--safe-left));
+        padding-right: calc(14px + var(--safe-right));
         max-height: calc(100% - 8px);
         border-radius: 14px 14px 0 0;
         max-width: 100%;
         width: 100%;
     }
     
+    .modal-centered-on-mobile .modal {
+        border-radius: 14px;
+    }
+    
     .modal-wide {
         padding: 14px 14px 18px 14px;
+        padding-top: calc(14px + var(--safe-top));
+        padding-bottom: calc(18px + var(--safe-bottom));
+        padding-left: calc(14px + var(--safe-left));
+        padding-right: calc(14px + var(--safe-right));
         border-radius: 14px 14px 0 0;
     }
     
     .modal-small {
         padding: 14px 14px 18px 14px;
+        padding-top: calc(14px + var(--safe-top));
+        padding-bottom: calc(18px + var(--safe-bottom));
+        padding-left: calc(14px + var(--safe-left));
+        padding-right: calc(14px + var(--safe-right));
         border-radius: 14px 14px 0 0;
     }
     
@@ -659,6 +722,142 @@ body {
     .modal-footer {
         padding-top: 10px;
         gap: 8px;
+        padding-bottom: calc(10px + var(--safe-bottom));
+    }
+    
+    .top-section-inner {
+        padding: 6px var(--content-padding) 10px;
+    }
+    
+    .header {
+        gap: 8px;
+        margin-bottom: 10px;
+        min-height: 36px;
+    }
+    
+    .logo {
+        font-size: 20px;
+    }
+    
+    .icon-button {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+        border-radius: 10px;
+    }
+    
+    #usernameDisplay {
+        font-size: 13px;
+    }
+    
+    .search-box {
+        height: 44px;
+        padding: 0 14px;
+        border-radius: 12px;
+    }
+    
+    .search-box input {
+        font-size: 15px;
+    }
+    
+    .search-box i {
+        font-size: 16px;
+    }
+    
+    .filter-button {
+        width: 44px;
+        height: 44px;
+        font-size: 16px;
+        border-radius: 12px;
+    }
+    
+    .content {
+        padding: var(--content-padding);
+        padding-bottom: calc(var(--nav-height) + var(--content-padding) + 12px);
+    }
+    
+    .content-padded {
+        padding-bottom: calc(var(--nav-height) + var(--content-padding) + 70px);
+    }
+    
+    .filament-grid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 10px;
+    }
+    
+    .filament-card {
+        padding: 12px;
+        min-height: 140px;
+        border-radius: 14px;
+    }
+    
+    .progress-ring {
+        --size: 52px;
+    }
+    
+    .progress-ring::before {
+        --size: 38px;
+    }
+    
+    .progress-ring span {
+        font-size: 12px;
+    }
+    
+    .filament-info h2 {
+        font-size: 15px;
+    }
+    
+    .filament-color {
+        font-size: 12px;
+    }
+    
+    .filament-info p {
+        font-size: 11px;
+    }
+    
+    .weight-info {
+        font-size: 12px;
+    }
+    
+    .weight-dot {
+        width: 6px;
+        height: 6px;
+    }
+    
+    .fab-group {
+        gap: 8px;
+        bottom: calc(var(--nav-height) + var(--content-padding) + 4px);
+        right: calc(var(--content-padding) + var(--safe-right));
+    }
+    
+    .fab-button {
+        width: 52px;
+        height: 52px;
+        font-size: 18px;
+    }
+    
+    .fab-single .fab-button {
+        width: 52px;
+        height: 52px;
+        font-size: 18px;
+    }
+    
+    .fab-single {
+        bottom: calc(var(--nav-height) + var(--content-padding) + 4px);
+        right: calc(var(--content-padding) + var(--safe-right));
+    }
+    
+    .bottom-nav {
+        height: calc(60px + var(--safe-bottom));
+        padding-bottom: var(--safe-bottom);
+    }
+    
+    .nav-item i {
+        font-size: 17px;
+    }
+    
+    .nav-item span {
+        font-size: 10px;
     }
 }
 
@@ -666,17 +865,33 @@ body {
 @media (max-width: 380px) {
     .modal {
         padding: 12px 12px 16px 12px;
+        padding-top: calc(12px + var(--safe-top));
+        padding-bottom: calc(16px + var(--safe-bottom));
+        padding-left: calc(12px + var(--safe-left));
+        padding-right: calc(12px + var(--safe-right));
         border-radius: 12px 12px 0 0;
         max-height: calc(100% - 4px);
     }
     
+    .modal-centered-on-mobile .modal {
+        border-radius: 12px;
+    }
+    
     .modal-wide {
         padding: 12px 12px 16px 12px;
+        padding-top: calc(12px + var(--safe-top));
+        padding-bottom: calc(16px + var(--safe-bottom));
+        padding-left: calc(12px + var(--safe-left));
+        padding-right: calc(12px + var(--safe-right));
         border-radius: 12px 12px 0 0;
     }
     
     .modal-small {
         padding: 12px 12px 16px 12px;
+        padding-top: calc(12px + var(--safe-top));
+        padding-bottom: calc(16px + var(--safe-bottom));
+        padding-left: calc(12px + var(--safe-left));
+        padding-right: calc(12px + var(--safe-right));
         border-radius: 12px 12px 0 0;
     }
     
@@ -700,6 +915,7 @@ body {
     .modal-footer {
         padding-top: 8px;
         gap: 6px;
+        padding-bottom: calc(8px + var(--safe-bottom));
     }
     
     .modal-footer .auth-button {
@@ -714,11 +930,19 @@ body {
     .modal-overlay {
         align-items: center;
         padding: 8px 12px;
+        padding-top: calc(8px + var(--safe-top));
+        padding-bottom: calc(8px + var(--safe-bottom));
+        padding-left: calc(12px + var(--safe-left));
+        padding-right: calc(12px + var(--safe-right));
     }
     
     .modal {
         max-height: calc(100% - 20px);
         padding: 12px 16px 14px 16px;
+        padding-top: calc(12px + var(--safe-top));
+        padding-bottom: calc(14px + var(--safe-bottom));
+        padding-left: calc(16px + var(--safe-left));
+        padding-right: calc(16px + var(--safe-right));
         border-radius: 14px;
         max-width: 90%;
         animation: modalSlideUp 0.3s ease;
@@ -726,12 +950,20 @@ body {
     
     .modal-wide {
         padding: 12px 16px 14px 16px;
+        padding-top: calc(12px + var(--safe-top));
+        padding-bottom: calc(14px + var(--safe-bottom));
+        padding-left: calc(16px + var(--safe-left));
+        padding-right: calc(16px + var(--safe-right));
         border-radius: 14px;
         max-width: 95%;
     }
     
     .modal-small {
         padding: 12px 16px 14px 16px;
+        padding-top: calc(12px + var(--safe-top));
+        padding-bottom: calc(14px + var(--safe-bottom));
+        padding-left: calc(16px + var(--safe-left));
+        padding-right: calc(16px + var(--safe-right));
         border-radius: 14px;
         max-width: 85%;
     }
@@ -751,8 +983,11 @@ body {
     
     .modal-footer {
         padding-top: 8px;
+        padding-bottom: calc(8px + var(--safe-bottom));
     }
 }
+
+/* ========== ОСТАЛЬНЫЕ СТИЛИ ОСТАЮТСЯ БЕЗ ИЗМЕНЕНИЙ ========== */
 
 /* ========== ФИЛЬТРЫ В МОДАЛЬНЫХ ОКНАХ ========== */
 
@@ -839,208 +1074,6 @@ body {
 .filter-reset:hover {
     background: #232734;
     color: #ffffff;
-}
-
-/* Контейнеры для фильтров с прокруткой */
-#manufacturerFilterContainer,
-#colorFilterContainer,
-#typeFilterContainer,
-#compositionFilterContainer {
-    display: none;
-    flex-direction: column;
-    gap: 4px;
-    max-height: 120px;
-    overflow-y: auto;
-    padding-right: 4px;
-    margin-left: 4px;
-    -webkit-overflow-scrolling: touch;
-}
-
-#manufacturerFilterContainer::-webkit-scrollbar,
-#colorFilterContainer::-webkit-scrollbar,
-#typeFilterContainer::-webkit-scrollbar,
-#compositionFilterContainer::-webkit-scrollbar {
-    width: 3px;
-}
-
-#manufacturerFilterContainer::-webkit-scrollbar-track,
-#colorFilterContainer::-webkit-scrollbar-track,
-#typeFilterContainer::-webkit-scrollbar-track,
-#compositionFilterContainer::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-#manufacturerFilterContainer::-webkit-scrollbar-thumb,
-#colorFilterContainer::-webkit-scrollbar-thumb,
-#typeFilterContainer::-webkit-scrollbar-thumb,
-#compositionFilterContainer::-webkit-scrollbar-thumb {
-    background: #4a4a5a;
-    border-radius: 4px;
-}
-
-#manufacturerFilterContainer .filter-option,
-#colorFilterContainer .filter-option,
-#typeFilterContainer .filter-option,
-#compositionFilterContainer .filter-option {
-    padding: 8px 12px;
-    font-size: 13px;
-    min-height: 36px;
-}
-
-/* Адаптация фильтров на телефонах */
-@media (max-width: 480px) {
-    .filter-option {
-        padding: 8px 12px;
-        font-size: 14px;
-        min-height: 40px;
-        border-radius: 10px;
-    }
-    
-    .filter-option i {
-        font-size: 15px;
-        width: 18px;
-    }
-    
-    .filter-label {
-        font-size: 10px;
-    }
-    
-    .filter-divider {
-        margin: 4px 0;
-    }
-    
-    .filter-reset {
-        padding: 8px;
-        font-size: 13px;
-        min-height: 38px;
-    }
-    
-    #manufacturerFilterContainer,
-    #colorFilterContainer,
-    #typeFilterContainer,
-    #compositionFilterContainer {
-        max-height: 100px;
-    }
-    
-    #manufacturerFilterContainer .filter-option,
-    #colorFilterContainer .filter-option,
-    #typeFilterContainer .filter-option,
-    #compositionFilterContainer .filter-option {
-        padding: 6px 10px;
-        font-size: 12px;
-        min-height: 32px;
-    }
-}
-
-@media (max-width: 380px) {
-    .filter-option {
-        padding: 6px 10px;
-        font-size: 13px;
-        min-height: 34px;
-        border-radius: 8px;
-    }
-    
-    .filter-option i {
-        font-size: 13px;
-        width: 16px;
-    }
-    
-    #manufacturerFilterContainer,
-    #colorFilterContainer,
-    #typeFilterContainer,
-    #compositionFilterContainer {
-        max-height: 80px;
-    }
-}
-
-/* ========== ОСОБЫЕ СЛУЧАИ ========== */
-
-/* Для модального окна фильтров - делаем его компактнее */
-#filterModal .modal {
-    max-width: 420px;
-}
-
-#filterModal .modal-body {
-    gap: 8px;
-}
-
-/* Для модального окна состава */
-#compositionModal .modal-body {
-    max-height: none;
-}
-
-#compositionList {
-    max-height: 200px;
-    overflow-y: auto;
-    padding-right: 4px;
-    -webkit-overflow-scrolling: touch;
-}
-
-#compositionList::-webkit-scrollbar {
-    width: 3px;
-}
-
-#compositionList::-webkit-scrollbar-thumb {
-    background: #4a4a5a;
-    border-radius: 4px;
-}
-
-/* Для модального окна QR-сканера */
-#qrScannerModal .modal {
-    max-width: 520px;
-}
-
-#qr-reader {
-    min-height: 200px;
-    max-height: 300px;
-    overflow: hidden;
-}
-
-#qr-reader video {
-    width: 100% !important;
-    height: auto !important;
-    max-height: 280px;
-    object-fit: cover;
-}
-
-/* Для модального окна добавления расхода */
-#addConsumptionModal .modal-body {
-    gap: 10px;
-}
-
-#addConsumptionModal .form-group {
-    flex-shrink: 0;
-}
-
-#fileParsedInfo {
-    max-height: 150px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-#fileParsedInfo::-webkit-scrollbar {
-    width: 3px;
-}
-
-#fileParsedInfo::-webkit-scrollbar-thumb {
-    background: #4a4a5a;
-    border-radius: 4px;
-}
-
-/* Стили для скролла внутри модальных окон на iOS */
-@supports (-webkit-touch-callout: none) {
-    .modal {
-        -webkit-overflow-scrolling: touch;
-    }
-    .modal-body {
-        -webkit-overflow-scrolling: touch;
-    }
-    #manufacturerFilterContainer,
-    #colorFilterContainer,
-    #typeFilterContainer,
-    #compositionFilterContainer {
-        -webkit-overflow-scrolling: touch;
-    }
 }
 
 /* ========== COLOR PICKER ========== */
@@ -1713,40 +1746,47 @@ body {
 /* ========== КОНТЕЙНЕРЫ ДЛЯ ФИЛЬТРОВ ========== */
 #manufacturerFilterContainer,
 #colorFilterContainer,
-#typeFilterContainer {
-    display: flex;
+#typeFilterContainer,
+#compositionFilterContainer {
+    display: none;
     flex-direction: column;
     gap: 4px;
-    max-height: 150px;
+    max-height: 120px;
     overflow-y: auto;
     padding-right: 4px;
-}
-
-#manufacturerFilterContainer .filter-option,
-#colorFilterContainer .filter-option,
-#typeFilterContainer .filter-option {
-    padding: 8px 12px;
-    font-size: 13px;
-    min-height: 36px;
+    margin-left: 4px;
+    -webkit-overflow-scrolling: touch;
 }
 
 #manufacturerFilterContainer::-webkit-scrollbar,
 #colorFilterContainer::-webkit-scrollbar,
-#typeFilterContainer::-webkit-scrollbar {
-    width: 4px;
+#typeFilterContainer::-webkit-scrollbar,
+#compositionFilterContainer::-webkit-scrollbar {
+    width: 3px;
 }
 
 #manufacturerFilterContainer::-webkit-scrollbar-track,
 #colorFilterContainer::-webkit-scrollbar-track,
-#typeFilterContainer::-webkit-scrollbar-track {
+#typeFilterContainer::-webkit-scrollbar-track,
+#compositionFilterContainer::-webkit-scrollbar-track {
     background: transparent;
 }
 
 #manufacturerFilterContainer::-webkit-scrollbar-thumb,
 #colorFilterContainer::-webkit-scrollbar-thumb,
-#typeFilterContainer::-webkit-scrollbar-thumb {
+#typeFilterContainer::-webkit-scrollbar-thumb,
+#compositionFilterContainer::-webkit-scrollbar-thumb {
     background: #4a4a5a;
     border-radius: 4px;
+}
+
+#manufacturerFilterContainer .filter-option,
+#colorFilterContainer .filter-option,
+#typeFilterContainer .filter-option,
+#compositionFilterContainer .filter-option {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-height: 36px;
 }
 
 /* ========== COLORS ========== */
@@ -1860,728 +1900,161 @@ body {
         width: 100%;
         min-width: unset;
     }
-    
-    .modal-wide {
-        max-width: 100%;
-        padding: 18px;
-    }
-    
-    .modal-small {
-        max-width: 100%;
-        padding: 18px;
-    }
-    
-    .modal {
-        max-height: calc(100% - 20px);
-        padding: 18px;
-        border-radius: 16px;
-    }
-    
-    .modal-overlay {
-        padding: 10px;
-    }
 }
 
-/* Маленькие телефоны */
+/* Маленькие телефоны - дополнительные стили для фильтров */
 @media (max-width: 480px) {
-    :root {
-        --header-height: calc(48px + var(--safe-top));
-        --search-height: 44px;
-        --top-section-height: calc(var(--header-height) + var(--search-height) + 24px);
-        --nav-height: calc(54px + var(--safe-bottom));
-        --content-padding: 12px;
-    }
-    
-    .top-section-inner {
-        padding: 6px var(--content-padding) 10px;
-    }
-    
-    .header {
-        gap: 8px;
-        margin-bottom: 10px;
-        min-height: 36px;
-    }
-    
-    .logo {
-        font-size: 20px;
-    }
-    
-    .icon-button {
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-        border-radius: 10px;
-    }
-    
-    #usernameDisplay {
-        font-size: 13px;
-    }
-    
-    .search-box {
-        height: 44px;
-        padding: 0 14px;
-        border-radius: 12px;
-    }
-    
-    .search-box input {
-        font-size: 15px;
-    }
-    
-    .search-box i {
-        font-size: 16px;
-    }
-    
-    .filter-button {
-        width: 44px;
-        height: 44px;
-        font-size: 16px;
-        border-radius: 12px;
-    }
-    
-    .content {
-        padding: var(--content-padding);
-        padding-bottom: calc(var(--nav-height) + var(--content-padding) + 12px);
-    }
-    
-    .content-padded {
-        padding-bottom: calc(var(--nav-height) + var(--content-padding) + 70px);
-    }
-    
-    .filament-grid {
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 10px;
-    }
-    
-    .filament-card {
-        padding: 12px;
-        min-height: 140px;
-        border-radius: 14px;
-    }
-    
-    .progress-ring {
-        --size: 52px;
-    }
-    
-    .progress-ring::before {
-        --size: 38px;
-    }
-    
-    .progress-ring span {
-        font-size: 12px;
-    }
-    
-    .filament-info h2 {
-        font-size: 15px;
-    }
-    
-    .filament-color {
-        font-size: 12px;
-    }
-    
-    .filament-info p {
-        font-size: 11px;
-    }
-    
-    .weight-info {
-        font-size: 12px;
-    }
-    
-    .weight-dot {
-        width: 6px;
-        height: 6px;
-    }
-    
-    .fab-group {
-        gap: 8px;
-        bottom: calc(var(--nav-height) + var(--content-padding) + 4px);
-        right: calc(var(--content-padding) + var(--safe-right));
-    }
-    
-    .fab-button {
-        width: 52px;
-        height: 52px;
-        font-size: 18px;
-    }
-    
-    .fab-single .fab-button {
-        width: 52px;
-        height: 52px;
-        font-size: 18px;
-    }
-    
-    .fab-single {
-        bottom: calc(var(--nav-height) + var(--content-padding) + 4px);
-        right: calc(var(--content-padding) + var(--safe-right));
-    }
-    
-    .bottom-nav {
-        height: calc(60px + var(--safe-bottom));
-        padding-bottom: var(--safe-bottom);
-    }
-    
-    .nav-item i {
-        font-size: 17px;
-    }
-    
-    .nav-item span {
-        font-size: 10px;
-    }
-    
-    .modal-header h2 {
-        font-size: 18px;
-    }
-    
-    .modal-close {
-        font-size: 22px;
-    }
-    
-    .modal-body {
-        gap: 12px;
-    }
-    
-    .form-group label {
-        font-size: 14px;
-    }
-    
-    .form-group input[type="text"],
-    .form-group input[type="email"],
-    .form-group input[type="password"],
-    .form-group input[type="number"],
-    .form-group select {
-        padding: 10px 14px;
-        font-size: 15px;
-        height: 44px;
-        border-radius: 10px;
-    }
-    
-    .modal .form-group select,
-    #addFilamentModal .form-group select,
-    #addConsumptionModal .form-group select {
-        padding: 10px 32px 10px 14px;
-        font-size: 15px;
-        height: 44px;
-        border-radius: 10px;
-    }
-    
-    .auth-button {
-        padding: 12px;
-        font-size: 16px;
-        min-height: 46px;
-        border-radius: 10px;
-    }
-    
-    .color-option {
-        width: 30px;
-        height: 30px;
-    }
-    
-    .color-picker {
-        gap: 5px;
-        padding: 5px;
-    }
-    
-    .color-picker.expanded {
-        gap: 4px;
-        padding: 6px;
-    }
-    
     .filter-option {
-        padding: 10px 14px;
-        font-size: 15px;
-        min-height: 44px;
+        padding: 8px 12px;
+        font-size: 14px;
+        min-height: 40px;
         border-radius: 10px;
     }
     
     .filter-option i {
-        font-size: 17px;
-        width: 20px;
+        font-size: 15px;
+        width: 18px;
     }
     
     .filter-label {
-        font-size: 13px;
-    }
-    
-    .filter-reset {
-        padding: 10px;
-        font-size: 15px;
-        min-height: 44px;
-        border-radius: 10px;
+        font-size: 10px;
     }
     
     .filter-divider {
-        margin: 8px 0;
+        margin: 4px 0;
     }
     
-    .history-item {
-        padding: 12px 14px;
-        gap: 10px;
-        border-radius: 12px;
+    .filter-reset {
+        padding: 8px;
+        font-size: 13px;
+        min-height: 38px;
     }
     
-    .history-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 14px;
+    #manufacturerFilterContainer,
+    #colorFilterContainer,
+    #typeFilterContainer,
+    #compositionFilterContainer {
+        max-height: 100px;
     }
     
-    .history-title {
-        font-size: 14px;
-    }
-    
-    .history-meta {
+    #manufacturerFilterContainer .filter-option,
+    #colorFilterContainer .filter-option,
+    #typeFilterContainer .filter-option,
+    #compositionFilterContainer .filter-option {
+        padding: 6px 10px;
         font-size: 12px;
+        min-height: 32px;
     }
-    
-    .history-amount-remove,
-    .history-amount-add {
-        font-size: 14px;
-    }
-    
-    .stats-grid {
-        gap: 8px;
-    }
-    
-    .stat-card {
-        padding: 14px;
-        border-radius: 12px;
-    }
-    
-    .stat-value {
-        font-size: 26px;
-    }
-    
-    .stat-label {
-        font-size: 12px;
-    }
-    
-    .stats-controls {
-        gap: 8px;
-    }
-    
-    .stats-period {
-        gap: 4px;
-    }
-    
-    .period-btn {
-        padding: 4px 8px;
-        font-size: 11px;
-        height: 28px;
+}
+
+@media (max-width: 380px) {
+    .filter-option {
+        padding: 6px 10px;
+        font-size: 13px;
+        min-height: 34px;
         border-radius: 8px;
     }
     
-    .stats-custom input[type="date"] {
-        padding: 4px 8px;
-        font-size: 11px;
-        min-width: 80px;
-        height: 30px;
-    }
-    
-    .stats-custom span {
-        font-size: 12px;
-    }
-    
-    #detailBody .progress-ring {
-        --size: 70px;
-    }
-    
-    #detailBody .progress-ring span {
-        font-size: 14px;
-    }
-    
-    #detailBody h2 {
-        font-size: 18px;
-    }
-    
-    #detailBody p {
-        font-size: 15px;
-    }
-    
-    #detailBody .weight-info {
+    .filter-option i {
         font-size: 13px;
+        width: 16px;
     }
     
-    .auth-card {
-        padding: 24px 16px;
-    }
-    
-    .auth-header h1 {
-        font-size: 22px;
-    }
-    
-    .auth-header p {
-        font-size: 14px;
-    }
-    
-    #qr-reader {
-        min-height: 180px;
-    }
-    
-    #qr-reader button {
-        font-size: 11px !important;
-        padding: 5px 10px !important;
-    }
-    
-    .notification {
-        padding: 10px 20px;
-        font-size: 14px;
-        top: calc(12px + var(--safe-top));
-        min-width: 200px;
-    }
-    
-    .notification-content {
-        font-size: 14px;
-    }
-    
-    .notification-content i {
-        font-size: 18px;
+    #manufacturerFilterContainer,
+    #colorFilterContainer,
+    #typeFilterContainer,
+    #compositionFilterContainer {
+        max-height: 80px;
     }
 }
 
-/* Очень маленькие телефоны */
-@media (max-width: 400px) {
-    .filament-grid {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-    
-    .stats-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 6px;
-    }
-    
-    .stat-card {
-        padding: 10px;
-    }
-    
-    .stat-value {
-        font-size: 22px;
-    }
-    
-    .stat-label {
-        font-size: 11px;
-    }
-    
-    .logo {
-        font-size: 18px;
-    }
-    
+/* ========== ОСОБЫЕ СЛУЧАИ ========== */
+
+/* Для модального окна фильтров - делаем его компактнее */
+#filterModal .modal {
+    max-width: 420px;
+}
+
+#filterModal .modal-body {
+    gap: 8px;
+}
+
+/* Для модального окна состава */
+#compositionModal .modal-body {
+    max-height: none;
+}
+
+#compositionList {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 4px;
+    -webkit-overflow-scrolling: touch;
+}
+
+#compositionList::-webkit-scrollbar {
+    width: 3px;
+}
+
+#compositionList::-webkit-scrollbar-thumb {
+    background: #4a4a5a;
+    border-radius: 4px;
+}
+
+/* Для модального окна QR-сканера */
+#qrScannerModal .modal {
+    max-width: 520px;
+}
+
+#qr-reader {
+    min-height: 200px;
+    max-height: 300px;
+    overflow: hidden;
+}
+
+#qr-reader video {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 280px;
+    object-fit: cover;
+}
+
+/* Для модального окна добавления расхода */
+#addConsumptionModal .modal-body {
+    gap: 10px;
+}
+
+#addConsumptionModal .form-group {
+    flex-shrink: 0;
+}
+
+#fileParsedInfo {
+    max-height: 150px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#fileParsedInfo::-webkit-scrollbar {
+    width: 3px;
+}
+
+#fileParsedInfo::-webkit-scrollbar-thumb {
+    background: #4a4a5a;
+    border-radius: 4px;
+}
+
+/* Стили для скролла внутри модальных окон на iOS */
+@supports (-webkit-touch-callout: none) {
     .modal {
-        padding: 14px;
-        border-radius: 14px;
+        -webkit-overflow-scrolling: touch;
     }
-    
-    .modal-overlay {
-        padding: 8px;
+    .modal-body {
+        -webkit-overflow-scrolling: touch;
     }
-    
-    .fab-button {
-        width: 48px;
-        height: 48px;
-        font-size: 16px;
-    }
-    
-    .fab-single .fab-button {
-        width: 48px;
-        height: 48px;
-        font-size: 16px;
-    }
-    
-    .color-option {
-        width: 26px;
-        height: 26px;
-    }
-    
-    .color-picker.expanded {
-        gap: 3px;
-        padding: 5px;
-    }
-    
-    .period-btn {
-        font-size: 10px;
-        padding: 3px 6px;
-        height: 24px;
-    }
-    
-    .stats-custom input[type="date"] {
-        font-size: 10px;
-        padding: 3px 6px;
-        min-width: 70px;
-        height: 26px;
-    }
-}
-
-/* Супер маленькие телефоны */
-@media (max-width: 360px) {
-    .logo {
-        font-size: 16px;
-    }
-    
-    .stats-grid {
-        gap: 4px;
-    }
-    
-    .stat-card {
-        padding: 8px;
-    }
-    
-    .stat-value {
-        font-size: 18px;
-    }
-    
-    .stat-label {
-        font-size: 10px;
-    }
-    
-    .modal {
-        padding: 12px;
-        border-radius: 12px;
-    }
-    
-    .modal-header h2 {
-        font-size: 16px;
-    }
-    
-    .form-group label {
-        font-size: 13px;
-    }
-    
-    .form-group input[type="text"],
-    .form-group input[type="email"],
-    .form-group input[type="password"],
-    .form-group input[type="number"],
-    .form-group select {
-        padding: 8px 12px;
-        font-size: 14px;
-        height: 38px;
-    }
-    
-    .modal .form-group select,
-    #addFilamentModal .form-group select,
-    #addConsumptionModal .form-group select {
-        padding: 8px 28px 8px 12px;
-        font-size: 14px;
-        height: 38px;
-    }
-    
-    .auth-button {
-        padding: 10px;
-        font-size: 14px;
-        min-height: 40px;
-    }
-    
-    .top-section-inner {
-        padding: 4px var(--content-padding) 8px;
-    }
-    
-    .header {
-        margin-bottom: 6px;
-        min-height: 32px;
-    }
-    
-    .search-box {
-        height: 38px;
-        padding: 0 12px;
-    }
-    
-    .search-box input {
-        font-size: 14px;
-    }
-    
-    .filter-button {
-        width: 38px;
-        height: 38px;
-        font-size: 14px;
-    }
-    
-    .content {
-        padding-bottom: calc(var(--nav-height) + var(--content-padding) + 8px);
-    }
-    
-    .content-padded {
-        padding-bottom: calc(var(--nav-height) + var(--content-padding) + 60px);
-    }
-    
-    .bottom-nav {
-        height: calc(54px + var(--safe-bottom));
-        padding-bottom: var(--safe-bottom);
-    }
-    
-    .nav-item i {
-        font-size: 14px;
-    }
-    
-    .nav-item span {
-        font-size: 9px;
-    }
-}
-
-/* Альбомная ориентация */
-@media (max-height: 600px) and (orientation: landscape) {
-    :root {
-        --header-height: calc(40px + var(--safe-top));
-        --search-height: 36px;
-        --top-section-height: calc(var(--header-height) + var(--search-height) + 16px);
-        --content-padding: 8px;
-        --nav-height: calc(44px + var(--safe-bottom));
-    }
-    
-    .top-section-inner {
-        padding: 4px var(--content-padding) 6px;
-    }
-    
-    .header {
-        margin-bottom: 6px;
-        min-height: 28px;
-    }
-    
-    .logo {
-        font-size: 18px;
-    }
-    
-    .icon-button {
-        width: 32px;
-        height: 32px;
-        font-size: 14px;
-    }
-    
-    .search-box {
-        height: 36px;
-        padding: 0 12px;
-    }
-    
-    .search-box input {
-        font-size: 14px;
-    }
-    
-    .search-box i {
-        font-size: 14px;
-    }
-    
-    .filter-button {
-        width: 36px;
-        height: 36px;
-        font-size: 14px;
-    }
-    
-    .content {
-        padding: var(--content-padding);
-        padding-bottom: calc(var(--nav-height) + var(--content-padding) + 8px);
-    }
-    
-    .content-padded {
-        padding-bottom: calc(var(--nav-height) + var(--content-padding) + 50px);
-    }
-    
-    .filament-grid {
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 8px;
-    }
-    
-    .filament-card {
-        padding: 10px;
-        min-height: 100px;
-    }
-    
-    .progress-ring {
-        --size: 44px;
-    }
-    
-    .progress-ring::before {
-        --size: 34px;
-    }
-    
-    .progress-ring span {
-        font-size: 10px;
-    }
-    
-    .filament-info h2 {
-        font-size: 13px;
-    }
-    
-    .filament-color {
-        font-size: 11px;
-    }
-    
-    .weight-info {
-        font-size: 11px;
-    }
-    
-    .fab-button {
-        width: 40px;
-        height: 40px;
-        font-size: 14px;
-    }
-    
-    .fab-single .fab-button {
-        width: 40px;
-        height: 40px;
-        font-size: 14px;
-    }
-    
-    .fab-group {
-        gap: 6px;
-        bottom: calc(var(--nav-height) + var(--content-padding) + 4px);
-    }
-    
-    .fab-single {
-        bottom: calc(var(--nav-height) + var(--content-padding) + 4px);
-    }
-    
-    .bottom-nav {
-        height: calc(44px + var(--safe-bottom));
-        padding-bottom: var(--safe-bottom);
-    }
-    
-    .nav-item i {
-        font-size: 14px;
-    }
-    
-    .nav-item span {
-        font-size: 9px;
-    }
-}
-
-/* ===== СТИЛИ ДЛЯ ГРУПП ===== */
-
-.group-container {
-    border: 2px solid #8b5cf6 !important;
-    background: #1a1d26;
-    transition: all 0.3s ease;
-}
-
-.group-container .group-children {
-    animation: groupExpand 0.3s ease;
-}
-
-@keyframes groupExpand {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.group-toggle-btn:hover {
-    background: rgba(139, 92, 246, 0.25) !important;
-    border-color: #8b5cf6 !important;
-}
-
-.group-toggle-btn:active {
-    transform: scale(0.98);
-}
-
-/* Адаптация для телефонов */
-@media (max-width: 480px) {
-    .group-container .group-children {
-        grid-template-columns: 1fr !important;
-    }
-    
-    .group-toggle-btn {
-        font-size: 12px !important;
-        padding: 6px 10px !important;
+    #manufacturerFilterContainer,
+    #colorFilterContainer,
+    #typeFilterContainer,
+    #compositionFilterContainer {
+        -webkit-overflow-scrolling: touch;
     }
 }
 
@@ -2619,5 +2092,40 @@ body {
         width: 44px;
         font-size: 14px;
         border-radius: 12px;
+    }
+}
+
+/* Адаптация модальных окон для телефонов с вырезом */
+@supports (padding-top: env(safe-area-inset-top)) {
+    .modal-overlay {
+        padding-top: calc(12px + env(safe-area-inset-top, 0px));
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        padding-left: calc(12px + env(safe-area-inset-left, 0px));
+        padding-right: calc(12px + env(safe-area-inset-right, 0px));
+    }
+    
+    .modal {
+        padding-top: calc(24px + env(safe-area-inset-top, 0px));
+        padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        padding-left: calc(24px + env(safe-area-inset-left, 0px));
+        padding-right: calc(24px + env(safe-area-inset-right, 0px));
+    }
+    
+    @media (max-width: 600px) {
+        .modal {
+            padding-top: calc(16px + env(safe-area-inset-top, 0px));
+            padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+            padding-left: calc(16px + env(safe-area-inset-left, 0px));
+            padding-right: calc(16px + env(safe-area-inset-right, 0px));
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .modal {
+            padding-top: calc(14px + env(safe-area-inset-top, 0px));
+            padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+            padding-left: calc(14px + env(safe-area-inset-left, 0px));
+            padding-right: calc(14px + env(safe-area-inset-right, 0px));
+        }
     }
 }
