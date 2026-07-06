@@ -229,39 +229,20 @@
             <p style="color:#9ca3af; font-size:14px; margin-bottom:12px;">
                 Укажите состав материала в процентах. Сумма всех компонентов должна быть 100%.
             </p>
+            
+            <!-- БЛОК С РАСЧЕТОМ ПЛОТНОСТИ -->
+            <div style="background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.2); border-radius:8px; padding:10px; margin-bottom:12px;">
+                <p style="color:#8b5cf6; font-size:13px;">
+                    <i class="fa-solid fa-calculator"></i> 
+                    Плотность композита рассчитывается автоматически как средневзвешенная.
+                </p>
+                <p style="color:#9ca3af; font-size:12px; margin-top:4px;">
+                    Текущая расчетная плотность: <span id="calculatedDensity" style="color:#4ade80; font-weight:700;">1.24</span> г/см³
+                </p>
+            </div>
+            
             <div id="compositionList" style="display:flex; flex-direction:column; gap:8px;">
-                <div class="composition-item" style="display:flex; align-items:center; gap:10px; background:#232734; border-radius:10px; padding:8px 12px;">
-                    <select class="composition-material" style="flex:1; background:#1a1d26; border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px 12px; color:#ffffff; font-size:14px;">
-                        <option value="PLA">PLA</option>
-                        <option value="PETG">PETG</option>
-                        <option value="ABS">ABS</option>
-                        <option value="HIPS">HIPS</option>
-                        <option value="SBS">SBS</option>
-                        <option value="TPU">TPU</option>
-                        <option value="NYLON">NYLON</option>
-                        <option value="ASA">ASA</option>
-                        <option value="PP">PP</option>
-                        <option value="PC">PC</option>
-                        <option value="POM">POM</option>
-                        <option value="PMMA">PMMA</option>
-                        <option value="PEEK">PEEK</option>
-                        <option value="Ceramo">Ceramo</option>
-                        <option value="PVA">PVA</option>
-                        <option value="WAX">WAX</option>
-                        <option value="Clearing">Clearing</option>
-                        <option value="Углеволокно">Углеволокно</option>
-                        <option value="Стекловолокно">Стекловолокно</option>
-                        <option value="Кевлар">Кевлар</option>
-                        <option value="Металлик">Металлик</option>
-                        <option value="Дерево">Дерево</option>
-                        <option value="Светящийся">Светящийся</option>
-                        <option value="Другое">Другое</option>
-                    </select>
-                    <input type="number" class="composition-percent" placeholder="%" value="100" min="0" max="100" style="width:70px; background:#1a1d26; border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px 10px; color:#ffffff; font-size:14px; text-align:center;" />
-                    <button class="remove-composition" onclick="removeCompositionItem(0)" style="background:transparent; border:none; color:#ff5f5f; cursor:pointer; font-size:18px; padding:4px 8px;">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
+                <!-- Заполняется динамически -->
             </div>
             
             <button class="auth-button" onclick="addCompositionItem()" type="button" style="background:#232734; color:#9ca3af; font-size:14px; padding:10px; margin-top:4px; border:1px solid rgba(255,255,255,0.06);">

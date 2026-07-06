@@ -34,6 +34,34 @@ let currentGroupKey = null;
 
 const MAX_FILAMENT_LENGTH = 100000000;
 
+// ===== СЛОВАРЬ ПЛОТНОСТЕЙ МАТЕРИАЛОВ =====
+const MATERIAL_DENSITY = {
+    'pla': 1.24,
+    'petg': 1.27,
+    'abs': 1.04,
+    'hips': 1.04,
+    'sbs': 1.02,
+    'tpu': 1.20,
+    'nylon': 1.14,
+    'asa': 1.07,
+    'pp': 0.90,
+    'pc': 1.20,
+    'pom': 1.41,
+    'pmma': 1.18,
+    'peek': 1.32,
+    'ceramo': 1.20,
+    'pva': 1.19,
+    'wax': 0.95,
+    'clearing': 1.00,
+    'углеволокно': 1.80,
+    'стекловолокно': 1.40,
+    'кевлар': 1.44,
+    'металлик': 2.50,
+    'дерево': 0.60,
+    'светящийся': 1.20,
+    'другое': 1.00
+};
+
 const MATERIAL_DEFAULTS = {
     'pla': { density: 1.24, diameter: 1.75 },
     'petg': { density: 1.27, diameter: 1.75 },
@@ -204,11 +232,75 @@ function toggleAdvancedSettings() {
     }
 }
 
+// ===== РАСЧЕТ ПЛОТНОСТИ КОМПОЗИТА =====
+function calculateCompositeDensity(composition) {
+    if (!composition || composition.length === 0) {
+        return 1.24; // Плотность PLA по умолчанию
+    }
+    
+    // Проверяем, что сумма процентов = 100%
+    const totalPercent = composition.reduce((sum, item) => sum + (item.percent || 0), 0);
+    if (totalPercent === 0) return 1.24;
+    
+    let weightedDensity = 0;
+    for (const item of composition) {
+        const materialKey = item.material.toLowerCase();
+        const density = MATERIAL_DENSITY[materialKey] || 1.24;
+        const percent = (item.percent || 0) / 100;
+        weightedDensity += density * percent;
+    }
+    
+    // Если сумма не 100%, нормализуем
+    if (Math.abs(totalPercent - 100) > 0.01) {
+        weightedDensity = weightedDensity / (totalPercent / 100);
+    }
+    
+    return Math.round(weightedDensity * 100) / 100;
+}
+
+// ===== ОБНОВЛЕНИЕ ПОЛЯ ПЛОТНОСТИ ПРИ ИЗМЕНЕНИИ СОСТАВА =====
+function updateDensityFromComposition() {
+    const total = compositionData.reduce((sum, item) => sum + (item.percent || 0), 0);
+    const densityInput = document.getElementById('filamentDensity');
+    const calcDensityEl = document.getElementById('calculatedDensity');
+    
+    if (!densityInput) return;
+    
+    if (Math.abs(total - 100) > 0.01) {
+        // Если сумма не 100%, показываем предупреждение
+        densityInput.style.borderColor = '#f59e0b';
+        if (calcDensityEl) {
+            calcDensityEl.textContent = '— (сумма ≠ 100%)';
+            calcDensityEl.style.color = '#f59e0b';
+        }
+        return;
+    }
+    
+    const density = calculateCompositeDensity(compositionData);
+    densityInput.value = density;
+    densityInput.style.borderColor = '#4ade80';
+    
+    if (calcDensityEl) {
+        calcDensityEl.textContent = density.toFixed(2) + ' г/см³';
+        calcDensityEl.style.color = '#4ade80';
+    }
+}
+
 function updateAdvancedDefaults() {
     const type = document.getElementById('filamentType').value;
     const defaults = MATERIAL_DEFAULTS[type];
     if (defaults) {
-        document.getElementById('filamentDensity').value = defaults.density;
+        // Если состав не задан или это просто один компонент 100%
+        if (compositionData.length === 1 && compositionData[0].percent === 100) {
+            const densityInput = document.getElementById('filamentDensity');
+            if (densityInput) {
+                densityInput.value = defaults.density;
+                densityInput.style.borderColor = '';
+            }
+        } else {
+            // Если состав сложный, пересчитываем плотность
+            updateDensityFromComposition();
+        }
         document.getElementById('filamentDiameter').value = defaults.diameter;
     }
     syncCompositionWithType();
@@ -218,8 +310,10 @@ function syncCompositionWithType() {
     const type = document.getElementById('filamentType').value;
     if (!type) return;
     
+    // Если состав пустой или только один компонент с 100% того же типа
     if (compositionData.length === 0 || 
-        (compositionData.length === 1 && compositionData[0].percent === 100)) {
+        (compositionData.length === 1 && compositionData[0].percent === 100 && 
+         compositionData[0].material === type.toLowerCase())) {
         compositionData = [{ material: type.toLowerCase(), percent: 100 }];
         renderCompositionList();
         updateCompositionTotal();
@@ -393,6 +487,9 @@ function renderCompositionList() {
             updateCompositionTotal();
         });
     });
+    
+    // Обновляем плотность после рендера
+    updateDensityFromComposition();
 }
 
 function getMaterialOptions(selected) {
@@ -423,6 +520,9 @@ function updateCompositionTotal() {
         totalEl.textContent = Math.round(total);
         totalEl.style.color = Math.abs(total - 100) < 0.01 ? '#4ade80' : '#f59e0b';
     }
+    
+    // Обновляем плотность при изменении состава
+    updateDensityFromComposition();
 }
 
 function saveComposition() {
@@ -438,7 +538,15 @@ function saveComposition() {
         return;
     }
     
-    showNotification('Состав сохранен!', 'success');
+    // Обновляем плотность перед сохранением
+    const density = calculateCompositeDensity(compositionData);
+    const densityInput = document.getElementById('filamentDensity');
+    if (densityInput) {
+        densityInput.value = density;
+        densityInput.style.borderColor = '#4ade80';
+    }
+    
+    showNotification(`Состав сохранен! Расчетная плотность: ${density} г/см³`, 'success');
     closeCompositionModal();
 }
 
@@ -2130,6 +2238,7 @@ async function addFilamentManual() {
     const color = document.getElementById('filamentColor').value.trim();
     const initial_length = parseFloat(document.getElementById('filamentLength').value);
     
+    // Берем плотность из поля (она могла быть автоматически рассчитана)
     let density = parseFloat(document.getElementById('filamentDensity').value) || 1.24;
     let diameter = parseFloat(document.getElementById('filamentDiameter').value) || 1.75;
     
@@ -2150,6 +2259,7 @@ async function addFilamentManual() {
         return;
     }
     
+    // Проверяем состав
     const total = compositionData.reduce((sum, item) => sum + (item.percent || 0), 0);
     if (Math.abs(total - 100) > 0.01) {
         showNotification('Сумма компонентов состава должна быть 100%', 'error');
