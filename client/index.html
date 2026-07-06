@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧵%3C/text%3E%3C/svg%3E" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 </head>
 <body>
@@ -188,7 +189,7 @@
             </div>
             <div class="form-group">
                 <label for="filamentLength">Длина (миллиметры)</label>
-                <input type="number" id="filamentLength" placeholder="300000" value="300000" min="1" max="100000000" step="1" maxlength="9" oninput="if(this.value.length > 9) this.value = this.value.slice(0,9); checkFilamentFields()" />
+                <input type="number" id="filamentLength" placeholder="300000" value="300000" min="1" max="100000000" step="1" maxlength="9" oninput="checkFilamentFields()" />
                 <small style="color:#9ca3af; font-size:12px; margin-top:4px;">Максимальная длина: 100 км (100 000 000 мм)</small>
             </div>
             
@@ -257,7 +258,7 @@
                         <option value="Другое">Другое</option>
                     </select>
                     <input type="number" class="composition-percent" placeholder="%" value="100" min="0" max="100" style="width:70px; background:#1a1d26; border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px 10px; color:#ffffff; font-size:14px; text-align:center;" />
-                    <button class="remove-composition" onclick="removeCompositionItem(this)" style="background:transparent; border:none; color:#ff5f5f; cursor:pointer; font-size:18px; padding:4px 8px;">
+                    <button class="remove-composition" onclick="removeCompositionItem(0)" style="background:transparent; border:none; color:#ff5f5f; cursor:pointer; font-size:18px; padding:4px 8px;">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
@@ -342,6 +343,17 @@
             
             <div class="filter-divider"></div>
             
+            <!-- Группировка -->
+            <div class="filter-section">
+                <label class="filter-label">Группировка</label>
+                <button class="filter-option" onclick="toggleGrouping()" id="groupToggleBtn">
+                    <i class="fa-solid fa-layer-group"></i> 
+                    <span>Группировка отключена</span>
+                </button>
+            </div>
+            
+            <div class="filter-divider"></div>
+            
             <!-- Фильтр по типу -->
             <div class="filter-section">
                 <label class="filter-label">Фильтр по типу</label>
@@ -384,6 +396,22 @@
                     <i class="fa-solid fa-chevron-down" style="margin-left:6px;"></i>
                 </button>
                 <div id="manufacturerFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:8px 0 0 12px; max-height:150px; overflow-y:auto;">
+                    <!-- Заполняется динамически -->
+                </div>
+            </div>
+            
+            <div class="filter-divider"></div>
+            
+            <!-- Фильтр по составу -->
+            <div class="filter-section">
+                <label class="filter-label">Фильтр по составу</label>
+                <button class="filter-option" onclick="toggleCompositionFilter()" id="filterCompositionToggle">
+                    <i class="fa-solid fa-flask"></i> 
+                    <span id="filterCompositionLabel">Все составы</span>
+                    <span id="filterCompositionCount" style="color:#8b5cf6; font-size:12px; margin-left:auto; display:none;"></span>
+                    <i class="fa-solid fa-chevron-down" style="margin-left:6px;"></i>
+                </button>
+                <div id="compositionFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:8px 0 0 12px; max-height:150px; overflow-y:auto;">
                     <!-- Заполняется динамически -->
                 </div>
             </div>

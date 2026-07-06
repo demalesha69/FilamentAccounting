@@ -2280,3 +2280,47 @@ body {
         font-size: 9px;
     }
 }
+
+/* ===== СТИЛИ ДЛЯ ГРУПП ===== */
+
+.group-container {
+    border: 2px solid #8b5cf6 !important;
+    background: #1a1d26;
+    transition: all 0.3s ease;
+}
+
+.group-container .group-children {
+    animation: groupExpand 0.3s ease;
+}
+
+@keyframes groupExpand {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.group-toggle-btn:hover {
+    background: rgba(139, 92, 246, 0.25) !important;
+    border-color: #8b5cf6 !important;
+}
+
+.group-toggle-btn:active {
+    transform: scale(0.98);
+}
+
+/* Адаптация для телефонов */
+@media (max-width: 480px) {
+    .group-container .group-children {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .group-toggle-btn {
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+    }
+}
