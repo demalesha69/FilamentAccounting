@@ -45,15 +45,21 @@
     <main class="content">
         <!-- Вертикальная структура: все блоки друг под другом -->
         
-        <!-- 1. Общий расход (большая плашка) -->
-        <div class="stat-card" style="background:rgba(74,222,128,0.1); border-color:rgba(74,222,128,0.2); margin-bottom:10px;">
+        <!-- 1. Операций расхода -->
+        <div class="stat-card" style="margin-bottom:10px;">
+            <div class="stat-value" id="totalOperations" style="color:#8b5cf6;">0</div>
+            <div class="stat-label">Операций расхода</div>
+        </div>
+        
+        <!-- 2. Общий расход (большая плашка) -->
+        <div class="stat-card" style="margin-bottom:10px;">
             <div class="stat-value" id="totalUsed" style="color:#8b5cf6;">0</div>
             <div class="stat-label">Общий расход</div>
         </div>
         
-        <!-- 2. Две маленькие: успешная печать и брак/прервано -->
+        <!-- 3. Две маленькие: успешная печать и брак/прервано -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-            <div class="stat-card" style="background:rgba(59,130,246,0.1); border-color:rgba(59,130,246,0.2);">
+            <div class="stat-card" style="background:rgba(74,222,128,0.1); border-color:rgba(74,222,128,0.2);">
                 <div class="stat-value" id="successUsed" style="color:#4ade80;">0</div>
                 <div class="stat-label">Успешная печать</div>
             </div>
@@ -63,34 +69,28 @@
             </div>
         </div>
         
-        <!-- 3. Эффективность (большая плашка) -->
+        <!-- 4. Эффективность (большая плашка) -->
         <div class="stat-card" style="background:rgba(139,92,246,0.1); border-color:rgba(139,92,246,0.2); margin-bottom:10px;">
             <div class="stat-value" id="efficiency" style="color:#8b5cf6;">0%</div>
             <div class="stat-label">Эффективность</div>
         </div>
         
-        <!-- 4. Две маленькие: среднее за печать и среднее в день -->
+        <!-- 5. Две маленькие: среднее за печать и среднее в день -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-            <div class="stat-card" style="background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.2);">
-                <div class="stat-value" id="avgPerPrint" style="color:#4ade80;">0</div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgPerPrint" style="color:#8b5cf6;">0</div>
                 <div class="stat-label">Среднее за печать</div>
             </div>
-            <div class="stat-card" style="background:rgba(34,211,238,0.1); border-color:rgba(34,211,238,0.2);">
-                <div class="stat-value" id="avgPerDay" style="color:#4ade80;">0</div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgPerDay" style="color:#8b5cf6;">0</div>
                 <div class="stat-label">Среднее в день <span id="periodLabel" style="font-size:10px;color:#9ca3af;display:block;">за все время</span></div>
             </div>
         </div>
         
-        <!-- 5. Всего катушек и Операций расхода -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div class="stat-card">
-                <div class="stat-value" id="totalMaterials" style="color:#8b5cf6;">0</div>
-                <div class="stat-label">Всего катушек</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="totalOperations" style="color:#8b5cf6;">0</div>
-                <div class="stat-label">Операций расхода</div>
-            </div>
+        <!-- 6. Всего катушек (большая плашка) -->
+        <div class="stat-card" style="margin-bottom:0;">
+            <div class="stat-value" id="totalMaterials" style="color:#8b5cf6;">0</div>
+            <div class="stat-label">Всего катушек</div>
         </div>
     </main>
 

@@ -1,4 +1,5 @@
 const API_URL = '/api';
+
 let allFilaments = [];
 let currentSort = 'default';
 let currentSortBy = 'id';

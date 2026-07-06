@@ -1,4 +1,5 @@
 const API_URL = '/api';
+
 let currentPeriod = 'all';
 let currentStartTimestamp = null;
 let currentEndTimestamp = null;
