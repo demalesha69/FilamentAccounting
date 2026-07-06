@@ -9,7 +9,7 @@ let isGrouped = false;
 let selectedTypes = [];
 let selectedColors = [];
 let selectedManufacturers = [];
-let selectedCompositions = []; // Хранит строки вида "pla + petg" или "pla"
+let selectedCompositions = [];
 
 let currentSearchQuery = '';
 let currentFilamentId = null;
@@ -25,14 +25,23 @@ let compositionFilterExpanded = false;
 let uniqueTypes = [];
 let uniqueColors = [];
 let uniqueManufacturers = [];
-let uniqueCompositions = []; // Массив строк вида "pla + petg"
+let uniqueCompositions = [];
 
 // Состояние навигации по группам
 let groupNavigationStack = [];
 let isInGroupView = false;
 let currentGroupKey = null;
 
+// Флаг для предотвращения рекурсивного обновления типа
+let isUpdatingTypeFromComposition = false;
+
 const MAX_FILAMENT_LENGTH = 100000000;
+
+// ===== СПИСОК МАТЕРИАЛОВ, КОТОРЫЕ МОГУТ БЫТЬ ОСНОВНЫМ ТИПОМ =====
+const PRIMARY_MATERIALS = [
+    'pla', 'petg', 'abs', 'hips', 'sbs', 'tpu', 'nylon', 'asa', 
+    'pp', 'pc', 'pom', 'pmma', 'peek', 'ceramo', 'pva', 'wax', 'clearing'
+];
 
 // ===== СЛОВАРЬ ПЛОТНОСТЕЙ МАТЕРИАЛОВ =====
 const MATERIAL_DENSITY = {
@@ -232,6 +241,99 @@ function toggleAdvancedSettings() {
     }
 }
 
+// ===== ФУНКЦИЯ ДЛЯ ОПРЕДЕЛЕНИЯ ОСНОВНОГО МАТЕРИАЛА ИЗ СОСТАВА =====
+function getPrimaryMaterialFromComposition(composition) {
+    if (!composition || composition.length === 0) {
+        return null;
+    }
+    
+    // Находим материал с максимальным процентом
+    let maxPercent = 0;
+    let primaryMaterial = null;
+    
+    for (const item of composition) {
+        const percent = item.percent || 0;
+        if (percent > maxPercent) {
+            maxPercent = percent;
+            primaryMaterial = item.material;
+        }
+    }
+    
+    // Если максимальный процент меньше 50%, считаем, что основного материала нет
+    if (maxPercent < 50) {
+        return null;
+    }
+    
+    // Проверяем, может ли этот материал быть основным типом
+    const normalizedPrimary = primaryMaterial.toLowerCase();
+    if (!PRIMARY_MATERIALS.includes(normalizedPrimary)) {
+        return null;
+    }
+    
+    return primaryMaterial;
+}
+
+// ===== АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ ТИПА НА ОСНОВЕ СОСТАВА =====
+function updateMaterialTypeFromComposition() {
+    // Предотвращаем рекурсивные вызовы
+    if (isUpdatingTypeFromComposition) {
+        return;
+    }
+    
+    const typeSelect = document.getElementById('filamentType');
+    if (!typeSelect) return;
+    
+    const primaryMaterial = getPrimaryMaterialFromComposition(compositionData);
+    
+    if (primaryMaterial) {
+        const normalizedPrimary = primaryMaterial.toLowerCase();
+        
+        // Проверяем, совпадает ли текущий выбранный тип с основным материалом
+        const currentType = typeSelect.value.toLowerCase();
+        
+        // Если текущий тип уже соответствует основному материалу, ничего не делаем
+        if (currentType === normalizedPrimary) {
+            return;
+        }
+        
+        // Проверяем, не был ли тип установлен вручную пользователем
+        // Для этого проверяем, есть ли в составе материал, соответствующий текущему типу
+        const hasMatchingMaterial = compositionData.some(item => 
+            item.material.toLowerCase() === currentType
+        );
+        
+        // Если пользователь выбрал тип, который есть в составе, не перезаписываем его
+        if (hasMatchingMaterial && currentType !== '') {
+            return;
+        }
+        
+        // Находим соответствующий тип в списке
+        const options = typeSelect.options;
+        let found = false;
+        
+        for (let i = 0; i < options.length; i++) {
+            const optionValue = options[i].value.toLowerCase();
+            if (optionValue === normalizedPrimary) {
+                isUpdatingTypeFromComposition = true;
+                typeSelect.value = options[i].value;
+                isUpdatingTypeFromComposition = false;
+                found = true;
+                break;
+            }
+        }
+        
+        if (found) {
+            // Обновляем расширенные настройки
+            updateAdvancedDefaults();
+            // Визуально показываем, что тип был установлен автоматически
+            typeSelect.style.borderColor = '#4ade80';
+            setTimeout(() => {
+                typeSelect.style.borderColor = '';
+            }, 2000);
+        }
+    }
+}
+
 // ===== РАСЧЕТ ПЛОТНОСТИ КОМПОЗИТА =====
 function calculateCompositeDensity(composition) {
     if (!composition || composition.length === 0) {
@@ -304,6 +406,12 @@ function syncCompositionWithType() {
     const type = document.getElementById('filamentType').value;
     if (!type) return;
     
+    // Проверяем, есть ли уже состав с этим материалом
+    const hasMaterial = compositionData.some(item => 
+        item.material.toLowerCase() === type.toLowerCase()
+    );
+    
+    // Если состав пустой или состоит из одного материала 100%
     if (compositionData.length === 0 || 
         (compositionData.length === 1 && compositionData[0].percent === 100 && 
          compositionData[0].material === type.toLowerCase())) {
@@ -443,17 +551,13 @@ function getUniqueCompositions(filaments) {
 
 // ===== ФУНКЦИЯ ДЛЯ ФОРМИРОВАНИЯ ПАРАМЕТРОВ СОСТАВА ДЛЯ ЗАПРОСА =====
 function buildCompositionParams(selectedCompositions) {
-    // Для каждого выбранного состава нужно отправить отдельный параметр composition
-    // с именем материала (без процентов), в нижнем регистре, с TRUE
     const params = [];
     
     for (const comp of selectedCompositions) {
         if (!comp) continue;
         
-        // Разбиваем состав на отдельные материалы
         const materials = comp.split(' + ').map(m => m.toLowerCase().trim());
         
-        // Добавляем каждый материал как отдельный параметр с TRUE
         for (const material of materials) {
             if (material) {
                 params.push(material + '_TRUE');
@@ -474,9 +578,7 @@ function updateCompositionLabel() {
         label.textContent = 'Все составы';
         if (count) count.style.display = 'none';
     } else if (selectedCompositions.length === 1) {
-        // Показываем состав в виде "Материал1 + Материал2"
         const display = selectedCompositions[0];
-        // Обрезаем длинные названия
         label.textContent = display.length > 30 ? display.substring(0, 27) + '...' : display;
         if (count) count.style.display = 'none';
     } else {
@@ -526,6 +628,7 @@ function renderCompositionList() {
             const index = parseInt(this.dataset.index);
             compositionData[index].material = this.value;
             updateCompositionTotal();
+            updateMaterialTypeFromComposition();
         });
     });
     
@@ -534,6 +637,7 @@ function renderCompositionList() {
             const index = parseInt(this.dataset.index);
             compositionData[index].percent = parseFloat(this.value) || 0;
             updateCompositionTotal();
+            updateMaterialTypeFromComposition();
         });
     });
     
@@ -559,6 +663,7 @@ function removeCompositionItem(index) {
     compositionData.splice(index, 1);
     renderCompositionList();
     updateCompositionTotal();
+    updateMaterialTypeFromComposition();
 }
 
 function updateCompositionTotal() {
@@ -591,6 +696,8 @@ function saveComposition() {
         densityInput.value = density;
         densityInput.style.borderColor = '#4ade80';
     }
+    
+    updateMaterialTypeFromComposition();
     
     showNotification(`Состав сохранен! Расчетная плотность: ${density} г/см³`, 'success');
     closeCompositionModal();
@@ -718,8 +825,6 @@ async function loadUniqueValues() {
     uniqueColors = colors;
     uniqueManufacturers = manufacturers;
     
-    // Формируем уникальные составы из полученных данных
-    // composition может быть массивом объектов или строкой
     const compSet = new Set();
     
     if (Array.isArray(compositions)) {
@@ -841,9 +946,7 @@ function updateCompositionFilterList() {
     
     container.innerHTML = uniqueCompositions.map(c => {
         const isSelected = selectedCompositions.includes(c);
-        // Экранируем для безопасности
         const escapedC = c.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        // Обрезаем длинные названия для отображения
         const displayText = c.length > 30 ? c.substring(0, 27) + '...' : c;
         return `
             <button class="filter-option ${isSelected ? 'active' : ''}" onclick="toggleComposition('${escapedC}')" style="padding:6px 12px; font-size:13px;">
@@ -1046,8 +1149,6 @@ function buildMaterialsUrl() {
         params.append('manufacturer', m);
     });
     
-    // ===== ФИЛЬТР ПО СОСТАВУ (новый формат) =====
-    // Для каждого выбранного состава добавляем параметры для каждого материала с TRUE
     if (selectedCompositions.length > 0) {
         const compositionParams = buildCompositionParams(selectedCompositions);
         for (const param of compositionParams) {
@@ -1870,7 +1971,7 @@ async function openDetailModal(id) {
 
 function printQRCode() {
     if (window.api?.printQR) {
-        window.api.printQR(window.currentFilamentId);
+        window.api.printQR(currentFilamentId);
         return;
     }
 
@@ -2242,7 +2343,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const typeSelect = document.getElementById('filamentType');
     if (typeSelect) {
         typeSelect.addEventListener('change', function() {
+            // Если пользователь сам меняет тип, не перезаписываем его автоматически
+            // Просто обновляем расширенные настройки
             updateAdvancedDefaults();
+            // Проверяем, нужно ли синхронизировать состав
             syncCompositionWithType();
         });
     }
