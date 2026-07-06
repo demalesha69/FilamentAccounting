@@ -5,7 +5,7 @@ let currentSortBy = 'id';
 let currentSortOrder = 'asc';
 let isGrouped = false;
 
-// Выбранные фильтры (множественный выбор)
+// Выбранные фильтры
 let selectedTypes = [];
 let selectedColors = [];
 let selectedManufacturers = [];
@@ -26,6 +26,11 @@ let uniqueTypes = [];
 let uniqueColors = [];
 let uniqueManufacturers = [];
 let uniqueCompositions = [];
+
+// Состояние навигации по группам
+let groupNavigationStack = [];
+let isInGroupView = false;
+let currentGroupKey = null;
 
 const MAX_FILAMENT_LENGTH = 100000000;
 
@@ -206,7 +211,6 @@ function updateAdvancedDefaults() {
         document.getElementById('filamentDensity').value = defaults.density;
         document.getElementById('filamentDiameter').value = defaults.diameter;
     }
-    // Синхронизируем состав с выбранным типом
     syncCompositionWithType();
 }
 
@@ -214,7 +218,6 @@ function syncCompositionWithType() {
     const type = document.getElementById('filamentType').value;
     if (!type) return;
     
-    // Если состав пустой или содержит только один элемент с 100%
     if (compositionData.length === 0 || 
         (compositionData.length === 1 && compositionData[0].percent === 100)) {
         compositionData = [{ material: type.toLowerCase(), percent: 100 }];
@@ -731,6 +734,12 @@ function toggleGrouping() {
             btn.innerHTML = '<i class="fa-solid fa-layer-group"></i> Группировка отключена';
         }
     }
+    
+    // Если мы в режиме просмотра группы, выходим из него
+    if (isInGroupView) {
+        exitGroupView();
+    }
+    
     loadFilaments();
 }
 
@@ -826,6 +835,11 @@ function resetFilters() {
     if (colorFilterExpanded) updateColorFilterList();
     if (manufacturerFilterExpanded) updateManufacturerFilterList();
     if (compositionFilterExpanded) updateCompositionFilterList();
+    
+    // Если мы в режиме просмотра группы, выходим из него
+    if (isInGroupView) {
+        exitGroupView();
+    }
     
     loadFilaments();
 }
@@ -925,7 +939,6 @@ function renderFilaments(filaments) {
     
     let html = '';
     for (const f of filaments) {
-        // Если это группа
         if (f.is_group === true) {
             const colorKey = f.color || '';
             const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
@@ -1042,7 +1055,6 @@ function renderFilaments(filaments) {
             continue;
         }
         
-        // Обычная катушка
         const colorKey = f.color || '';
         const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
         const ringColor = RING_COLOR_MAP[colorKey] || '#8b5cf6';
@@ -1165,12 +1177,13 @@ function renderFilaments(filaments) {
     
     grid.innerHTML = html;
     
+    // Обработчик для карточек групп
     document.querySelectorAll('.group-card').forEach(card => {
         card.addEventListener('click', function(e) {
             e.preventDefault();
             const groupKey = this.dataset.groupkey;
             if (groupKey) {
-                openGroupDetail(groupKey);
+                openGroupView(groupKey);
             }
         });
     });
@@ -1188,10 +1201,36 @@ function saveGroupingState(value) {
     localStorage.setItem('filament_grouping_enabled', String(value));
 }
 
-// ===== ДЕТАЛИ ГРУППЫ =====
+// ===== НАВИГАЦИЯ ПО ГРУППАМ =====
 
-async function openGroupDetail(groupKey) {
-    console.log('openGroupDetail вызвана с groupKey:', groupKey);
+function showBackButton(show) {
+    const searchSection = document.querySelector('.search-section');
+    if (!searchSection) return;
+    
+    let backBtn = document.getElementById('groupBackButton');
+    
+    if (show) {
+        if (!backBtn) {
+            backBtn = document.createElement('button');
+            backBtn.id = 'groupBackButton';
+            backBtn.className = 'filter-button';
+            backBtn.style.background = '#8b5cf6';
+            backBtn.style.color = '#ffffff';
+            backBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i>';
+            backBtn.title = 'Назад к списку';
+            backBtn.onclick = exitGroupView;
+            searchSection.prepend(backBtn);
+        }
+        backBtn.style.display = 'flex';
+    } else {
+        if (backBtn) {
+            backBtn.style.display = 'none';
+        }
+    }
+}
+
+async function openGroupView(groupKey) {
+    console.log('openGroupView вызвана с groupKey:', groupKey);
     
     const token = localStorage.getItem('token');
     if (!token) {
@@ -1250,73 +1289,208 @@ async function openGroupDetail(groupKey) {
             return;
         }
         
-        const modal = document.getElementById('detailModal');
-        const body = document.getElementById('detailBody');
+        // Сохраняем состояние
+        isInGroupView = true;
+        currentGroupKey = groupKey;
+        groupNavigationStack.push(groupKey);
         
-        if (!modal || !body) {
-            console.error('Модальное окно не найдено!');
-            showNotification('Ошибка: модальное окно не найдено', 'error');
-            return;
+        // Показываем кнопку назад
+        showBackButton(true);
+        
+        // Обновляем заголовок
+        const logo = document.querySelector('.logo');
+        if (logo) {
+            const first = filaments[0];
+            const colorName = COLOR_NAMES[first.color] || first.color || 'Без цвета';
+            const materialType = first.material_type || 'Неизвестный тип';
+            logo.textContent = `📦 Группа (${filaments.length})`;
+            logo.style.fontSize = '20px';
         }
         
-        const first = filaments[0];
-        const colorKey = first.color || '';
-        const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
-        const colorName = COLOR_NAMES[colorKey] || first.color || 'Без цвета';
-        const materialType = first.material_type || 'Неизвестный тип';
-        const manufacturer = first.manufacturer || '';
+        // Обновляем поиск
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.placeholder = `Поиск в группе...`;
+            searchInput.value = '';
+        }
         
-        const sortedFilaments = [...filaments].sort((a, b) => (a.current_length || 0) - (b.current_length || 0));
-        
-        let itemsHtml = sortedFilaments.map(f => {
-            const progress = Math.round(((f.current_length || 0) / (f.initial_length || 1)) * 100);
-            const isEmpty = (f.current_length || 0) <= 0;
-            const currentLength = formatLength(f.current_length || 0);
-            const initialLength = formatLength(f.initial_length || 0);
-            const used = (f.initial_length || 0) - (f.current_length || 0);
-            const usedLength = formatLength(used);
-            
-            return `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#1a1d26;border-radius:8px;border-left:3px solid ${isEmpty ? '#6b7280' : colorHex};gap:8px;cursor:pointer;" onclick="openDetailModal(${f.id})">
-                <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
-                    <span style="color:#ffffff;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.name || 'Без названия'}</span>
-                    <span style="font-size:11px;color:#9ca3af;white-space:nowrap;">${progress}%</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                    <span style="font-size:11px;color:#9ca3af;">${currentLength}</span>
-                    <span style="font-size:12px;font-weight:700;color:#ff5f5f;">-${usedLength}</span>
-                </div>
-            </div>
-        `}).join('');
-        
-        body.innerHTML = `
-            <div style="display:flex;flex-direction:column;gap:12px;">
-                <div style="display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06);">
-                    <div style="width:50px;height:50px;border-radius:50%;background:${colorHex};display:flex;align-items:center;justify-content:center;font-size:20px;color:white;flex-shrink:0;">
-                        <i class="fa-solid fa-layer-group"></i>
-                    </div>
-                    <div>
-                        <h2 style="color:#ffffff;font-size:18px;">Группа: ${sortedFilaments.length} катушек</h2>
-                        <p style="color:${colorHex};font-size:14px;">${colorName} • ${materialType.toUpperCase()}</p>
-                        ${manufacturer ? `<p style="color:#9ca3af;font-size:12px;"><i class="fa-solid fa-building"></i> ${manufacturer}</p>` : ''}
-                    </div>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto;">
-                    ${itemsHtml}
-                </div>
-                <button class="auth-button" onclick="closeDetailModal()" style="background:#232734;color:#9ca3af;margin-top:4px;">
-                    <i class="fa-solid fa-xmark"></i> Закрыть
-                </button>
-            </div>
-        `;
-        
-        modal.style.display = 'flex';
-        console.log('Модальное окно открыто');
+        // Рендерим катушки из группы
+        renderGroupFilaments(filaments);
         
     } catch (error) {
         console.error('Ошибка загрузки группы:', error);
         showNotification('Ошибка загрузки группы: ' + error.message, 'error');
     }
+}
+
+function renderGroupFilaments(filaments) {
+    const grid = document.getElementById('filamentGrid');
+    if (!grid) return;
+    
+    if (!filaments || filaments.length === 0) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#9ca3af;">
+            <i class="fa-solid fa-box-open" style="font-size:48px;margin-bottom:12px;display:block;"></i>
+            <p>В группе нет катушек</p>
+        </div>`;
+        return;
+    }
+    
+    // Сортируем катушки в группе
+    const sortedFilaments = [...filaments].sort((a, b) => {
+        const nameA = a.name || '';
+        const nameB = b.name || '';
+        return nameA.localeCompare(nameB);
+    });
+    
+    let html = '';
+    for (const f of sortedFilaments) {
+        const colorKey = f.color || '';
+        const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
+        const ringColor = RING_COLOR_MAP[colorKey] || '#8b5cf6';
+        const colorName = COLOR_NAMES[colorKey] || f.color || 'Без цвета';
+        const progress = Math.round(((f.current_length || 0) / (f.initial_length || 1)) * 100);
+        const isEmpty = (f.current_length || 0) <= 0;
+        const materialType = f.material_type || 'Неизвестный тип';
+        const manufacturer = f.manufacturer || '';
+        const density = f.density || 1.24;
+        const diameter = f.diameter || 1.75;
+        
+        const emptyStyles = isEmpty ? `
+            opacity: 0.5;
+            filter: grayscale(0.8);
+            border-color: rgba(255,255,255,0.02);
+        ` : '';
+        
+        const currentLength = formatLength(f.current_length || 0);
+        const initialLength = formatLength(f.initial_length || 0);
+        const lengthText = isEmpty ? '0 мм (пусто)' : `${currentLength} / ${initialLength}`;
+        const lengthColor = isEmpty ? '#6b7280' : colorHex;
+        
+        let ringStyle;
+        if (colorKey === 'multicolor') {
+            const multiColors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
+            const totalColors = multiColors.length;
+            const segmentSize = 100 / totalColors;
+            let gradientStops = [];
+            
+            for (let i = 0; i < totalColors; i++) {
+                const start = i * segmentSize;
+                const end = (i + 1) * segmentSize;
+                if (start < progress) {
+                    const actualEnd = Math.min(end, progress);
+                    gradientStops.push(`${multiColors[i]} ${start}% ${actualEnd}%`);
+                } else {
+                    if (i === 0 && progress === 0) {
+                        gradientStops = [`#2b2f3a 0% 100%`];
+                        break;
+                    }
+                    if (i === 0 && progress > 0) {
+                        continue;
+                    }
+                    const darkStart = Math.max(progress, start);
+                    if (darkStart < 100) {
+                        gradientStops.push(`#2b2f3a ${darkStart}% 100%`);
+                    }
+                    break;
+                }
+            }
+            
+            if (progress >= 100) {
+                gradientStops = gradientStops.filter(stop => !stop.includes('#2b2f3a'));
+                if (gradientStops.length > 0) {
+                    const last = gradientStops[gradientStops.length - 1];
+                    const parts = last.split(' ');
+                    if (parts.length >= 3) {
+                        parts[parts.length - 1] = '100%';
+                        gradientStops[gradientStops.length - 1] = parts.join(' ');
+                    }
+                }
+            }
+            
+            if (gradientStops.length === 0) {
+                gradientStops = [`#2b2f3a 0% 100%`];
+            }
+            
+            ringStyle = `background: conic-gradient(${gradientStops.join(', ')});`;
+        } else {
+            ringStyle = `background: conic-gradient(${ringColor} ${progress}%, #2b2f3a 0);`;
+        }
+        
+        const dotStyle = colorKey === 'multicolor' 
+            ? 'background: linear-gradient(45deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7);' 
+            : `background: ${colorHex};`;
+        
+        const emptyEmoji = isEmpty ? ' 📦' : '';
+        
+        const manufacturerHtml = manufacturer ? `
+            <p style="font-size:11px; color:#6b7280; margin-top:1px;">
+                <i class="fa-solid fa-building" style="font-size:10px; margin-right:3px;"></i>
+                ${manufacturer}
+            </p>
+        ` : '';
+        
+        const specsHtml = `
+            <p style="font-size:10px; color:#4a4a5a; margin-top:1px;">
+                ρ=${density} г/см³ • Ø=${diameter} мм
+            </p>
+        `;
+        
+        html += `<article class="filament-card" onclick="openDetailModal(${f.id})" style="cursor:pointer; ${emptyStyles} border:2px solid ${colorHex};">
+            <div class="card-top">
+                <div class="progress-ring" style="--progress:${progress}; ${ringStyle}">
+                    <span>${isEmpty ? '0%' : progress + '%'}</span>
+                </div>
+                <div class="filament-info">
+                    <h2>${f.name || 'Без названия'}${emptyEmoji}</h2>
+                    <p class="filament-color" style="color:${isEmpty ? '#6b7280' : colorHex};">
+                        <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${isEmpty ? '#6b7280' : colorHex}; margin-right:6px; vertical-align:middle;"></span>
+                        ${colorName}
+                    </p>
+                    <p style="font-size:12px; color:#6b7280; margin-top:2px;">
+                        <i class="fa-solid fa-cube" style="font-size:11px; margin-right:4px;"></i>
+                        ${materialType.toUpperCase()}
+                    </p>
+                    ${manufacturerHtml}
+                    ${specsHtml}
+                </div>
+            </div>
+            <div class="weight-info" style="color:${lengthColor};">
+                <div class="weight-dot" style="${dotStyle}"></div>
+                <span>${lengthText}</span>
+            </div>
+            ${isEmpty ? `<div style="margin-top:6px; font-size:11px; color:#6b7280; text-align:center; border-top:1px solid rgba(255,255,255,0.05); padding-top:6px;">
+                <i class="fa-solid fa-triangle-exclamation"></i> Катушка пуста
+            </div>` : ''}
+        </article>`;
+    }
+    
+    grid.innerHTML = html;
+}
+
+function exitGroupView() {
+    isInGroupView = false;
+    currentGroupKey = null;
+    groupNavigationStack = [];
+    
+    // Убираем кнопку назад
+    showBackButton(false);
+    
+    // Восстанавливаем заголовок
+    const logo = document.querySelector('.logo');
+    if (logo) {
+        logo.textContent = 'Катушки';
+        logo.style.fontSize = '';
+    }
+    
+    // Восстанавливаем поиск
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.placeholder = 'Поиск филамента...';
+        searchInput.value = '';
+    }
+    
+    // Перезагружаем список
+    loadFilaments();
 }
 
 // ===== ДЕТАЛИ КАТУШКИ =====
@@ -1517,64 +1691,7 @@ async function openDetailModal(id) {
     }
 }
 
-// ===== СОСТАВ КАТУШКИ =====
-
-function openCompositionDetail(materialId) {
-    const filament = allFilaments.find(f => f.id === materialId);
-    if (!filament) {
-        showNotification('Катушка не найдена', 'error');
-        return;
-    }
-    
-    const composition = filament.composition || [];
-    const modal = document.getElementById('compositionDetailModal');
-    const body = document.getElementById('compositionDetailBody');
-    
-    if (!composition || composition.length === 0) {
-        body.innerHTML = `
-            <div style="text-align:center; padding:20px; color:#9ca3af;">
-                <i class="fa-solid fa-flask" style="font-size:32px; display:block; margin-bottom:12px; opacity:0.5;"></i>
-                <p>Состав не указан</p>
-            </div>
-        `;
-        modal.style.display = 'flex';
-        return;
-    }
-    
-    let html = `
-        <div style="display:flex; flex-direction:column; gap:10px;">
-            <div style="background:#232734; border-radius:10px; padding:12px;">
-                <div style="color:#9ca3af; font-size:12px; margin-bottom:8px;">Материал</div>
-                <div style="color:#ffffff; font-size:16px; font-weight:600;">${filament.name}</div>
-                ${filament.material_type ? `<div style="color:#9ca3af; font-size:13px; margin-top:4px;">Тип: ${filament.material_type.toUpperCase()}</div>` : ''}
-            </div>
-            <div style="background:#232734; border-radius:10px; padding:12px;">
-                <div style="color:#9ca3af; font-size:12px; margin-bottom:8px;">Состав</div>
-                ${composition.map(item => `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
-                        <span style="color:#ffffff;">${item.material || 'Неизвестный материал'}</span>
-                        <span style="color:#8b5cf6; font-weight:600;">${item.percent || 0}%</span>
-                    </div>
-                `).join('')}
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0 4px 0; border-top:2px solid rgba(139,92,246,0.3); margin-top:4px;">
-                    <span style="color:#9ca3af; font-weight:500;">Итого</span>
-                    <span style="color:#4ade80; font-weight:700;">${composition.reduce((sum, item) => sum + (item.percent || 0), 0)}%</span>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    body.innerHTML = html;
-    modal.style.display = 'flex';
-}
-
-function closeCompositionDetail() {
-    document.getElementById('compositionDetailModal').style.display = 'none';
-}
-
-document.getElementById('compositionDetailModal').addEventListener('click', function(e) {
-    if (e.target === this) closeCompositionDetail();
-});
+// ===== QR-КОД =====
 
 function printQRCode() {
     if (window.api?.printQR) {
@@ -1952,7 +2069,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Синхронизация состава при изменении типа материала
     const typeSelect = document.getElementById('filamentType');
     if (typeSelect) {
         typeSelect.addEventListener('change', function() {
@@ -1974,7 +2090,6 @@ function openAddFilament() {
     document.getElementById('advancedSettings').style.display = 'none';
     document.getElementById('advancedIcon').className = 'fa-solid fa-gear';
     
-    // Устанавливаем состав по умолчанию на основе выбранного типа (если он пустой)
     const defaultType = document.getElementById('filamentType').value || 'pla';
     compositionData = [{ material: defaultType.toLowerCase(), percent: 100 }];
     renderCompositionList();
@@ -2035,17 +2150,11 @@ async function addFilamentManual() {
         return;
     }
     
-    // Проверяем состав
     const total = compositionData.reduce((sum, item) => sum + (item.percent || 0), 0);
     if (Math.abs(total - 100) > 0.01) {
         showNotification('Сумма компонентов состава должна быть 100%', 'error');
         return;
     }
-    
-    // Убеждаемся, что материал в составе соответствует выбранному типу, если состав еще не был изменен пользователем
-    // Если compositionData содержит только один элемент и он равен типу по умолчанию, оставляем как есть
-    // Если пользователь изменил состав вручную - сохраняем его изменения
-    
     const token = localStorage.getItem('token');
     if (!token) {
         showNotification('Вы не авторизованы', 'error');
@@ -2436,7 +2545,6 @@ async function findFilamentByQRCode(qrCode) {
 }
 
 function onScanError(error) {
-    // Игнорируем ошибки сканирования
 }
 
 function stopQRScanner() {
