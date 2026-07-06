@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, case
 
 from database.models.material import Material
 from database.models.consumption import Consumption
@@ -22,14 +22,28 @@ class StatisticsRepository:
 
         return (
             db.query(
-                func.sum(Consumption.used_length)
+                func.sum(Consumption.used_length).label("total_used"),
+
+                func.sum(
+                    case(
+                        (Consumption.status == "success", Consumption.used_length),
+                        else_=0
+                    )
+                ).label("success_used"),
+
+                func.sum(
+                    case(
+                        (Consumption.status.in_(["waste", "interrupted"]), Consumption.used_length),
+                        else_=0
+                    )
+                ).label("waste_used"),
             )
             .filter(
                 Consumption.owner_id == owner_id,
                 Consumption.timestamp >= start_date,
                 Consumption.timestamp <= end_date
             )
-            .scalar()
+            .one()
         )
 
     def get_materials_count(

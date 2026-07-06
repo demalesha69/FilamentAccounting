@@ -1,6 +1,7 @@
 from server.repositories.statisticRepo import StatisticsRepository
 from server.repositories.consumptionRepo import ConsumptionRepository
 from datetime import datetime, UTC
+from math import ceil
 
 class StatisticService:
 
@@ -13,22 +14,17 @@ class StatisticService:
         db,
         owner_id: int,
         start_timestamp: int,
-        end_timestamp: int
+        end_timestamp: int | None
     ) -> dict:
 
         if end_timestamp is None:
-            end_timestamp = datetime.now(UTC)
+            end_timestamp = datetime.now(UTC).timestamp()
 
-        total_used_length = self.repo.get_total_used_length(
+        summary = self.repo.get_total_used_length(
             db,
             owner_id,
             start_timestamp,
             end_timestamp
-        )
-
-        materials_count = self.repo.get_materials_count(
-            db,
-            owner_id
         )
 
         consumptions_count = self.repo.get_consumptions_count(
@@ -37,6 +33,8 @@ class StatisticService:
             start_timestamp,
             end_timestamp
         )
+
+        materials_count = self.repo.get_materials_count(db, owner_id)
 
         first_consumption = self.consumption_repo.get_first(
             db,
@@ -50,33 +48,36 @@ class StatisticService:
             else first_consumption.timestamp.timestamp()
         )
 
+        total = summary.total_used or 0
+        success = summary.success_used or 0
+        waste = summary.waste_used or 0
+
+        efficiency = success / total if total > 0 else 0
+
+        avg_per_print = (
+            total / consumptions_count
+            if consumptions_count > 0
+            else 0
+        )
+
+        start_date = datetime.fromtimestamp(start_timestamp)
+        end_date = datetime.fromtimestamp(end_timestamp)
+
+        days = max((end_date - start_date).days, 1)
+
+        avg_per_day = total / days if days > 0 else 0
+
         return {
-            "total_used_length": total_used_length or 0,
+            "total_used_length": total,
+            "success_used_length": success,
+            "waste_used_length": waste,
+
+            "efficiency": efficiency,
+
+            "avg_per_print": avg_per_print,
+            "avg_per_day": avg_per_day,
+
             "materials_count": materials_count,
             "consumptions_count": consumptions_count,
             "first_consumption_timestamp": first_consumption_timestamp
         }
-
-    def get_materials_statistics(
-        self,
-        db,
-        owner_id: int,
-        start_timestamp: int,
-        end_timestamp: int
-    ) -> list[dict]:
-
-        statistics = self.repo.get_materials_statistics(
-            db,
-            owner_id,
-            start_timestamp,
-            end_timestamp
-        )
-
-        return [
-            {
-                "material_id": item.id,
-                "material_name": item.name,
-                "used_length": float(item.used_length or 0)
-            }
-            for item in statistics
-        ]
