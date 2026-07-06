@@ -75,7 +75,7 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body modal-scrollable">
             <div style="display:flex; flex-direction:column; gap:12px;">
                 <div style="display:flex; gap:10px;">
                     <button class="auth-button" id="scanCameraBtn" onclick="switchScanMethod('camera')" style="flex:1; background:#3b82f6;">
@@ -120,7 +120,7 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body modal-scrollable">
             <div class="form-group">
                 <label for="filamentName">Название</label>
                 <input type="text" id="filamentName" placeholder="PLA Черный" />
@@ -209,9 +209,11 @@
                 </div>
             </div>
             
-            <button class="auth-button" id="addFilamentBtn" onclick="addFilamentManual()" disabled>
-                <i class="fa-solid fa-plus"></i> Добавить катушку
-            </button>
+            <div class="modal-footer">
+                <button class="auth-button" id="addFilamentBtn" onclick="addFilamentManual()" disabled>
+                    <i class="fa-solid fa-plus"></i> Добавить катушку
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -225,12 +227,11 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body modal-scrollable">
             <p style="color:#9ca3af; font-size:14px; margin-bottom:12px;">
                 Укажите состав материала в процентах. Сумма всех компонентов должна быть 100%.
             </p>
             
-            <!-- БЛОК С РАСЧЕТОМ ПЛОТНОСТИ -->
             <div style="background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.2); border-radius:8px; padding:10px; margin-bottom:12px;">
                 <p style="color:#8b5cf6; font-size:13px;">
                     <i class="fa-solid fa-calculator"></i> 
@@ -273,7 +274,7 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        <div class="modal-body" id="detailBody"></div>
+        <div class="modal-body modal-scrollable" id="detailBody"></div>
     </div>
 </div>
 
@@ -301,7 +302,7 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body modal-scrollable">
             <!-- Сортировка -->
             <div class="filter-section">
                 <label class="filter-label">Сортировка</label>
@@ -393,7 +394,7 @@
                 </div>
             </div>
             
-            <div style="display:flex; gap:10px; margin-top:12px;">
+            <div class="modal-footer">
                 <button class="auth-button" onclick="resetFilters()" style="flex:1; background:#232734; color:#9ca3af; font-size:14px; padding:12px; margin:0;">
                     <i class="fa-solid fa-rotate-left"></i> Сбросить
                 </button>
