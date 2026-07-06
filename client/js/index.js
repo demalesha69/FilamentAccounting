@@ -3,11 +3,13 @@ let allFilaments = [];
 let currentSort = 'default';
 let currentSortBy = 'id';
 let currentSortOrder = 'asc';
+let isGrouped = false;
 
-// Выбранные фильтры (множественный выбор)
+// Выбранные фильтры
 let selectedTypes = [];
 let selectedColors = [];
 let selectedManufacturers = [];
+let selectedCompositions = [];
 
 let currentSearchQuery = '';
 let currentFilamentId = null;
@@ -17,113 +19,120 @@ let compositionData = [];
 let typeFilterExpanded = false;
 let colorFilterExpanded = false;
 let manufacturerFilterExpanded = false;
+let compositionFilterExpanded = false;
 
 // Кеш для уникальных значений
 let uniqueTypes = [];
 let uniqueColors = [];
 let uniqueManufacturers = [];
+let uniqueCompositions = [];
 
-const MAX_FILAMENT_LENGTH = 100000000; // 100 км в миллиметрах
+// Состояние навигации по группам
+let groupNavigationStack = [];
+let isInGroupView = false;
+let currentGroupKey = null;
+
+const MAX_FILAMENT_LENGTH = 100000000;
 
 const MATERIAL_DEFAULTS = {
-    'PLA': { density: 1.24, diameter: 1.75 },
-    'PETG': { density: 1.27, diameter: 1.75 },
-    'ABS': { density: 1.04, diameter: 1.75 },
-    'HIPS': { density: 1.04, diameter: 1.75 },
-    'SBS': { density: 1.02, diameter: 1.75 },
-    'TPU': { density: 1.20, diameter: 1.75 },
-    'NYLON': { density: 1.14, diameter: 1.75 },
-    'ASA': { density: 1.07, diameter: 1.75 },
-    'PP': { density: 0.90, diameter: 1.75 },
-    'PC': { density: 1.20, diameter: 1.75 },
-    'POM': { density: 1.41, diameter: 1.75 },
-    'PMMA': { density: 1.18, diameter: 1.75 },
-    'PEEK': { density: 1.32, diameter: 1.75 },
-    'Ceramo': { density: 1.20, diameter: 1.75 },
-    'PVA': { density: 1.19, diameter: 1.75 },
-    'WAX': { density: 0.95, diameter: 1.75 },
-    'Clearing': { density: 1.00, diameter: 1.75 }
+    'pla': { density: 1.24, diameter: 1.75 },
+    'petg': { density: 1.27, diameter: 1.75 },
+    'abs': { density: 1.04, diameter: 1.75 },
+    'hips': { density: 1.04, diameter: 1.75 },
+    'sbs': { density: 1.02, diameter: 1.75 },
+    'tpu': { density: 1.20, diameter: 1.75 },
+    'nylon': { density: 1.14, diameter: 1.75 },
+    'asa': { density: 1.07, diameter: 1.75 },
+    'pp': { density: 0.90, diameter: 1.75 },
+    'pc': { density: 1.20, diameter: 1.75 },
+    'pom': { density: 1.41, diameter: 1.75 },
+    'pmma': { density: 1.18, diameter: 1.75 },
+    'peek': { density: 1.32, diameter: 1.75 },
+    'ceramo': { density: 1.20, diameter: 1.75 },
+    'pva': { density: 1.19, diameter: 1.75 },
+    'wax': { density: 0.95, diameter: 1.75 },
+    'clearing': { density: 1.00, diameter: 1.75 }
 };
 
 const COLOR_MAP = {
-    'Green': '#22c55e',
-    'Yellow': '#eab308',
-    'Red': '#ef4444',
-    'Blue': '#3b82f6',
-    'Orange': '#f97316',
-    'Purple': '#a855f7',
-    'Black': '#1a1a1a',
-    'White': '#f3f4f6',
-    'Gray': '#6b7280',
-    'Silver': '#c0c0c0',
-    'Crimson': '#dc2626',
-    'Pink': '#ec4899',
-    'Gold': '#f59e0b',
-    'Lime': '#84cc16',
-    'Teal': '#14b8a6',
-    'Cyan': '#06b6d4',
-    'Navy': '#1e3a8a',
-    'Violet': '#8b5cf6',
-    'Magenta': '#d946ef',
-    'Brown': '#92400e',
-    'Beige': '#f5e6d3',
-    'Transparent': 'rgba(255,255,255,0.1)',
-    'Glow': '#22d3ee',
-    'Multicolor': '#8b5cf6'
+    'green': '#22c55e',
+    'yellow': '#eab308',
+    'red': '#ef4444',
+    'blue': '#3b82f6',
+    'orange': '#f97316',
+    'purple': '#a855f7',
+    'black': '#1a1a1a',
+    'white': '#f3f4f6',
+    'gray': '#6b7280',
+    'silver': '#c0c0c0',
+    'crimson': '#dc2626',
+    'pink': '#ec4899',
+    'gold': '#f59e0b',
+    'lime': '#84cc16',
+    'teal': '#14b8a6',
+    'cyan': '#06b6d4',
+    'navy': '#1e3a8a',
+    'violet': '#8b5cf6',
+    'magenta': '#d946ef',
+    'brown': '#92400e',
+    'beige': '#f5e6d3',
+    'transparent': 'rgba(255,255,255,0.1)',
+    'glow': '#22d3ee',
+    'multicolor': '#8b5cf6'
 };
 
 const COLOR_NAMES = {
-    'Green': 'Зеленый',
-    'Yellow': 'Желтый',
-    'Red': 'Красный',
-    'Blue': 'Синий',
-    'Orange': 'Оранжевый',
-    'Purple': 'Фиолетовый',
-    'Black': 'Черный',
-    'White': 'Белый',
-    'Gray': 'Серый',
-    'Silver': 'Серебристый',
-    'Crimson': 'Малиновый',
-    'Pink': 'Розовый',
-    'Gold': 'Золотой',
-    'Lime': 'Лайм',
-    'Teal': 'Бирюзовый',
-    'Cyan': 'Циан',
-    'Navy': 'Темно-синий',
-    'Violet': 'Лиловый',
-    'Magenta': 'Пурпурный',
-    'Brown': 'Коричневый',
-    'Beige': 'Бежевый',
-    'Transparent': 'Прозрачный',
-    'Glow': 'Светящийся',
-    'Multicolor': 'Мультицвет'
+    'green': 'Зеленый',
+    'yellow': 'Желтый',
+    'red': 'Красный',
+    'blue': 'Синий',
+    'orange': 'Оранжевый',
+    'purple': 'Фиолетовый',
+    'black': 'Черный',
+    'white': 'Белый',
+    'gray': 'Серый',
+    'silver': 'Серебристый',
+    'crimson': 'Малиновый',
+    'pink': 'Розовый',
+    'gold': 'Золотой',
+    'lime': 'Лайм',
+    'teal': 'Бирюзовый',
+    'cyan': 'Циан',
+    'navy': 'Темно-синий',
+    'violet': 'Лиловый',
+    'magenta': 'Пурпурный',
+    'brown': 'Коричневый',
+    'beige': 'Бежевый',
+    'transparent': 'Прозрачный',
+    'glow': 'Светящийся',
+    'multicolor': 'Мультицвет'
 };
 
 const RING_COLOR_MAP = {
-    'Green': '#22c55e',
-    'Yellow': '#eab308',
-    'Red': '#ef4444',
-    'Blue': '#3b82f6',
-    'Orange': '#f97316',
-    'Purple': '#a855f7',
-    'Black': '#4a4a4a',
-    'White': '#e5e7eb',
-    'Gray': '#9ca3af',
-    'Silver': '#d1d5db',
-    'Crimson': '#dc2626',
-    'Pink': '#ec4899',
-    'Gold': '#f59e0b',
-    'Lime': '#84cc16',
-    'Teal': '#14b8a6',
-    'Cyan': '#06b6d4',
-    'Navy': '#3b82f6',
-    'Violet': '#8b5cf6',
-    'Magenta': '#d946ef',
-    'Brown': '#b45309',
-    'Beige': '#d4c5b0',
-    'Transparent': '#9ca3af',
-    'Glow': '#22d3ee',
-    'Multicolor': '#8b5cf6'
+    'green': '#22c55e',
+    'yellow': '#eab308',
+    'red': '#ef4444',
+    'blue': '#3b82f6',
+    'orange': '#f97316',
+    'purple': '#a855f7',
+    'black': '#4a4a4a',
+    'white': '#e5e7eb',
+    'gray': '#9ca3af',
+    'silver': '#d1d5db',
+    'crimson': '#dc2626',
+    'pink': '#ec4899',
+    'gold': '#f59e0b',
+    'lime': '#84cc16',
+    'teal': '#14b8a6',
+    'cyan': '#06b6d4',
+    'navy': '#3b82f6',
+    'violet': '#8b5cf6',
+    'magenta': '#d946ef',
+    'brown': '#b45309',
+    'beige': '#d4c5b0',
+    'transparent': '#9ca3af',
+    'glow': '#22d3ee',
+    'multicolor': '#8b5cf6'
 };
 
 function formatLength(mm) {
@@ -202,6 +211,19 @@ function updateAdvancedDefaults() {
         document.getElementById('filamentDensity').value = defaults.density;
         document.getElementById('filamentDiameter').value = defaults.diameter;
     }
+    syncCompositionWithType();
+}
+
+function syncCompositionWithType() {
+    const type = document.getElementById('filamentType').value;
+    if (!type) return;
+    
+    if (compositionData.length === 0 || 
+        (compositionData.length === 1 && compositionData[0].percent === 100)) {
+        compositionData = [{ material: type.toLowerCase(), percent: 100 }];
+        renderCompositionList();
+        updateCompositionTotal();
+    }
 }
 
 // ===== УПРАВЛЕНИЕ РАСКРЫТИЕМ =====
@@ -236,6 +258,11 @@ function toggleManufacturerFilter() {
     if (manufacturerFilterExpanded) updateManufacturerFilterList();
 }
 
+function toggleCompositionFilter() {
+    compositionFilterExpanded = toggleElement('compositionFilterContainer', 'filterCompositionToggle', compositionFilterExpanded);
+    if (compositionFilterExpanded) updateCompositionFilterList();
+}
+
 // ===== ОБНОВЛЕНИЕ ЛЕЙБЛОВ =====
 
 function updateTypeLabel() {
@@ -247,7 +274,7 @@ function updateTypeLabel() {
         label.textContent = 'Все типы';
         if (count) count.style.display = 'none';
     } else if (selectedTypes.length === 1) {
-        label.textContent = selectedTypes[0];
+        label.textContent = selectedTypes[0].toUpperCase();
         if (count) count.style.display = 'none';
     } else {
         label.textContent = `Типы (${selectedTypes.length})`;
@@ -298,11 +325,32 @@ function updateManufacturerLabel() {
     }
 }
 
+function updateCompositionLabel() {
+    const label = document.getElementById('filterCompositionLabel');
+    const count = document.getElementById('filterCompositionCount');
+    if (!label) return;
+    
+    if (selectedCompositions.length === 0) {
+        label.textContent = 'Все составы';
+        if (count) count.style.display = 'none';
+    } else if (selectedCompositions.length === 1) {
+        label.textContent = selectedCompositions[0];
+        if (count) count.style.display = 'none';
+    } else {
+        label.textContent = `Составы (${selectedCompositions.length})`;
+        if (count) {
+            count.textContent = `+${selectedCompositions.length}`;
+            count.style.display = 'inline';
+        }
+    }
+}
+
 // ===== УПРАВЛЕНИЕ СОСТАВОМ =====
 
 function openCompositionModal() {
     if (compositionData.length === 0) {
-        compositionData = [{ material: 'PLA', percent: 100 }];
+        const defaultType = document.getElementById('filamentType').value || 'pla';
+        compositionData = [{ material: defaultType.toLowerCase(), percent: 100 }];
     }
     
     renderCompositionList();
@@ -348,12 +396,12 @@ function renderCompositionList() {
 }
 
 function getMaterialOptions(selected) {
-    const materials = ['PLA', 'PETG', 'ABS', 'HIPS', 'SBS', 'TPU', 'NYLON', 'ASA', 'PP', 'PC', 'POM', 'PMMA', 'PEEK', 'Ceramo', 'PVA', 'WAX', 'Clearing', 'Углеволокно', 'Стекловолокно', 'Кевлар', 'Металлик', 'Дерево', 'Светящийся', 'Другое'];
-    return materials.map(m => `<option value="${m}" ${m === selected ? 'selected' : ''}>${m}</option>`).join('');
+    const materials = ['pla', 'petg', 'abs', 'hips', 'sbs', 'tpu', 'nylon', 'asa', 'pp', 'pc', 'pom', 'pmma', 'peek', 'ceramo', 'pva', 'wax', 'clearing', 'углеволокно', 'стекловолокно', 'кевлар', 'металлик', 'дерево', 'светящийся', 'другое'];
+    return materials.map(m => `<option value="${m}" ${m === selected ? 'selected' : ''}>${m.charAt(0).toUpperCase() + m.slice(1)}</option>`).join('');
 }
 
 function addCompositionItem() {
-    compositionData.push({ material: 'Другое', percent: 0 });
+    compositionData.push({ material: 'другое', percent: 0 });
     renderCompositionList();
     updateCompositionTotal();
 }
@@ -424,6 +472,7 @@ async function checkAuth() {
         return false;
     } catch (error) {
         console.error('Ошибка проверки авторизации:', error);
+        showNotification('Ошибка подключения к серверу', 'error');
         return false;
     }
 }
@@ -526,10 +575,12 @@ function openFilter() {
     updateTypeLabel();
     updateColorLabel();
     updateManufacturerLabel();
+    updateCompositionLabel();
     
     if (typeFilterExpanded) updateTypeFilterList();
     if (colorFilterExpanded) updateColorFilterList();
     if (manufacturerFilterExpanded) updateManufacturerFilterList();
+    if (compositionFilterExpanded) updateCompositionFilterList();
 }
 
 document.getElementById('filterModal').addEventListener('click', function(e) {
@@ -552,7 +603,7 @@ function updateTypeFilterList() {
         return `
             <button class="filter-option ${isSelected ? 'active' : ''}" onclick="toggleType('${t}')" style="padding:6px 12px; font-size:13px;">
                 <i class="fa-solid ${isSelected ? 'fa-check-circle' : 'fa-circle'}"></i>
-                <span>${t}</span>
+                <span>${t.toUpperCase()}</span>
             </button>
         `;
     }).join('');
@@ -601,6 +652,26 @@ function updateManufacturerFilterList() {
     }).join('');
 }
 
+function updateCompositionFilterList() {
+    const container = document.getElementById('compositionFilterContainer');
+    if (!container) return;
+    
+    if (uniqueCompositions.length === 0) {
+        container.innerHTML = `<div style="text-align:center;padding:8px;color:#6b7280;font-size:13px;">Нет составов</div>`;
+        return;
+    }
+    
+    container.innerHTML = uniqueCompositions.map(c => {
+        const isSelected = selectedCompositions.includes(c);
+        return `
+            <button class="filter-option ${isSelected ? 'active' : ''}" onclick="toggleComposition('${c.replace(/'/g, "\\'")}')" style="padding:6px 12px; font-size:13px;">
+                <i class="fa-solid ${isSelected ? 'fa-check-circle' : 'fa-circle'}"></i>
+                <span>${c}</span>
+            </button>
+        `;
+    }).join('');
+}
+
 // ===== ПЕРЕКЛЮЧЕНИЕ ФИЛЬТРОВ =====
 
 function toggleType(type) {
@@ -634,6 +705,42 @@ function toggleManufacturer(manufacturer) {
     }
     updateManufacturerFilterList();
     updateManufacturerLabel();
+}
+
+function toggleComposition(composition) {
+    const index = selectedCompositions.indexOf(composition);
+    if (index === -1) {
+        selectedCompositions.push(composition);
+    } else {
+        selectedCompositions.splice(index, 1);
+    }
+    updateCompositionFilterList();
+    updateCompositionLabel();
+}
+
+// ===== ПЕРЕКЛЮЧЕНИЕ ГРУППИРОВКИ =====
+
+function toggleGrouping() {
+    isGrouped = !isGrouped;
+    saveGroupingState(isGrouped);
+    
+    const btn = document.getElementById('groupToggleBtn');
+    if (btn) {
+        if (isGrouped) {
+            btn.classList.add('active');
+            btn.innerHTML = '<i class="fa-solid fa-layer-group"></i> Группировка включена';
+        } else {
+            btn.classList.remove('active');
+            btn.innerHTML = '<i class="fa-solid fa-layer-group"></i> Группировка отключена';
+        }
+    }
+    
+    // Если мы в режиме просмотра группы, выходим из него
+    if (isInGroupView) {
+        exitGroupView();
+    }
+    
+    loadFilaments();
 }
 
 // ===== СОРТИРОВКА =====
@@ -701,8 +808,20 @@ function resetFilters() {
     selectedTypes = [];
     selectedColors = [];
     selectedManufacturers = [];
+    selectedCompositions = [];
     currentSearchQuery = '';
     document.getElementById('searchInput').value = '';
+    
+    const btn = document.getElementById('groupToggleBtn');
+    if (btn) {
+        if (isGrouped) {
+            btn.classList.add('active');
+            btn.innerHTML = '<i class="fa-solid fa-layer-group"></i> Группировка включена';
+        } else {
+            btn.classList.remove('active');
+            btn.innerHTML = '<i class="fa-solid fa-layer-group"></i> Группировка отключена';
+        }
+    }
     
     document.querySelectorAll('.filter-option').forEach(btn => btn.classList.remove('active'));
     document.getElementById('filterDefault').classList.add('active');
@@ -710,10 +829,17 @@ function resetFilters() {
     updateTypeLabel();
     updateColorLabel();
     updateManufacturerLabel();
+    updateCompositionLabel();
     
     if (typeFilterExpanded) updateTypeFilterList();
     if (colorFilterExpanded) updateColorFilterList();
     if (manufacturerFilterExpanded) updateManufacturerFilterList();
+    if (compositionFilterExpanded) updateCompositionFilterList();
+    
+    // Если мы в режиме просмотра группы, выходим из него
+    if (isInGroupView) {
+        exitGroupView();
+    }
     
     loadFilaments();
 }
@@ -739,6 +865,14 @@ function buildMaterialsUrl() {
         params.append('manufacturer', m);
     });
     
+    selectedCompositions.forEach(c => {
+        params.append('composition', c);
+    });
+    
+    if (isGrouped) {
+        params.append('grouped', 'true');
+    }
+    
     if (currentSortBy) {
         params.append('sort_by', currentSortBy);
         params.append('sort_order', currentSortOrder);
@@ -754,6 +888,8 @@ async function loadFilaments() {
     if (!token) return;
     try {
         const url = buildMaterialsUrl();
+        console.log('Загрузка катушек:', url);
+        
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -761,11 +897,15 @@ async function loadFilaments() {
                 'Authorization': `Bearer ${token}`
             }
         });
+        
         if (response.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             redirectToLogin();
             return;
+        }
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
         if (data.status !== 200) {
@@ -775,7 +915,14 @@ async function loadFilaments() {
         renderFilaments(allFilaments);
     } catch (error) {
         console.error('Ошибка загрузки катушек:', error);
-        showNotification('Ошибка загрузки катушек', 'error');
+        showNotification('Ошибка загрузки катушек: ' + error.message, 'error');
+        document.getElementById('filamentGrid').innerHTML = `
+            <div style="grid-column:1/-1;text-align:center;padding:40px;color:#ff5f5f;">
+                <i class="fa-solid fa-circle-exclamation" style="font-size:48px;margin-bottom:12px;display:block;"></i>
+                <p>Ошибка загрузки катушек</p>
+                <p style="font-size:14px;color:#9ca3af;margin-top:8px;">Проверьте подключение к серверу</p>
+            </div>
+        `;
     }
 }
 
@@ -790,7 +937,124 @@ function renderFilaments(filaments) {
         return;
     }
     
-    grid.innerHTML = filaments.map(f => {
+    let html = '';
+    for (const f of filaments) {
+        if (f.is_group === true) {
+            const colorKey = f.color || '';
+            const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
+            const ringColor = RING_COLOR_MAP[colorKey] || '#8b5cf6';
+            const colorName = COLOR_NAMES[colorKey] || f.color || 'Без цвета';
+            const progress = Math.round(((f.current_length || 0) / (f.initial_length || 1)) * 100);
+            const isEmpty = (f.current_length || 0) <= 0;
+            const materialType = f.material_type || 'Неизвестный тип';
+            const manufacturer = f.manufacturer || '';
+            
+            const emptyStyles = isEmpty ? `
+                opacity: 0.5;
+                filter: grayscale(0.8);
+                border-color: rgba(255,255,255,0.02);
+            ` : '';
+            
+            const currentLength = formatLength(f.current_length || 0);
+            const initialLength = formatLength(f.initial_length || 0);
+            const lengthText = isEmpty ? '0 мм (пусто)' : `${currentLength} / ${initialLength}`;
+            const lengthColor = isEmpty ? '#6b7280' : colorHex;
+            
+            let ringStyle;
+            if (colorKey === 'multicolor') {
+                const multiColors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
+                const totalColors = multiColors.length;
+                const segmentSize = 100 / totalColors;
+                let gradientStops = [];
+                
+                for (let i = 0; i < totalColors; i++) {
+                    const start = i * segmentSize;
+                    const end = (i + 1) * segmentSize;
+                    if (start < progress) {
+                        const actualEnd = Math.min(end, progress);
+                        gradientStops.push(`${multiColors[i]} ${start}% ${actualEnd}%`);
+                    } else {
+                        if (i === 0 && progress === 0) {
+                            gradientStops = [`#2b2f3a 0% 100%`];
+                            break;
+                        }
+                        if (i === 0 && progress > 0) {
+                            continue;
+                        }
+                        const darkStart = Math.max(progress, start);
+                        if (darkStart < 100) {
+                            gradientStops.push(`#2b2f3a ${darkStart}% 100%`);
+                        }
+                        break;
+                    }
+                }
+                
+                if (progress >= 100) {
+                    gradientStops = gradientStops.filter(stop => !stop.includes('#2b2f3a'));
+                    if (gradientStops.length > 0) {
+                        const last = gradientStops[gradientStops.length - 1];
+                        const parts = last.split(' ');
+                        if (parts.length >= 3) {
+                            parts[parts.length - 1] = '100%';
+                            gradientStops[gradientStops.length - 1] = parts.join(' ');
+                        }
+                    }
+                }
+                
+                if (gradientStops.length === 0) {
+                    gradientStops = [`#2b2f3a 0% 100%`];
+                }
+                
+                ringStyle = `background: conic-gradient(${gradientStops.join(', ')});`;
+            } else {
+                ringStyle = `background: conic-gradient(${ringColor} ${progress}%, #2b2f3a 0);`;
+            }
+            
+            const dotStyle = colorKey === 'multicolor' 
+                ? 'background: linear-gradient(45deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7);' 
+                : `background: ${colorHex};`;
+            
+            const manufacturerHtml = manufacturer ? `
+                <p style="font-size:11px; color:#6b7280; margin-top:1px;">
+                    <i class="fa-solid fa-building" style="font-size:10px; margin-right:3px;"></i>
+                    ${manufacturer}
+                </p>
+            ` : '';
+            
+            const escapedKey = f.group_key.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            
+            html += `<article class="filament-card group-card" data-groupkey="${escapedKey}" style="cursor:pointer; ${emptyStyles} border:2px solid #8b5cf6;">
+                <div class="card-top">
+                    <div class="progress-ring" style="--progress:${progress}; ${ringStyle}">
+                        <span>${isEmpty ? '0%' : progress + '%'}</span>
+                    </div>
+                    <div class="filament-info">
+                        <h2>📦 Группа: ${f.count} шт.</h2>
+                        <p class="filament-color" style="color:${isEmpty ? '#6b7280' : colorHex};">
+                            <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${isEmpty ? '#6b7280' : colorHex}; margin-right:6px; vertical-align:middle;"></span>
+                            ${colorName}
+                        </p>
+                        <p style="font-size:12px; color:#6b7280; margin-top:2px;">
+                            <i class="fa-solid fa-cube" style="font-size:11px; margin-right:4px;"></i>
+                            ${materialType.toUpperCase()}
+                        </p>
+                        ${manufacturerHtml}
+                        <p style="font-size:10px; color:#4a4a5a; margin-top:1px;">
+                            <i class="fa-solid fa-people-group"></i> ${f.count} катушек
+                        </p>
+                    </div>
+                </div>
+                <div class="weight-info" style="color:${lengthColor};">
+                    <div class="weight-dot" style="${dotStyle}"></div>
+                    <span>${lengthText} (общая)</span>
+                </div>
+                <div style="margin-top:6px; font-size:10px; color:#8b5cf6; text-align:center; border-top:1px solid rgba(139,92,246,0.2); padding-top:4px;">
+                    <i class="fa-solid fa-chevron-down"></i> Нажмите для просмотра
+                </div>
+            </article>`;
+            continue;
+        }
+        
         const colorKey = f.color || '';
         const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
         const ringColor = RING_COLOR_MAP[colorKey] || '#8b5cf6';
@@ -814,7 +1078,7 @@ function renderFilaments(filaments) {
         const lengthColor = isEmpty ? '#6b7280' : colorHex;
         
         let ringStyle;
-        if (colorKey === 'Multicolor') {
+        if (colorKey === 'multicolor') {
             const multiColors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
             const totalColors = multiColors.length;
             const segmentSize = 100 / totalColors;
@@ -863,7 +1127,7 @@ function renderFilaments(filaments) {
             ringStyle = `background: conic-gradient(${ringColor} ${progress}%, #2b2f3a 0);`;
         }
         
-        const dotStyle = colorKey === 'Multicolor' 
+        const dotStyle = colorKey === 'multicolor' 
             ? 'background: linear-gradient(45deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7);' 
             : `background: ${colorHex};`;
         
@@ -882,7 +1146,7 @@ function renderFilaments(filaments) {
             </p>
         `;
         
-        return `<article class="filament-card" onclick="openDetailModal(${f.id})" style="cursor:pointer; ${emptyStyles}">
+        html += `<article class="filament-card" onclick="openDetailModal(${f.id})" style="cursor:pointer; ${emptyStyles}">
             <div class="card-top">
                 <div class="progress-ring" style="--progress:${progress}; ${ringStyle}">
                     <span>${isEmpty ? '0%' : progress + '%'}</span>
@@ -895,7 +1159,7 @@ function renderFilaments(filaments) {
                     </p>
                     <p style="font-size:12px; color:#6b7280; margin-top:2px;">
                         <i class="fa-solid fa-cube" style="font-size:11px; margin-right:4px;"></i>
-                        ${materialType}
+                        ${materialType.toUpperCase()}
                     </p>
                     ${manufacturerHtml}
                     ${specsHtml}
@@ -909,7 +1173,324 @@ function renderFilaments(filaments) {
                 <i class="fa-solid fa-triangle-exclamation"></i> Катушка пуста
             </div>` : ''}
         </article>`;
-    }).join('');
+    }
+    
+    grid.innerHTML = html;
+    
+    // Обработчик для карточек групп
+    document.querySelectorAll('.group-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            e.preventDefault();
+            const groupKey = this.dataset.groupkey;
+            if (groupKey) {
+                openGroupView(groupKey);
+            }
+        });
+    });
+}
+
+function loadGroupingState() {
+    const saved = localStorage.getItem('filament_grouping_enabled');
+    if (saved !== null) {
+        return saved === 'true';
+    }
+    return false;
+}
+
+function saveGroupingState(value) {
+    localStorage.setItem('filament_grouping_enabled', String(value));
+}
+
+// ===== НАВИГАЦИЯ ПО ГРУППАМ =====
+
+function showBackButton(show) {
+    const searchSection = document.querySelector('.search-section');
+    if (!searchSection) return;
+    
+    let backBtn = document.getElementById('groupBackButton');
+    
+    if (show) {
+        if (!backBtn) {
+            backBtn = document.createElement('button');
+            backBtn.id = 'groupBackButton';
+            backBtn.className = 'filter-button';
+            backBtn.style.background = '#8b5cf6';
+            backBtn.style.color = '#ffffff';
+            backBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i>';
+            backBtn.title = 'Назад к списку';
+            backBtn.onclick = exitGroupView;
+            searchSection.prepend(backBtn);
+        }
+        backBtn.style.display = 'flex';
+    } else {
+        if (backBtn) {
+            backBtn.style.display = 'none';
+        }
+    }
+}
+
+async function openGroupView(groupKey) {
+    console.log('openGroupView вызвана с groupKey:', groupKey);
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+        showNotification('Вы не авторизованы', 'error');
+        return;
+    }
+    
+    try {
+        const encodedKey = encodeURIComponent(groupKey);
+        const url = `${API_URL}/materials/?group_key=${encodedKey}`;
+        console.log('Запрос URL:', url);
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        console.log('Ответ от сервера статус:', response.status);
+        
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            redirectToLogin();
+            return;
+        }
+        
+        if (response.status === 404) {
+            showNotification('Группа не найдена', 'error');
+            return;
+        }
+        
+        if (response.status === 500) {
+            showNotification('Ошибка сервера при загрузке группы', 'error');
+            return;
+        }
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Данные группы:', data);
+        
+        if (data.status !== 200) {
+            throw new Error(data.message || 'Ошибка загрузки группы');
+        }
+        
+        const filaments = data.data || [];
+        console.log('Катушки в группе:', filaments);
+        
+        if (filaments.length === 0) {
+            showNotification('В группе нет катушек', 'error');
+            return;
+        }
+        
+        // Сохраняем состояние
+        isInGroupView = true;
+        currentGroupKey = groupKey;
+        groupNavigationStack.push(groupKey);
+        
+        // Показываем кнопку назад
+        showBackButton(true);
+        
+        // Обновляем заголовок
+        const logo = document.querySelector('.logo');
+        if (logo) {
+            const first = filaments[0];
+            const colorName = COLOR_NAMES[first.color] || first.color || 'Без цвета';
+            const materialType = first.material_type || 'Неизвестный тип';
+            logo.textContent = `📦 Группа (${filaments.length})`;
+            logo.style.fontSize = '20px';
+        }
+        
+        // Обновляем поиск
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.placeholder = `Поиск в группе...`;
+            searchInput.value = '';
+        }
+        
+        // Рендерим катушки из группы
+        renderGroupFilaments(filaments);
+        
+    } catch (error) {
+        console.error('Ошибка загрузки группы:', error);
+        showNotification('Ошибка загрузки группы: ' + error.message, 'error');
+    }
+}
+
+function renderGroupFilaments(filaments) {
+    const grid = document.getElementById('filamentGrid');
+    if (!grid) return;
+    
+    if (!filaments || filaments.length === 0) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#9ca3af;">
+            <i class="fa-solid fa-box-open" style="font-size:48px;margin-bottom:12px;display:block;"></i>
+            <p>В группе нет катушек</p>
+        </div>`;
+        return;
+    }
+    
+    // Сортируем катушки в группе
+    const sortedFilaments = [...filaments].sort((a, b) => {
+        const nameA = a.name || '';
+        const nameB = b.name || '';
+        return nameA.localeCompare(nameB);
+    });
+    
+    let html = '';
+    for (const f of sortedFilaments) {
+        const colorKey = f.color || '';
+        const colorHex = COLOR_MAP[colorKey] || '#8b5cf6';
+        const ringColor = RING_COLOR_MAP[colorKey] || '#8b5cf6';
+        const colorName = COLOR_NAMES[colorKey] || f.color || 'Без цвета';
+        const progress = Math.round(((f.current_length || 0) / (f.initial_length || 1)) * 100);
+        const isEmpty = (f.current_length || 0) <= 0;
+        const materialType = f.material_type || 'Неизвестный тип';
+        const manufacturer = f.manufacturer || '';
+        const density = f.density || 1.24;
+        const diameter = f.diameter || 1.75;
+        
+        const emptyStyles = isEmpty ? `
+            opacity: 0.5;
+            filter: grayscale(0.8);
+            border-color: rgba(255,255,255,0.02);
+        ` : '';
+        
+        const currentLength = formatLength(f.current_length || 0);
+        const initialLength = formatLength(f.initial_length || 0);
+        const lengthText = isEmpty ? '0 мм (пусто)' : `${currentLength} / ${initialLength}`;
+        const lengthColor = isEmpty ? '#6b7280' : colorHex;
+        
+        let ringStyle;
+        if (colorKey === 'multicolor') {
+            const multiColors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
+            const totalColors = multiColors.length;
+            const segmentSize = 100 / totalColors;
+            let gradientStops = [];
+            
+            for (let i = 0; i < totalColors; i++) {
+                const start = i * segmentSize;
+                const end = (i + 1) * segmentSize;
+                if (start < progress) {
+                    const actualEnd = Math.min(end, progress);
+                    gradientStops.push(`${multiColors[i]} ${start}% ${actualEnd}%`);
+                } else {
+                    if (i === 0 && progress === 0) {
+                        gradientStops = [`#2b2f3a 0% 100%`];
+                        break;
+                    }
+                    if (i === 0 && progress > 0) {
+                        continue;
+                    }
+                    const darkStart = Math.max(progress, start);
+                    if (darkStart < 100) {
+                        gradientStops.push(`#2b2f3a ${darkStart}% 100%`);
+                    }
+                    break;
+                }
+            }
+            
+            if (progress >= 100) {
+                gradientStops = gradientStops.filter(stop => !stop.includes('#2b2f3a'));
+                if (gradientStops.length > 0) {
+                    const last = gradientStops[gradientStops.length - 1];
+                    const parts = last.split(' ');
+                    if (parts.length >= 3) {
+                        parts[parts.length - 1] = '100%';
+                        gradientStops[gradientStops.length - 1] = parts.join(' ');
+                    }
+                }
+            }
+            
+            if (gradientStops.length === 0) {
+                gradientStops = [`#2b2f3a 0% 100%`];
+            }
+            
+            ringStyle = `background: conic-gradient(${gradientStops.join(', ')});`;
+        } else {
+            ringStyle = `background: conic-gradient(${ringColor} ${progress}%, #2b2f3a 0);`;
+        }
+        
+        const dotStyle = colorKey === 'multicolor' 
+            ? 'background: linear-gradient(45deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7);' 
+            : `background: ${colorHex};`;
+        
+        const emptyEmoji = isEmpty ? ' 📦' : '';
+        
+        const manufacturerHtml = manufacturer ? `
+            <p style="font-size:11px; color:#6b7280; margin-top:1px;">
+                <i class="fa-solid fa-building" style="font-size:10px; margin-right:3px;"></i>
+                ${manufacturer}
+            </p>
+        ` : '';
+        
+        const specsHtml = `
+            <p style="font-size:10px; color:#4a4a5a; margin-top:1px;">
+                ρ=${density} г/см³ • Ø=${diameter} мм
+            </p>
+        `;
+        
+        html += `<article class="filament-card" onclick="openDetailModal(${f.id})" style="cursor:pointer; ${emptyStyles} border:2px solid ${colorHex};">
+            <div class="card-top">
+                <div class="progress-ring" style="--progress:${progress}; ${ringStyle}">
+                    <span>${isEmpty ? '0%' : progress + '%'}</span>
+                </div>
+                <div class="filament-info">
+                    <h2>${f.name || 'Без названия'}${emptyEmoji}</h2>
+                    <p class="filament-color" style="color:${isEmpty ? '#6b7280' : colorHex};">
+                        <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${isEmpty ? '#6b7280' : colorHex}; margin-right:6px; vertical-align:middle;"></span>
+                        ${colorName}
+                    </p>
+                    <p style="font-size:12px; color:#6b7280; margin-top:2px;">
+                        <i class="fa-solid fa-cube" style="font-size:11px; margin-right:4px;"></i>
+                        ${materialType.toUpperCase()}
+                    </p>
+                    ${manufacturerHtml}
+                    ${specsHtml}
+                </div>
+            </div>
+            <div class="weight-info" style="color:${lengthColor};">
+                <div class="weight-dot" style="${dotStyle}"></div>
+                <span>${lengthText}</span>
+            </div>
+            ${isEmpty ? `<div style="margin-top:6px; font-size:11px; color:#6b7280; text-align:center; border-top:1px solid rgba(255,255,255,0.05); padding-top:6px;">
+                <i class="fa-solid fa-triangle-exclamation"></i> Катушка пуста
+            </div>` : ''}
+        </article>`;
+    }
+    
+    grid.innerHTML = html;
+}
+
+function exitGroupView() {
+    isInGroupView = false;
+    currentGroupKey = null;
+    groupNavigationStack = [];
+    
+    // Убираем кнопку назад
+    showBackButton(false);
+    
+    // Восстанавливаем заголовок
+    const logo = document.querySelector('.logo');
+    if (logo) {
+        logo.textContent = 'Катушки';
+        logo.style.fontSize = '';
+    }
+    
+    // Восстанавливаем поиск
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.placeholder = 'Поиск филамента...';
+        searchInput.value = '';
+    }
+    
+    // Перезагружаем список
+    loadFilaments();
 }
 
 // ===== ДЕТАЛИ КАТУШКИ =====
@@ -944,6 +1525,10 @@ async function openDetailModal(id) {
             return;
         }
         
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         if (data.status !== 200) {
             throw new Error(data.message || 'Ошибка загрузки катушки');
@@ -974,7 +1559,7 @@ async function openDetailModal(id) {
         const diameter = filament.diameter || 1.75;
         
         let ringStyle;
-        if (colorKey === 'Multicolor') {
+        if (colorKey === 'multicolor') {
             const colors = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
             const totalColors = colors.length;
             const segmentSize = 100 / totalColors;
@@ -1013,7 +1598,7 @@ async function openDetailModal(id) {
                         </div>
                         <div>
                             <h2 style="color:#ffffff; font-size:22px; margin-bottom:4px;">${filament.name}${emptyEmoji}</h2>
-                            <p style="color:${isEmpty ? '#6b7280' : colorHex}; font-size:16px; font-weight:600;">${colorName} ${filament.material_type ? '• ' + filament.material_type : ''}</p>
+                            <p style="color:${isEmpty ? '#6b7280' : colorHex}; font-size:16px; font-weight:600;">${colorName} ${filament.material_type ? '• ' + filament.material_type.toUpperCase() : ''}</p>
                             ${manufacturer ? `<p style="color:#9ca3af; font-size:14px;"><i class="fa-solid fa-building"></i> ${manufacturer}</p>` : ''}
                             <p style="color:#9ca3af; font-size:13px;">Плотность: ${density} г/см³ • Диаметр: ${diameter} мм</p>
                             ${isEmpty ? `<p style="color:#ff5f5f; font-size:14px; margin-top:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Катушка пуста</p>` : ''}
@@ -1106,64 +1691,7 @@ async function openDetailModal(id) {
     }
 }
 
-// ===== СОСТАВ КАТУШКИ =====
-
-function openCompositionDetail(materialId) {
-    const filament = allFilaments.find(f => f.id === materialId);
-    if (!filament) {
-        showNotification('Катушка не найдена', 'error');
-        return;
-    }
-    
-    const composition = filament.composition || [];
-    const modal = document.getElementById('compositionDetailModal');
-    const body = document.getElementById('compositionDetailBody');
-    
-    if (!composition || composition.length === 0) {
-        body.innerHTML = `
-            <div style="text-align:center; padding:20px; color:#9ca3af;">
-                <i class="fa-solid fa-flask" style="font-size:32px; display:block; margin-bottom:12px; opacity:0.5;"></i>
-                <p>Состав не указан</p>
-            </div>
-        `;
-        modal.style.display = 'flex';
-        return;
-    }
-    
-    let html = `
-        <div style="display:flex; flex-direction:column; gap:10px;">
-            <div style="background:#232734; border-radius:10px; padding:12px;">
-                <div style="color:#9ca3af; font-size:12px; margin-bottom:8px;">Материал</div>
-                <div style="color:#ffffff; font-size:16px; font-weight:600;">${filament.name}</div>
-                ${filament.material_type ? `<div style="color:#9ca3af; font-size:13px; margin-top:4px;">Тип: ${filament.material_type}</div>` : ''}
-            </div>
-            <div style="background:#232734; border-radius:10px; padding:12px;">
-                <div style="color:#9ca3af; font-size:12px; margin-bottom:8px;">Состав</div>
-                ${composition.map(item => `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
-                        <span style="color:#ffffff;">${item.material || 'Неизвестный материал'}</span>
-                        <span style="color:#8b5cf6; font-weight:600;">${item.percent || 0}%</span>
-                    </div>
-                `).join('')}
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0 4px 0; border-top:2px solid rgba(139,92,246,0.3); margin-top:4px;">
-                    <span style="color:#9ca3af; font-weight:500;">Итого</span>
-                    <span style="color:#4ade80; font-weight:700;">${composition.reduce((sum, item) => sum + (item.percent || 0), 0)}%</span>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    body.innerHTML = html;
-    modal.style.display = 'flex';
-}
-
-function closeCompositionDetail() {
-    document.getElementById('compositionDetailModal').style.display = 'none';
-}
-
-document.getElementById('compositionDetailModal').addEventListener('click', function(e) {
-    if (e.target === this) closeCompositionDetail();
-});
+// ===== QR-КОД =====
 
 function printQRCode() {
     if (window.api?.printQR) {
@@ -1430,7 +1958,6 @@ async function loadConsumptionHistory(materialId) {
             </div>`;
         }
         
-        // Статусы для отображения
         const statusMap = {
             'success': { color: '#4ade80', label: 'Успешно' },
             'waste': { color: '#ef4444', label: 'Брак' },
@@ -1493,6 +2020,15 @@ async function deleteFilament(id) {
             loadFilaments();
             return;
         }
+        if (response.status === 200) {
+            const data = await response.json();
+            if (data.status === 200 || data.status === 204) {
+                showNotification('Катушка удалена', 'success');
+                closeDetailModal();
+                loadFilaments();
+                return;
+            }
+        }
         const data = await response.json();
         if (data.status !== 204 && data.status !== 200) {
             throw new Error(data.message || data.error || 'Ошибка удаления');
@@ -1532,6 +2068,14 @@ document.addEventListener('DOMContentLoaded', function() {
             el.addEventListener('change', checkFilamentFields);
         }
     });
+    
+    const typeSelect = document.getElementById('filamentType');
+    if (typeSelect) {
+        typeSelect.addEventListener('change', function() {
+            updateAdvancedDefaults();
+            syncCompositionWithType();
+        });
+    }
 });
 
 function openAddFilament() {
@@ -1545,7 +2089,12 @@ function openAddFilament() {
     document.getElementById('filamentDiameter').value = '1.75';
     document.getElementById('advancedSettings').style.display = 'none';
     document.getElementById('advancedIcon').className = 'fa-solid fa-gear';
-    compositionData = [{ material: 'PLA', percent: 100 }];
+    
+    const defaultType = document.getElementById('filamentType').value || 'pla';
+    compositionData = [{ material: defaultType.toLowerCase(), percent: 100 }];
+    renderCompositionList();
+    updateCompositionTotal();
+    
     ['filamentName', 'filamentManufacturer', 'filamentType', 'filamentColor', 'filamentLength'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.borderColor = '';
@@ -1563,12 +2112,12 @@ document.getElementById('addFilamentModal').addEventListener('click', function(e
 
 function setColor(color) {
     const map = {
-        'green': 'Green', 'yellow': 'Yellow', 'red': 'Red', 'blue': 'Blue',
-        'orange': 'Orange', 'purple': 'Purple', 'black': 'Black', 'white': 'White',
-        'gray': 'Gray', 'silver': 'Silver', 'crimson': 'Crimson', 'pink': 'Pink',
-        'gold': 'Gold', 'lime': 'Lime', 'teal': 'Teal', 'cyan': 'Cyan',
-        'navy': 'Navy', 'violet': 'Violet', 'magenta': 'Magenta', 'brown': 'Brown',
-        'beige': 'Beige', 'transparent': 'Transparent', 'glow': 'Glow', 'multicolor': 'Multicolor'
+        'green': 'green', 'yellow': 'yellow', 'red': 'red', 'blue': 'blue',
+        'orange': 'orange', 'purple': 'purple', 'black': 'black', 'white': 'white',
+        'gray': 'gray', 'silver': 'silver', 'crimson': 'crimson', 'pink': 'pink',
+        'gold': 'gold', 'lime': 'lime', 'teal': 'teal', 'cyan': 'cyan',
+        'navy': 'navy', 'violet': 'violet', 'magenta': 'magenta', 'brown': 'brown',
+        'beige': 'beige', 'transparent': 'transparent', 'glow': 'glow', 'multicolor': 'multicolor'
     };
     document.getElementById('filamentColor').value = map[color] || color;
     checkFilamentFields();
@@ -1606,7 +2155,6 @@ async function addFilamentManual() {
         showNotification('Сумма компонентов состава должна быть 100%', 'error');
         return;
     }
-    
     const token = localStorage.getItem('token');
     if (!token) {
         showNotification('Вы не авторизованы', 'error');
@@ -1626,6 +2174,8 @@ async function addFilamentManual() {
         if (manufacturer) {
             requestBody.manufacturer = manufacturer;
         }
+        
+        console.log('Отправка данных:', requestBody);
         
         const response = await fetch(`${API_URL}/materials/`, {
             method: 'POST',
@@ -1772,7 +2322,7 @@ function toggleQRScanner() {
 }
 
 async function startQRScanner() {
-	    if (window.Android?.scanQR) {
+    if (window.Android?.scanQR) {
         window.Android.scanQR();
         return;
     }
@@ -1995,7 +2545,6 @@ async function findFilamentByQRCode(qrCode) {
 }
 
 function onScanError(error) {
-    // Игнорируем ошибки сканирования
 }
 
 function stopQRScanner() {
@@ -2058,8 +2607,23 @@ window.addEventListener('beforeunload', function() {
 });
 
 window.onload = async function() {
+    console.log('=== INDEX: ЗАГРУЗКА ===');
     const isAuth = await checkAuth();
+    console.log('Авторизация:', isAuth);
     if (isAuth) {
+        isGrouped = loadGroupingState();
+        
+        const btn = document.getElementById('groupToggleBtn');
+        if (btn) {
+            if (isGrouped) {
+                btn.classList.add('active');
+                btn.innerHTML = '<i class="fa-solid fa-layer-group"></i> Группировка включена';
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i class="fa-solid fa-layer-group"></i> Группировка отключена';
+            }
+        }
+        
         await loadUniqueValues();
         await loadFilaments();
     }

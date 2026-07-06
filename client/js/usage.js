@@ -1,10 +1,9 @@
 const API_URL = '/api';
 let allConsumptions = [];
 let currentConsumptionSort = 'default';
-let currentSortOrder = 'desc'; // 'asc' или 'desc'
+let currentSortOrder = 'desc';
 let parsedFileData = null;
 
-// Выбранные фильтры статусов
 let selectedStatuses = [];
 let currentSearchQuery = '';
 
@@ -151,17 +150,14 @@ function showUsername() {
 function buildConsumptionsUrl() {
     const params = new URLSearchParams();
     
-    // Поиск по названию
     if (currentSearchQuery) {
         params.append('title', currentSearchQuery);
     }
     
-    // Статусы - множественный параметр (OR логика)
     selectedStatuses.forEach(s => {
         params.append('status', s);
     });
     
-    // Сортировка - всегда добавляем sort_order
     params.append('sort_order', currentSortOrder);
     
     const queryString = params.toString();
@@ -263,17 +259,14 @@ function searchConsumptions() {
 // ===== СОРТИРОВКА =====
 
 function toggleSort() {
-    // Переключаем направление сортировки
     if (currentSortOrder === 'desc') {
         currentSortOrder = 'asc';
     } else {
         currentSortOrder = 'desc';
     }
-    
-    // Обновляем иконку кнопки
+
     updateSortButtonIcon();
     
-    // Перезагружаем данные
     loadAllConsumptions();
 }
 
@@ -324,7 +317,6 @@ function updateStatusFilterUI() {
         `;
     }).join('');
     
-    // Обновляем лейбл
     const label = document.getElementById('filterStatusLabel');
     const count = document.getElementById('filterStatusCount');
     if (label) {

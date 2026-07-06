@@ -5,6 +5,7 @@
     <title>Использование - FilamentAccounting</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+	 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧵%3C/text%3E%3C/svg%3E" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 </head>
 <body>
@@ -36,7 +37,6 @@
     </div>
 
     <main class="content content-padded">
-        <!-- Фильтр по статусам -->
         <div style="margin-bottom:12px;">
             <button class="filter-option" onclick="toggleStatusFilterContainer()" id="filterStatusToggle" style="padding:10px 14px; font-size:14px;">
                 <i class="fa-solid fa-circle-check"></i> 
@@ -45,7 +45,6 @@
                 <i class="fa-solid fa-chevron-down" style="margin-left:6px;"></i>
             </button>
             <div id="statusFilterContainer" style="display:none; flex-direction:column; gap:4px; padding:8px 0 0 12px; max-height:150px; overflow-y:auto;">
-                <!-- Заполняется динамически -->
             </div>
         </div>
         
@@ -96,7 +95,7 @@
                 Загрузить файл слайсера
             </button>
             
-            <!-- Область загрузки файла (изначально скрыта) -->
+            <!-- Область загрузки файла -->
             <div id="fileUploadArea" style="display:none; flex-direction:column; gap:12px; margin-top:8px;">
                 <div style="border:2px dashed rgba(255,255,255,0.1); border-radius:16px; padding:20px; text-align:center; background:#1a1d26; cursor:pointer;" 
                      onclick="document.getElementById('fileInput').click()">
@@ -126,7 +125,7 @@
                 <div id="toolSelector" style="display:none;"></div>
             </div>
             
-            <!-- Область ручного ввода (видна по умолчанию) -->
+            <!-- Область ручного ввода -->
             <div id="manualInputArea" style="display:block;">
                 <div class="form-group" style="margin-top:8px;">
                     <label for="consumptionTitle"><i class="fa-solid fa-pen"></i> Название действия</label>
