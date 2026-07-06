@@ -43,6 +43,11 @@ const PRIMARY_MATERIALS = [
     'pp', 'pc', 'pom', 'pmma', 'peek', 'ceramo', 'pva', 'wax', 'clearing'
 ];
 
+// ===== СПИСОК ДОПОЛНИТЕЛЬНЫХ МАТЕРИАЛОВ (НЕ МОГУТ БЫТЬ ОСНОВНЫМ ТИПОМ) =====
+const SECONDARY_MATERIALS = [
+    'углеволокно', 'стекловолокно', 'кевлар', 'металлик', 'дерево', 'светящийся', 'другое'
+];
+
 // ===== СЛОВАРЬ ПЛОТНОСТЕЙ МАТЕРИАЛОВ =====
 const MATERIAL_DENSITY = {
     'pla': 1.24,
@@ -241,36 +246,83 @@ function toggleAdvancedSettings() {
     }
 }
 
-// ===== ФУНКЦИЯ ДЛЯ ОПРЕДЕЛЕНИЯ ОСНОВНОГО МАТЕРИАЛА ИЗ СОСТАВА =====
-function getPrimaryMaterialFromComposition(composition) {
+// ===== ФУНКЦИЯ ДЛЯ ПРОВЕРКИ, ЯВЛЯЕТСЯ ЛИ МАТЕРИАЛ ДОПОЛНИТЕЛЬНЫМ =====
+function isSecondaryMaterial(material) {
+    if (!material) return false;
+    const normalized = material.toLowerCase();
+    return SECONDARY_MATERIALS.includes(normalized);
+}
+
+// ===== ФУНКЦИЯ ДЛЯ ПРОВЕРКИ, ЯВЛЯЕТСЯ ЛИ МАТЕРИАЛ ОСНОВНЫМ =====
+function isPrimaryMaterial(material) {
+    if (!material) return false;
+    const normalized = material.toLowerCase();
+    return PRIMARY_MATERIALS.includes(normalized);
+}
+
+// ===== ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ МАТЕРИАЛА С НАИБОЛЬШИМ ПРОЦЕНТОМ СРЕДИ ОСНОВНЫХ =====
+function getPrimaryMaterialWithMaxPercent(composition) {
     if (!composition || composition.length === 0) {
         return null;
     }
     
-    // Находим материал с максимальным процентом
     let maxPercent = 0;
-    let primaryMaterial = null;
+    let materialWithMaxPercent = null;
     
     for (const item of composition) {
         const percent = item.percent || 0;
-        if (percent > maxPercent) {
+        const material = item.material;
+        
+        // Учитываем только основные материалы
+        if (isPrimaryMaterial(material) && percent > maxPercent) {
             maxPercent = percent;
-            primaryMaterial = item.material;
+            materialWithMaxPercent = material;
         }
     }
     
-    // Если максимальный процент меньше 50%, считаем, что основного материала нет
-    if (maxPercent < 50) {
-        return null;
+    return materialWithMaxPercent;
+}
+
+// ===== ФУНКЦИЯ ДЛЯ ПРОВЕРКИ, ЕСТЬ ЛИ В СОСТАВЕ ТОЛЬКО ДОПОЛНИТЕЛЬНЫЕ МАТЕРИАЛЫ =====
+function hasOnlySecondaryMaterials(composition) {
+    if (!composition || composition.length === 0) {
+        return false;
     }
     
-    // Проверяем, может ли этот материал быть основным типом
-    const normalizedPrimary = primaryMaterial.toLowerCase();
-    if (!PRIMARY_MATERIALS.includes(normalizedPrimary)) {
-        return null;
+    for (const item of composition) {
+        if (isPrimaryMaterial(item.material)) {
+            return false;
+        }
     }
     
-    return primaryMaterial;
+    return true;
+}
+
+// ===== ФУНКЦИЯ ДЛЯ ПРОВЕРКИ ПРЕВЫШЕНИЯ ЛИМИТА ДОПОЛНИТЕЛЬНЫХ МАТЕРИАЛОВ =====
+function checkSecondaryMaterialLimit(composition) {
+    if (!composition || composition.length === 0) {
+        return { valid: true };
+    }
+    
+    const errors = [];
+    
+    for (const item of composition) {
+        if (isSecondaryMaterial(item.material)) {
+            const percent = item.percent || 0;
+            if (percent > 50) {
+                errors.push({
+                    material: item.material,
+                    percent: percent
+                });
+            }
+        }
+    }
+    
+    if (errors.length > 0) {
+        return { valid: false, errors: errors };
+    }
+    
+    return { valid: true };
 }
 
 // ===== АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ ТИПА НА ОСНОВЕ СОСТАВА =====
@@ -283,7 +335,19 @@ function updateMaterialTypeFromComposition() {
     const typeSelect = document.getElementById('filamentType');
     if (!typeSelect) return;
     
-    const primaryMaterial = getPrimaryMaterialFromComposition(compositionData);
+    // Проверяем, есть ли в составе только дополнительные материалы
+    if (hasOnlySecondaryMaterials(compositionData)) {
+        // Если есть только дополнительные материалы, показываем уведомление
+        const secondaryMaterials = compositionData.map(item => item.material).join(', ');
+        showNotification(
+            `В составе только дополнительные материалы (${secondaryMaterials}). Выберите основной тип материала вручную.`,
+            'info'
+        );
+        return;
+    }
+    
+    // Находим основной материал с максимальным процентом
+    const primaryMaterial = getPrimaryMaterialWithMaxPercent(compositionData);
     
     if (primaryMaterial) {
         const normalizedPrimary = primaryMaterial.toLowerCase();
@@ -297,12 +361,11 @@ function updateMaterialTypeFromComposition() {
         }
         
         // Проверяем, не был ли тип установлен вручную пользователем
-        // Для этого проверяем, есть ли в составе материал, соответствующий текущему типу
         const hasMatchingMaterial = compositionData.some(item => 
-            item.material.toLowerCase() === currentType
+            item.material.toLowerCase() === currentType && isPrimaryMaterial(item.material)
         );
         
-        // Если пользователь выбрал тип, который есть в составе, не перезаписываем его
+        // Если пользователь выбрал основной тип, который есть в составе, не перезаписываем его
         if (hasMatchingMaterial && currentType !== '') {
             return;
         }
@@ -687,6 +750,27 @@ function saveComposition() {
     const invalidItems = compositionData.filter(item => (item.percent || 0) <= 0);
     if (invalidItems.length > 0) {
         showNotification('Все компоненты должны иметь процент > 0', 'error');
+        return;
+    }
+    
+    // Проверяем, есть ли в составе только дополнительные материалы
+    if (hasOnlySecondaryMaterials(compositionData)) {
+        const secondaryMaterials = compositionData.map(item => item.material).join(', ');
+        showNotification(
+            `В составе только дополнительные материалы (${secondaryMaterials}). Добавьте основной материал или выберите тип вручную.`,
+            'info'
+        );
+        return;
+    }
+    
+    // Проверяем лимит дополнительных материалов (не более 50%)
+    const limitCheck = checkSecondaryMaterialLimit(compositionData);
+    if (!limitCheck.valid) {
+        const errors = limitCheck.errors.map(e => `"${e.material}" (${e.percent}%)`).join(', ');
+        showNotification(
+            `Дополнительные материалы не могут превышать 50%: ${errors}`,
+            'error'
+        );
         return;
     }
     
@@ -1971,7 +2055,7 @@ async function openDetailModal(id) {
 
 function printQRCode() {
     if (window.api?.printQR) {
-        window.api.printQR(currentFilamentId);
+        window.api.printQR(window.currentFilamentId);
         return;
     }
 
