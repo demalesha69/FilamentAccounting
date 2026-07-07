@@ -2061,7 +2061,7 @@ function printQRCode() {
     }
 	
 	if (window.Android) {
-		window.Android.printQR(uuid);
+		window.Android.printQR(currentFilamentId);
 		return;
 	}   
 
