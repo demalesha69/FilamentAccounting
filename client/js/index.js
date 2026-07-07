@@ -2056,7 +2056,7 @@ async function openDetailModal(id) {
 
 function printQRCode() {
     if (window.api?.printQR) {
-        window.api.printQR(window.currentFilamentId);
+        window.api.printQR(currentFilamentId);
         return;
     }
 
