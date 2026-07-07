@@ -2059,6 +2059,11 @@ function printQRCode() {
         window.api.printQR(currentFilamentId);
         return;
     }
+	
+	if (window.Android) {
+		window.Android.printQR(uuid);
+		return;
+	}   
 
     const container = document.getElementById('qrCodeContainer');
     if (!container) {
@@ -2232,7 +2237,7 @@ function downloadQRCode() {
         showNotification('QR-код не найден', 'error');
         return;
     }
-    
+
     const img = container.querySelector('img');
     if (!img) {
         showNotification('QR-код еще не загружен', 'error');
