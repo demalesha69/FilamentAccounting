@@ -84,7 +84,7 @@ function getDateRange(period) {
     return { start, end: now };
 }
 
-// ===== АВТОРИЗАЦИЯ =====
+//  АВТОРИЗАЦИЯ 
 
 async function checkAuth() {
     const token = localStorage.getItem('token');
@@ -158,7 +158,7 @@ function showUsername() {
     } catch (e) {}
 }
 
-// ===== СТАТИСТИКА =====
+//  СТАТИСТИКА 
 
 async function loadStats(startTimestamp = null, endTimestamp = null) {
     const token = localStorage.getItem('token');
@@ -245,17 +245,14 @@ function updateStats(data) {
     const avgPerDay = data.avg_per_day || 0;
     const materialsCount = data.materials_count || 0;
     const consumptionsCount = data.consumptions_count || 0;
-    
-    // Форматируем значения
+
     document.getElementById('totalUsed').textContent = formatLength(totalUsed);
     document.getElementById('successUsed').textContent = formatLength(successUsed);
     document.getElementById('wasteUsed').textContent = formatLength(wasteUsed);
-    
-    // Эффективность в процентах
+
     const efficiencyPercent = Math.round(efficiency * 100);
     document.getElementById('efficiency').textContent = efficiencyPercent + '%';
-    
-    // Меняем цвет эффективности
+
     const efficiencyEl = document.getElementById('efficiency');
     if (efficiencyPercent >= 80) {
         efficiencyEl.style.color = '#4ade80';
@@ -269,8 +266,7 @@ function updateStats(data) {
     document.getElementById('avgPerDay').textContent = formatLength(Math.round(avgPerDay));
     document.getElementById('totalMaterials').textContent = materialsCount;
     document.getElementById('totalOperations').textContent = consumptionsCount;
-    
-    // Обновляем период для среднего в день
+
     const periodLabel = document.getElementById('periodLabel');
     if (periodLabel) {
         const periodNames = {

@@ -30,7 +30,7 @@ body {
     position: relative;
 }
 
-/* ===== SAFE AREA INSETS ===== */
+/*  Сейф зона  */
 :root {
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -44,7 +44,7 @@ body {
     --content-padding: 16px;
 }
 
-/* ========== TOP SECTION ========== */
+/*  Верхняя панель  */
 .top-section {
     position: sticky;
     top: 0;
@@ -105,7 +105,7 @@ body {
     white-space: nowrap;
 }
 
-/* ========== SEARCH SECTION - FULL WIDTH ========== */
+/*  Поиск  */
 .search-section {
     display: flex;
     gap: 12px;
@@ -160,7 +160,7 @@ body {
     flex-shrink: 0;
 }
 
-/* ========== CONTENT ========== */
+/*  Весь контент  */
 .content {
     flex: 1;
     overflow-y: auto;
@@ -174,7 +174,7 @@ body {
     padding-bottom: calc(var(--nav-height) + var(--content-padding) + 80px);
 }
 
-/* ========== FILAMENT GRID ========== */
+/*  Филамент  */
 .filament-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -283,7 +283,7 @@ body {
     flex-shrink: 0;
 }
 
-/* ========== FAB BUTTONS ========== */
+/*  Кнопки добавления  */
 .fab-group {
     position: fixed;
     right: calc(var(--content-padding) + var(--safe-right));
@@ -342,7 +342,7 @@ body {
     box-shadow: 0 10px 25px rgba(139,92,246,0.4);
 }
 
-/* ========== BOTTOM NAV ========== */
+/*  Кнопки навигации  */
 .bottom-nav {
     position: fixed;
     left: var(--safe-left);
@@ -388,7 +388,7 @@ body {
     font-size: 11px;
 }
 
-/* ========== МОДАЛЬНЫЕ ОКНА - С SAFE AREA ========== */
+/*  МОДАЛЬНЫЕ ОКНА - С SAFE AREA  */
 
 .modal-overlay {
     display: none;
@@ -529,7 +529,7 @@ body {
     max-width: 600px;
 }
 
-/* ===== АДАПТАЦИЯ МОДАЛЬНЫХ ОКОН ПОД ТЕЛЕФОНЫ С SAFE AREA ===== */
+/*  АДАПТАЦИЯ МОДАЛЬНЫХ ОКОН ПОД ТЕЛЕФОНЫ С SAFE AREA  */
 
 /* Планшеты */
 @media (max-width: 768px) {
@@ -573,7 +573,6 @@ body {
         animation: modalSlideUpMobile 0.3s ease;
     }
     
-    /* Для модальных окон, которые должны быть по центру на телефонах */
     .modal-centered-on-mobile {
         align-items: center;
     }
@@ -987,9 +986,7 @@ body {
     }
 }
 
-/* ========== ОСТАЛЬНЫЕ СТИЛИ ОСТАЮТСЯ БЕЗ ИЗМЕНЕНИЙ ========== */
-
-/* ========== ФИЛЬТРЫ В МОДАЛЬНЫХ ОКНАХ ========== */
+/*  ФИЛЬТРЫ В МОДАЛЬНЫХ ОКНАХ  */
 
 .filter-section {
     display: flex;
@@ -1076,7 +1073,7 @@ body {
     color: #ffffff;
 }
 
-/* ========== COLOR PICKER ========== */
+/*  Выбор цвета  */
 .color-select {
     display: flex;
     flex-direction: column;
@@ -1159,7 +1156,7 @@ body {
     100% { background-position: 0% 50%; }
 }
 
-/* ========== COMPOSITION MODAL ========== */
+/*  Модалка композитов  */
 .composition-item {
     transition: all 0.2s ease;
 }
@@ -1191,7 +1188,7 @@ body {
     transition: color 0.3s ease;
 }
 
-/* ========== FORMS ========== */
+/*  Формы  */
 .form-group {
     display: flex;
     flex-direction: column;
@@ -1332,7 +1329,7 @@ body {
     cursor: not-allowed;
 }
 
-/* ========== AUTH PAGES ========== */
+/*  Страница авторизации  */
 .auth-page {
     background: #0f1117;
     min-height: 100vh;
@@ -1408,7 +1405,7 @@ body {
     margin-top: -6px;
 }
 
-/* ========== HISTORY ========== */
+/*  История  */
 .history-list {
     display: flex;
     flex-direction: column;
@@ -1477,7 +1474,7 @@ body {
     white-space: nowrap;
 }
 
-/* ========== HELP TEXT ========== */
+/*  Помощь  */
 .form-group small {
     color: #9ca3af;
     font-size: 12px;
@@ -1485,7 +1482,7 @@ body {
     display: block;
 }
 
-/* ========== STATS ========== */
+/*  Статистика  */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -1578,7 +1575,7 @@ body {
     color: #8b5cf6;
 }
 
-/* ========== DETAIL MODAL ========== */
+/*  Модалка деталей  */
 #detailBody .progress-ring {
     --size: 80px;
     width: var(--size);
@@ -1603,7 +1600,7 @@ body {
     font-weight: 700;
 }
 
-/* ========== NOTIFICATIONS ========== */
+/*  Уведомления  */
 .notification {
     position: fixed;
     top: calc(16px + var(--safe-top));
@@ -1658,7 +1655,7 @@ body {
     }
 }
 
-/* ========== QR SCANNER ========== */
+/*  QR сканер  */
 #qr-reader {
     background: #0f1117;
     border-radius: 12px;
@@ -1713,7 +1710,7 @@ body {
     min-height: 40px;
 }
 
-/* ========== PROGRESS RING SPECIAL COLORS ========== */
+/*  Цвет кольца особые  */
 .progress-ring.multicolor {
     background: conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444) !important;
     animation: multicolorSpin 4s linear infinite;
@@ -1743,7 +1740,7 @@ body {
     border: 2px solid rgba(255,255,255,0.1);
 }
 
-/* ========== КОНТЕЙНЕРЫ ДЛЯ ФИЛЬТРОВ ========== */
+/*  КОНТЕЙНЕРЫ ДЛЯ ФИЛЬТРОВ  */
 #manufacturerFilterContainer,
 #colorFilterContainer,
 #typeFilterContainer,
@@ -1789,7 +1786,7 @@ body {
     min-height: 36px;
 }
 
-/* ========== COLORS ========== */
+/*  Цвета  */
 .green { color: #22c55e; }
 .yellow { color: #eab308; }
 .red { color: #ef4444; }
@@ -1820,7 +1817,7 @@ body {
     background-clip: text;
 }
 
-/* ========== СОСТАВ КАТУШКИ ========== */
+/*  СОСТАВ КАТУШКИ  */
 #compositionDetailBody {
     padding: 4px 0;
 }
@@ -1869,8 +1866,6 @@ body {
     font-size: 15px;
 }
 
-/* ========== RESPONSIVE ========== */
-
 /* Планшеты */
 @media (max-width: 768px) {
     .filament-grid {
@@ -1902,7 +1897,7 @@ body {
     }
 }
 
-/* Маленькие телефоны - дополнительные стили для фильтров */
+/* Маленькие телефоны */
 @media (max-width: 480px) {
     .filter-option {
         padding: 8px 12px;
@@ -1968,9 +1963,7 @@ body {
     }
 }
 
-/* ========== ОСОБЫЕ СЛУЧАИ ========== */
-
-/* Для модального окна фильтров - делаем его компактнее */
+/* Для модального окна фильтров */
 #filterModal .modal {
     max-width: 420px;
 }
@@ -2042,7 +2035,7 @@ body {
     border-radius: 4px;
 }
 
-/* Стили для скролла внутри модальных окон на iOS */
+/* для скролла внутри модальных окон iOS */
 @supports (-webkit-touch-callout: none) {
     .modal {
         -webkit-overflow-scrolling: touch;
@@ -2095,7 +2088,7 @@ body {
     }
 }
 
-/* Адаптация модальных окон для телефонов с вырезом */
+/* Адаптация модальных окон для телефонов */
 @supports (padding-top: env(safe-area-inset-top)) {
     .modal-overlay {
         padding-top: calc(12px + env(safe-area-inset-top, 0px));

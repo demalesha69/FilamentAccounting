@@ -62,7 +62,7 @@ function formatLocalDate(timestamp) {
     }
 }
 
-// ===== ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ СТАТУСА =====
+//  ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ СТАТУСА 
 function getStatusDisplay(status) {
     const statusMap = {
         'success': { icon: 'fa-solid fa-check-circle', color: '#4ade80', label: 'Успешно' },
@@ -72,7 +72,7 @@ function getStatusDisplay(status) {
     return statusMap[status] || statusMap['success'];
 }
 
-// ===== АВТОРИЗАЦИЯ =====
+//  АВТОРИЗАЦИЯ 
 
 async function checkAuth() {
     const token = localStorage.getItem('token');
@@ -146,7 +146,7 @@ function showUsername() {
     } catch (e) {}
 }
 
-// ===== ПОСТРОЕНИЕ URL ДЛЯ РАСХОДОВ =====
+//  ПОСТРОЕНИЕ URL ДЛЯ РАСХОДОВ 
 
 function buildConsumptionsUrl() {
     const params = new URLSearchParams();
@@ -165,7 +165,7 @@ function buildConsumptionsUrl() {
     return `${API_URL}/consumptions/${queryString ? '?' + queryString : ''}`;
 }
 
-// ===== ЗАГРУЗКА ВСЕХ РАСХОДОВ =====
+//  ЗАГРУЗКА ВСЕХ РАСХОДОВ 
 
 async function loadAllConsumptions() {
     const token = localStorage.getItem('token');
@@ -250,14 +250,14 @@ function renderConsumptions(consumptions) {
     `}).join('');
 }
 
-// ===== ПОИСК =====
+//  ПОИСК 
 
 function searchConsumptions() {
     currentSearchQuery = document.getElementById('searchInput').value.trim();
     loadAllConsumptions();
 }
 
-// ===== СОРТИРОВКА =====
+//  СОРТИРОВКА 
 
 function toggleSort() {
     if (currentSortOrder === 'desc') {
@@ -284,7 +284,7 @@ function updateSortButtonIcon() {
     }
 }
 
-// ===== ФИЛЬТР ПО СТАТУСУ =====
+//  ФИЛЬТР ПО СТАТУСУ 
 
 function toggleStatusFilter(status) {
     const index = selectedStatuses.indexOf(status);
@@ -337,7 +337,7 @@ function updateStatusFilterUI() {
     }
 }
 
-// ===== РАСКРЫТИЕ ФИЛЬТРА СТАТУСОВ =====
+//  РАСКРЫТИЕ ФИЛЬТРА СТАТУСОВ 
 
 let statusFilterExpanded = false;
 
@@ -357,7 +357,7 @@ function toggleStatusFilterContainer() {
     }
 }
 
-// ===== ПРОВЕРКА ПОЛЕЙ =====
+//  ПРОВЕРКА ПОЛЕЙ 
 
 function checkConsumptionFields() {
     const materialId = document.getElementById('consumptionMaterialSelect').value;
@@ -435,7 +435,7 @@ async function loadFilamentsForSelect() {
     }
 }
 
-// ========== ПАРСИНГ ФАЙЛОВ СЛАЙСЕРА ==========
+//  ПАРСИНГ ФАЙЛОВ СЛАЙСЕРА 
 
 function parseGCodeFile(content) {
     const lines = content.split('\n');
@@ -659,7 +659,7 @@ function convertGToMm(g, density, diameter) {
     return length_mm;
 }
 
-// ========== МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ РАСХОДА ==========
+//  МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ РАСХОДА 
 
 function openAddConsumption() {
     const modal = document.getElementById('addConsumptionModal');
@@ -711,7 +711,7 @@ document.getElementById('addConsumptionModal').addEventListener('click', functio
     if (e.target === this) closeAddConsumption();
 });
 
-// ========== ПЕРЕКЛЮЧЕНИЕ МЕЖДУ РУЧНЫМ ВВОДОМ И ФАЙЛОМ ==========
+//  ПЕРЕКЛЮЧЕНИЕ МЕЖДУ РУЧНЫМ ВВОДОМ И ФАЙЛОМ 
 
 function toggleFileUpload() {
     const fileArea = document.getElementById('fileUploadArea');
@@ -756,7 +756,7 @@ function toggleFileUpload() {
     }
 }
 
-// ========== ОБРАБОТКА ЗАГРУЗКИ ФАЙЛА ==========
+//  ОБРАБОТКА ЗАГРУЗКИ ФАЙЛА 
 
 async function handleFileSelect(event) {
     const file = event.target.files[0];
@@ -861,7 +861,7 @@ function showToolSelector(toolKeys) {
     `;
 }
 
-// ========== ОТПРАВКА РАСХОДОВ ИЗ ФАЙЛА ==========
+//  ОТПРАВКА РАСХОДОВ ИЗ ФАЙЛА 
 
 async function submitFileConsumptions() {
     if (!parsedFileData) {
@@ -997,7 +997,7 @@ async function submitFileConsumptions() {
     }
 }
 
-// ========== РУЧНОЕ СОЗДАНИЕ РАСХОДА ==========
+//  РУЧНОЕ СОЗДАНИЕ РАСХОДА 
 
 async function createConsumption() {
     const materialId = document.getElementById('consumptionMaterialSelect').value;
@@ -1079,7 +1079,7 @@ async function createConsumption() {
     }
 }
 
-// ========== ИНИЦИАЛИЗАЦИЯ ==========
+//  ИНИЦИАЛИЗАЦИЯ 
 
 window.onload = async function() {
     const isAuth = await checkAuth();
