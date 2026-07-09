@@ -60,7 +60,7 @@ class StatisticService:
             else 0
         )
 
-        start_date = datetime.fromtimestamp(start_timestamp)
+        start_date = datetime.fromtimestamp(start_timestamp if start_timestamp > 0 else first_consumption_timestamp)
         end_date = datetime.fromtimestamp(end_timestamp)
 
         days = max((end_date - start_date).days, 1)
