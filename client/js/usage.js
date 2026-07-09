@@ -1,4 +1,5 @@
 const API_URL = '/api';
+
 let allConsumptions = [];
 let currentConsumptionSort = 'default';
 let currentSortOrder = 'desc';

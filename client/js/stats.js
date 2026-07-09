@@ -1,4 +1,5 @@
 const API_URL = '/api';
+
 let currentPeriod = 'all';
 let currentStartTimestamp = null;
 let currentEndTimestamp = null;
@@ -163,10 +164,7 @@ async function loadStats(startTimestamp = null, endTimestamp = null) {
     const token = localStorage.getItem('token');
     if (!token) {
         showNotification('Вы не авторизованы', 'error');
-        document.getElementById('totalUsed').textContent = '—';
-        document.getElementById('totalMaterials').textContent = '—';
-        document.getElementById('totalOperations').textContent = '—';
-        document.getElementById('avgPerDay').textContent = '—';
+        clearStats();
         return;
     }
     
@@ -205,10 +203,7 @@ async function loadStats(startTimestamp = null, endTimestamp = null) {
             const text = await response.text();
             console.error('Ответ не JSON:', text.substring(0, 200));
             showNotification('Сервер вернул ошибку. Проверьте подключение к интернету.', 'error');
-            document.getElementById('totalUsed').textContent = '—';
-            document.getElementById('totalMaterials').textContent = '—';
-            document.getElementById('totalOperations').textContent = '—';
-            document.getElementById('avgPerDay').textContent = '—';
+            clearStats();
             return;
         }
         
@@ -225,34 +220,69 @@ async function loadStats(startTimestamp = null, endTimestamp = null) {
     } catch (error) {
         console.error('Ошибка загрузки статистики:', error);
         showNotification('Ошибка загрузки статистики: ' + error.message, 'error');
-        document.getElementById('totalUsed').textContent = '—';
-        document.getElementById('totalMaterials').textContent = '—';
-        document.getElementById('totalOperations').textContent = '—';
-        document.getElementById('avgPerDay').textContent = '—';
+        clearStats();
     }
 }
 
+function clearStats() {
+    document.getElementById('totalUsed').textContent = '—';
+    document.getElementById('successUsed').textContent = '—';
+    document.getElementById('wasteUsed').textContent = '—';
+    document.getElementById('efficiency').textContent = '—';
+    document.getElementById('avgPerPrint').textContent = '—';
+    document.getElementById('avgPerDay').textContent = '—';
+    document.getElementById('totalMaterials').textContent = '—';
+    document.getElementById('totalOperations').textContent = '—';
+}
+
 function updateStats(data) {
+    // Основные показатели
     const totalUsed = data.total_used_length || 0;
+    const successUsed = data.success_used_length || 0;
+    const wasteUsed = data.waste_used_length || 0;
+    const efficiency = data.efficiency || 0;
+    const avgPerPrint = data.avg_per_print || 0;
+    const avgPerDay = data.avg_per_day || 0;
     const materialsCount = data.materials_count || 0;
     const consumptionsCount = data.consumptions_count || 0;
     
-    let avgPerDay = 0;
-    if (currentPeriod !== 'all' && currentPeriod !== 'custom') {
-        const range = getDateRange(currentPeriod);
-        const days = Math.max(1, Math.ceil((range.end - range.start) / (24 * 60 * 60)));
-        avgPerDay = totalUsed / days;
-    } else if (currentPeriod === 'all' && totalUsed > 0 && data.first_consumption_timestamp) {
-        const firstTs = data.first_consumption_timestamp;
-        const now = Math.floor(Date.now() / 1000);
-        const days = Math.max(1, Math.ceil((now - firstTs) / (24 * 60 * 60)));
-        avgPerDay = totalUsed / days;
+    // Форматируем значения
+    document.getElementById('totalUsed').textContent = formatLength(totalUsed);
+    document.getElementById('successUsed').textContent = formatLength(successUsed);
+    document.getElementById('wasteUsed').textContent = formatLength(wasteUsed);
+    
+    // Эффективность в процентах
+    const efficiencyPercent = Math.round(efficiency * 100);
+    document.getElementById('efficiency').textContent = efficiencyPercent + '%';
+    
+    // Меняем цвет эффективности
+    const efficiencyEl = document.getElementById('efficiency');
+    if (efficiencyPercent >= 80) {
+        efficiencyEl.style.color = '#4ade80';
+    } else if (efficiencyPercent >= 50) {
+        efficiencyEl.style.color = '#f59e0b';
+    } else {
+        efficiencyEl.style.color = '#ef4444';
     }
     
-    document.getElementById('totalUsed').textContent = formatLength(totalUsed);
+    document.getElementById('avgPerPrint').textContent = formatLength(Math.round(avgPerPrint));
+    document.getElementById('avgPerDay').textContent = formatLength(Math.round(avgPerDay));
     document.getElementById('totalMaterials').textContent = materialsCount;
     document.getElementById('totalOperations').textContent = consumptionsCount;
-    document.getElementById('avgPerDay').textContent = avgPerDay > 0 ? formatLength(Math.round(avgPerDay)) : '—';
+    
+    // Обновляем период для среднего в день
+    const periodLabel = document.getElementById('periodLabel');
+    if (periodLabel) {
+        const periodNames = {
+            'all': 'за все время',
+            'day': 'за день',
+            'week': 'за неделю',
+            'month': 'за месяц',
+            'year': 'за год',
+            'custom': 'за выбранный период'
+        };
+        periodLabel.textContent = periodNames[currentPeriod] || '';
+    }
 }
 
 function setPeriod(period) {
@@ -290,6 +320,7 @@ function setCustomPeriod() {
     loadStats(currentStartTimestamp, currentEndTimestamp);
 }
 
+// Инициализация
 window.onload = async function() {
     console.log('=== СТАТИСТИКА: ЗАГРУЗКА ===');
     const isAuth = await checkAuth();
@@ -297,9 +328,6 @@ window.onload = async function() {
     if (isAuth) {
         setPeriod('all');
     } else {
-        document.getElementById('totalUsed').textContent = '—';
-        document.getElementById('totalMaterials').textContent = '—';
-        document.getElementById('totalOperations').textContent = '—';
-        document.getElementById('avgPerDay').textContent = '—';
+        clearStats();
     }
 };
